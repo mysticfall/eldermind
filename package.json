@@ -1,0 +1,53 @@
+{
+  "name": "eldermind",
+  "version": "0.0.1",
+  "private": false,
+  "type": "module",
+  "main": "dist/eldermind.js",
+  "scripts": {
+    "build": "vite build",
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix",
+    "doc": "typedoc",
+    "test": "vitest --no-watch",
+    "coverage": "vitest --coverage --no-watch",
+    "make-badges": "istanbul-badges-readme"
+  },
+  "keywords": [
+    "skyrim",
+    "skryim platform"
+  ],
+  "dependencies": {
+    "skyrim-effect-client": "file:../skyrim-effect/packages/client",
+    "@skyrim-platform/skyrim-platform": "2.9.0",
+    "dotenv": "^16.4.7",
+    "effect": "3.12.0",
+    "@effect/platform": "^0.72.0",
+    "@effect/platform-node": "^0.68.0",
+    "@effect/typeclass": "^0.31.0",
+    "@langchain/core": "^0.3.27",
+    "@langchain/openai": "^0.3.16",
+    "node-microphone": "^0.1.6",
+    "marked": "^15.0.5",
+    "gray-matter": "^4.0.3",
+    "handlebars": "^4.7.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "typedoc": "^0.27.6",
+    "vite": "^6.0.7",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@effect/vitest": "^0.16.0",
+    "@stylistic/eslint-plugin": "^2.12.1",
+    "eslint": "^9.17.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-config-prettier": "^9.1.0",
+    "@eslint/js": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript-eslint": "^8.19.0",
+    "husky": "^9.1.7",
+    "@types/node-microphone": "^0.1.4"
+  }
+}
