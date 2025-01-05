@@ -10,7 +10,7 @@ import {Either} from "effect/Either"
 import {ReadonlyRecord} from "effect/Record"
 import * as A from "effect/Array"
 import * as SC from "effect/Schema"
-import {flow, pipe, Schedule} from "effect"
+import {flow, JSONSchema, pipe, Schedule} from "effect"
 import {Duration} from "effect/Duration"
 import {traverseArray} from "../common/Type"
 import {
@@ -25,6 +25,15 @@ import {InvalidDataError} from "../common/Data"
 export type PromptContextBuilder<in TContext> = (
     context: TContext
 ) => Effect<ReadonlyRecord<string, unknown>>
+
+export const createSchemaPromptContextBuilder =
+    <TContext, TOutput, TSource = TOutput>(
+        schema: SC.Schema<TOutput, TSource>
+    ): PromptContextBuilder<TContext> =>
+    () =>
+        pipe(JSONSchema.make(schema), s =>
+            FX.succeed({schema: JSON.stringify(s)})
+        )
 
 export interface PromptTemplate<in TContext, TOutput, TSource = TOutput> {
     readonly schema: SC.Schema<TOutput, TSource>
@@ -53,6 +62,7 @@ export abstract class AbstractPromptTemplate<
     render(context: TContext): Effect<readonly BaseMessage[]> {
         return pipe(
             this.builders,
+            A.append(createSchemaPromptContextBuilder(this.schema)),
             traverseArray(b => b(context)),
             FX.map(A.reduceRight({}, (a, b) => ({...a, ...b}))),
             FX.flatMap(this.doRender)

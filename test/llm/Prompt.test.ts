@@ -4,24 +4,32 @@ import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
 import {LlmExecutionError} from "../../src/llm/Model"
-import {PromptTemplate, runPrompt} from "../../src/llm/Prompt"
+import {
+    createSchemaPromptContextBuilder,
+    PromptTemplate,
+    runPrompt
+} from "../../src/llm/Prompt"
 import {BaseMessage, HumanMessage} from "@langchain/core/messages"
 import {FakeChatModel, FakeListChatModel} from "@langchain/core/utils/testing"
 import {CallbackManagerForLLMRun} from "@langchain/core/callbacks/manager"
 import {ChatResult} from "@langchain/core/outputs"
 import {InvalidDataError} from "../../src/common/Data"
 
+const schema = SC.Struct({
+    name: SC.String.annotations({
+        description: "The name of the user"
+    }),
+    age: SC.Number.annotations({
+        description: "The age of the user"
+    })
+}).annotations({
+    description: "User"
+})
+
 describe("runPrompt", () => {
     const context = {
         name: "Anna"
     }
-
-    const schema = SC.Struct({
-        name: SC.String,
-        age: SC.Number
-    }).annotations({
-        description: "User"
-    })
 
     type Context = typeof context
     type Response = typeof schema.Type
@@ -155,6 +163,24 @@ describe("runPrompt", () => {
                     `User
 └─ ["age"]
    └─ is missing`
+                )
+            })
+    )
+})
+
+describe("createSchemaPromptContextBuilder", () => {
+    it.effect(
+        "should create a PromptContextBuilder that adds the given schema definition to the context",
+        () =>
+            FX.gen(function* () {
+                const context = yield* pipe(
+                    {},
+                    createSchemaPromptContextBuilder(schema)
+                )
+
+                expect(context).toHaveProperty(
+                    "schema",
+                    `{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["name","age"],"properties":{"name":{"type":"string","description":"The name of the user"},"age":{"type":"number","description":"The age of the user"}},"additionalProperties":false,"description":"User"}`
                 )
             })
     )
