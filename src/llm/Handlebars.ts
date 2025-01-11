@@ -33,21 +33,25 @@ export function createHandlebarsMessageTemplateLoader(
                 )
             ),
             FX.map(template =>
-                flow(template, function (text) {
-                    switch (options?.messageType) {
-                        case "system":
-                            return FX.succeed(new SystemMessage(text))
-                        case "human":
-                            return FX.succeed(new HumanMessage(text))
-                        case "ai":
-                            return FX.succeed(new AIMessage(text))
-                        case undefined:
-                        default:
-                            return path.includes("system")
-                                ? FX.succeed(new SystemMessage(text))
-                                : FX.succeed(new HumanMessage(text))
-                    }
-                })
+                flow(
+                    template,
+                    function (text) {
+                        switch (options?.messageType) {
+                            case "system":
+                                return new SystemMessage(text)
+                            case "human":
+                                return new HumanMessage(text)
+                            case "ai":
+                                return new AIMessage(text)
+                            case undefined:
+                            default:
+                                return path.includes("system")
+                                    ? new SystemMessage(text)
+                                    : new HumanMessage(text)
+                        }
+                    },
+                    FX.succeed
+                )
             )
         )
 }
