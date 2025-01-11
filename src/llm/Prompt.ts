@@ -17,9 +17,9 @@ export type ContextBuilder<TContext> = (
     context: TContext
 ) => Effect<ReadonlyRecord<string, unknown>>
 
-export type MessageTemplate<out T extends BaseMessage = BaseMessage> = (
+export type MessageTemplate = (
     context: ReadonlyRecord<string, unknown>
-) => Effect<T>
+) => Effect<BaseMessage>
 
 export type Prompt<TContext, TOutput> = (
     context: TContext
