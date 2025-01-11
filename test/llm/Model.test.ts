@@ -1,27 +1,25 @@
-import {describe, expect} from "vitest"
+import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import {Duration, pipe} from "effect"
 import * as FX from "effect/Effect"
 import {
+    createLlmRunner,
     createOpenAICompatibleModel,
     LlmApiKey,
     LlmEndpoint,
+    LlmExecutionError,
     LlmFrequencyPenalty,
     LlmMaxTokens,
     LlmMinP,
-    LlmExecutionError,
     LlmModelId,
     LlmParameters,
     LlmPresencePenalty,
     LlmTemperature,
-    LlmTopP,
-    runLlm
+    LlmTopP
 } from "../../src/llm/Model"
 import {ClientOptions} from "@langchain/openai"
-import {BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {FakeChatModel, FakeListChatModel} from "@langchain/core/utils/testing"
-import {CallbackManagerForLLMRun} from "@langchain/core/callbacks/manager"
-import {ChatResult} from "@langchain/core/outputs"
+import {AIMessageChunk, HumanMessage} from "@langchain/core/messages"
+import {FakeChatModel} from "@langchain/core/utils/testing"
 
 describe("createOpenAICompatibleModel", () => {
     it("should create a ChatOpenAI instance with the given configuration", () => {
@@ -63,57 +61,85 @@ describe("createOpenAICompatibleModel", () => {
     })
 })
 
-describe("runLlm", () => {
-    it.effect("should return a successful response from the model", () =>
+describe("createLlmRunner", () => {
+    it.live("should return a successful response from the model", () =>
         FX.gen(function* () {
-            const model = new FakeListChatModel({
-                responses: [
-                    "I used to be an adventurer like you. Then I took an arrow in the knee."
-                ]
-            })
+            const model = new FakeChatModel({})
 
-            const response = yield* pipe(
-                [new HumanMessage("Hello?")],
-                runLlm(model)
+            const spy = vi.spyOn(model, "invoke")
+
+            spy.mockReturnValue(
+                pipe(
+                    FX.succeed(
+                        new AIMessageChunk({
+                            content:
+                                "I used to be an adventurer like you. Then I took an arrow in the knee.",
+                            response_metadata: {
+                                model: "fake_model"
+                            },
+                            usage_metadata: {
+                                input_tokens: 20,
+                                output_tokens: 30,
+                                total_tokens: 50
+                            }
+                        })
+                    ),
+                    FX.delay("100 millis"),
+                    FX.runPromise
+                )
             )
 
-            expect(response).toBeDefined()
-            expect(response.content).toBe(
+            const {output, duration, metadata, usage} = yield* pipe(
+                [new HumanMessage("Hello?")],
+                createLlmRunner(model)
+            )
+
+            expect(spy).toHaveBeenCalledWith(
+                [new HumanMessage("Hello?")],
+                undefined
+            )
+
+            expect(output).toBe(
                 "I used to be an adventurer like you. Then I took an arrow in the knee."
             )
+
+            expect(duration).toSatisfy(
+                Duration.between({minimum: "80 millis", maximum: "120 millis"})
+            )
+
+            expect(metadata).toHaveProperty("model", "fake_model")
+
+            expect(usage).toBeDefined()
+            expect(usage).toHaveProperty("input_tokens", 20)
+            expect(usage).toHaveProperty("output_tokens", 30)
+            expect(usage).toHaveProperty("total_tokens", 50)
         })
     )
 
-    it.effect("should return an LlmModelExecutionError on model failure", () => {
-        class ChatModelFixture extends FakeChatModel {
-            _generate(
-                _messages: BaseMessage[],
-                _options?: this["ParsedCallOptions"],
-                _runManager?: CallbackManagerForLLMRun
-            ): Promise<ChatResult> {
-                return Promise.reject(
-                    new Error(
-                        "The guard is expected to be shot in his knee but it was on his head."
+    it.effect(
+        "should return an LlmModelExecutionError on model failure",
+        () => {
+            return FX.gen(function* () {
+                const model = new FakeChatModel({})
+
+                const spy = vi.spyOn(model, "invoke")
+
+                spy.mockRejectedValue(
+                    "The guard is expected to be shot in his knee but it was on his head."
+                )
+
+                const error = yield* pipe(
+                    [new HumanMessage("Hello?")],
+                    createLlmRunner(model),
+                    FX.catchTag("LlmExecutionError", (e: LlmExecutionError) =>
+                        FX.succeed(e.message)
                     )
                 )
-            }
-        }
 
-        return FX.gen(function* () {
-            const model = new ChatModelFixture({})
-
-            const error = yield* pipe(
-                [new HumanMessage("Hello?")],
-                runLlm(model),
-                FX.catchTag(
-                    "LlmExecutionError",
-                    (e: LlmExecutionError) => FX.succeed(e.message)
+                expect(error).toBe(
+                    "The guard is expected to be shot in his knee but it was on his head."
                 )
-            )
-
-            expect(error).toBe(
-                "The guard is expected to be shot in his knee but it was on his head."
-            )
-        })
-    })
+            })
+        }
+    )
 })

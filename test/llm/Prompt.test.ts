@@ -1,18 +1,20 @@
-import {describe, expect} from "vitest"
+import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
-import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
-import {LlmExecutionError} from "../../src/llm/Model"
+import {createLlmRunner, LlmExecutionError} from "../../src/llm/Model"
 import {
-    createSchemaPromptContextBuilder,
-    PromptTemplate,
-    runPrompt
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage
+} from "@langchain/core/messages"
+import {FakeChatModel} from "@langchain/core/utils/testing"
+import {
+    ContextBuilder,
+    createPrompt,
+    MessageTemplate
 } from "../../src/llm/Prompt"
-import {BaseMessage, HumanMessage} from "@langchain/core/messages"
-import {FakeChatModel, FakeListChatModel} from "@langchain/core/utils/testing"
-import {CallbackManagerForLLMRun} from "@langchain/core/callbacks/manager"
-import {ChatResult} from "@langchain/core/outputs"
+import {Duration, pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
 
 const schema = SC.Struct({
@@ -26,77 +28,148 @@ const schema = SC.Struct({
     description: "User"
 })
 
-describe("runPrompt", () => {
+describe("createPrompt", () => {
     const context = {
         name: "Anna"
     }
 
     type Context = typeof context
-    type Response = typeof schema.Type
 
-    const prompt: PromptTemplate<Context, Response> = {
-        schema,
-        render: (context: Context) => {
-            return pipe(
-                [new HumanMessage(`Who is ${context.name}?`)],
-                FX.succeed
-            )
-        }
-    }
-
-    it.effect("should return a successful response from the model", () =>
+    it.live("should create a prompt with the given information", () =>
         FX.gen(function* () {
-            const model = new FakeListChatModel({
-                responses: [`{"name": "Anna", "age": 42}`]
-            })
+            const templates: MessageTemplate[] = [
+                ctx =>
+                    FX.succeed(
+                        new SystemMessage(
+                            `Reply using this schema: ${ctx.schema}`
+                        )
+                    ),
+                ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
+            ]
 
-            const response = yield* pipe(context, runPrompt(prompt, model))
+            const builders: ContextBuilder<Context>[] = [ctx => FX.succeed(ctx)]
 
-            expect(response).toBeDefined()
+            const model = new FakeChatModel({})
 
-            const {output, duration} = response
+            const runner = createLlmRunner(model)
+            const prompt = createPrompt(templates, builders, schema, runner)
+
+            const spy = vi.spyOn(model, "invoke")
+
+            spy.mockReturnValue(
+                pipe(
+                    FX.succeed(
+                        new AIMessageChunk({
+                            content: JSON.stringify({name: "Anna", age: 41}),
+                            response_metadata: {
+                                model: "fake_model"
+                            },
+                            usage_metadata: {
+                                input_tokens: 20,
+                                output_tokens: 30,
+                                total_tokens: 50
+                            }
+                        })
+                    ),
+                    FX.delay("100 millis"),
+                    FX.runPromise
+                )
+            )
+
+            const response = yield* prompt(context)
+
+            expect(spy).toHaveBeenCalledWith(
+                [
+                    new SystemMessage(
+                        'Reply using this schema: {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["name","age"],"properties":{"name":{"type":"string","description":"The name of the user"},"age":{"type":"number","description":"The age of the user"}},"additionalProperties":false,"description":"User"}'
+                    ),
+                    new HumanMessage(`Who is ${context.name}?`)
+                ],
+                undefined
+            )
+
+            const {output, duration, metadata, usage} = response
 
             expect(output.name).toBe("Anna")
-            expect(output.age).toBe(42)
-            expect(duration).toBeDefined()
-        })
-    )
+            expect(output.age).toBe(41)
 
-    it.effect("should return an LlmModelExecutionError on model failure", () =>
-        FX.gen(function* () {
-            class ChatModelFixture extends FakeChatModel {
-                _generate(
-                    _messages: BaseMessage[],
-                    _options?: this["ParsedCallOptions"],
-                    _runManager?: CallbackManagerForLLMRun
-                ): Promise<ChatResult> {
-                    return Promise.reject(new Error("Who is Anna?"))
-                }
-            }
-
-            const error = yield* pipe(
-                context,
-                runPrompt(prompt, new ChatModelFixture({})),
-                FX.catchTag("LlmExecutionError", (e: LlmExecutionError) =>
-                    FX.succeed(e.message)
-                )
+            expect(duration).toSatisfy(
+                Duration.between({minimum: "80 millis", maximum: "120 millis"})
             )
 
-            expect(error).toBe("Who is Anna?")
+            expect(metadata).toHaveProperty("model", "fake_model")
+
+            expect(usage).toBeDefined()
+            expect(usage).toHaveProperty("input_tokens", 20)
+            expect(usage).toHaveProperty("output_tokens", 30)
+            expect(usage).toHaveProperty("total_tokens", 50)
         })
     )
 
     it.effect(
-        "should return an InvalidDataError when it fails to validate the response",
+        "should create a prompt that returns an LlmModelExecutionError on model failure",
         () =>
             FX.gen(function* () {
-                const model = new FakeListChatModel({
-                    responses: [`{"name": "Anna"}`]
-                })
+                const templates: MessageTemplate[] = [
+                    ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
+                ]
+
+                const builders: ContextBuilder<Context>[] = [
+                    ctx => FX.succeed(ctx)
+                ]
+
+                const model = new FakeChatModel({})
+
+                const runner = createLlmRunner(model)
+                const prompt = createPrompt(templates, builders, schema, runner)
+
+                const spy = vi.spyOn(model, "invoke")
+
+                spy.mockRejectedValue("Who is Anna?")
 
                 const error = yield* pipe(
                     context,
-                    runPrompt(prompt, model),
+                    prompt,
+                    FX.catchTag("LlmExecutionError", (e: LlmExecutionError) =>
+                        FX.succeed(e.message)
+                    )
+                )
+
+                expect(error).toBe("Who is Anna?")
+            })
+    )
+
+    it.effect(
+        "should create a prompt that returns an InvalidDataError when it fails to validate the response",
+        () =>
+            FX.gen(function* () {
+                const templates: MessageTemplate[] = [
+                    ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
+                ]
+
+                const builders: ContextBuilder<Context>[] = [
+                    ctx => FX.succeed(ctx)
+                ]
+
+                const model = new FakeChatModel({})
+
+                const runner = createLlmRunner(model)
+                const prompt = createPrompt(templates, builders, schema, runner)
+
+                const spy = vi.spyOn(model, "invoke")
+
+                spy.mockResolvedValue(
+                    new AIMessageChunk({
+                        content: JSON.stringify({name: "Anna"}),
+                        response_metadata: {
+                            model: "fake_model"
+                        }
+                    })
+                )
+
+                const error = yield* pipe(
+                    context,
+                    prompt,
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
                     )
@@ -111,49 +184,115 @@ describe("runPrompt", () => {
     )
 
     it.effect(
-        "should retry up to the given number of times if it fails with InvalidDataError",
+        "should create a prompt that retries up to the given number of times if it fails with InvalidDataError",
         () =>
             FX.gen(function* () {
-                const model = new FakeListChatModel({
-                    responses: [
-                        `{"name": "Anna"}`,
-                        `{"age": 42}`,
-                        `"name": "Anna", "age": 42}`,
-                        `{"name": "Anna", "age": 42}`
-                    ]
-                })
+                const templates: MessageTemplate[] = [
+                    ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
+                ]
 
-                const response = yield* pipe(
-                    context,
-                    runPrompt(prompt, model, {retryTimes: 3})
+                const builders: ContextBuilder<Context>[] = [
+                    ctx => FX.succeed(ctx)
+                ]
+
+                const model = new FakeChatModel({})
+
+                const runner = createLlmRunner(model)
+                const prompt = createPrompt(
+                    templates,
+                    builders,
+                    schema,
+                    runner,
+                    {retryTimes: 2}
                 )
 
-                expect(response).toBeDefined()
+                const spy = vi.spyOn(model, "invoke")
 
-                const {output, duration} = response
+                spy.mockResolvedValueOnce(
+                    new AIMessageChunk({
+                        content: JSON.stringify({name: "Anna"}),
+                        response_metadata: {
+                            model: "fake_model"
+                        }
+                    })
+                )
+                    .mockResolvedValueOnce(
+                        new AIMessageChunk({
+                            content: JSON.stringify({name: "Anna"}),
+                            response_metadata: {
+                                model: "fake_model"
+                            }
+                        })
+                    )
+                    .mockResolvedValueOnce(
+                        new AIMessageChunk({
+                            content: JSON.stringify({name: "Anna", age: 41}),
+                            response_metadata: {
+                                model: "fake_model"
+                            }
+                        })
+                    )
+
+                const {output} = yield* pipe(context, prompt)
 
                 expect(output.name).toBe("Anna")
-                expect(output.age).toBe(42)
-                expect(duration).toBeDefined()
+                expect(output.age).toBe(41)
             })
     )
 
     it.effect(
-        "should return an InvalidDataError when it exceeds the maximum number of retries",
+        "should create a prompt that returns an InvalidDataError when it exceeds the maximum number of retries",
         () =>
             FX.gen(function* () {
-                const model = new FakeListChatModel({
-                    responses: [
-                        `{"name": "Anna"}`,
-                        `{"age": 42}`,
-                        `"name": "Anna", "age": 42}`,
-                        `{"name": "Anna"}`
-                    ]
-                })
+                const templates: MessageTemplate[] = [
+                    ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
+                ]
+
+                const builders: ContextBuilder<Context>[] = [
+                    ctx => FX.succeed(ctx)
+                ]
+
+                const model = new FakeChatModel({})
+
+                const runner = createLlmRunner(model)
+                const prompt = createPrompt(
+                    templates,
+                    builders,
+                    schema,
+                    runner,
+                    {retryTimes: 1}
+                )
+
+                const spy = vi.spyOn(model, "invoke")
+
+                spy.mockResolvedValueOnce(
+                    new AIMessageChunk({
+                        content: JSON.stringify({name: "Anna"}),
+                        response_metadata: {
+                            model: "fake_model"
+                        }
+                    })
+                )
+                    .mockResolvedValueOnce(
+                        new AIMessageChunk({
+                            content: JSON.stringify({name: "Anna"}),
+                            response_metadata: {
+                                model: "fake_model"
+                            }
+                        })
+                    )
+                    .mockResolvedValueOnce(
+                        new AIMessageChunk({
+                            content: JSON.stringify({name: "Anna", age: 41}),
+                            response_metadata: {
+                                model: "fake_model"
+                            }
+                        })
+                    )
 
                 const error = yield* pipe(
                     context,
-                    runPrompt(prompt, model, {retryTimes: 2}),
+                    prompt,
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
                     )
@@ -163,24 +302,6 @@ describe("runPrompt", () => {
                     `User
 └─ ["age"]
    └─ is missing`
-                )
-            })
-    )
-})
-
-describe("createSchemaPromptContextBuilder", () => {
-    it.effect(
-        "should create a PromptContextBuilder that adds the given schema definition to the context",
-        () =>
-            FX.gen(function* () {
-                const context = yield* pipe(
-                    {},
-                    createSchemaPromptContextBuilder(schema)
-                )
-
-                expect(context).toHaveProperty(
-                    "schema",
-                    `{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["name","age"],"properties":{"name":{"type":"string","description":"The name of the user"},"age":{"type":"number","description":"The age of the user"}},"additionalProperties":false,"description":"User"}`
                 )
             })
     )

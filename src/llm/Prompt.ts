@@ -1,8 +1,4 @@
-import {
-    BaseMessage,
-    MessageContent,
-    UsageMetadata
-} from "@langchain/core/messages"
+import {BaseMessage, MessageContent} from "@langchain/core/messages"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as E from "effect/Either"
@@ -10,72 +6,24 @@ import {Either} from "effect/Either"
 import {ReadonlyRecord} from "effect/Record"
 import * as A from "effect/Array"
 import * as SC from "effect/Schema"
-import {flow, JSONSchema, pipe, Schedule} from "effect"
-import {Duration} from "effect/Duration"
+import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
-import {
-    BaseChatModel,
-    BaseChatModelCallOptions
-} from "@langchain/core/language_models/chat_models"
-import {LlmExecutionError, runLlm} from "./Model"
+import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../common/Json"
 import {InvalidDataError} from "../common/Data"
 
-export type PromptContextBuilder<in TContext> = (
+export type ContextBuilder<TContext> = (
     context: TContext
 ) => Effect<ReadonlyRecord<string, unknown>>
 
-export const createSchemaPromptContextBuilder =
-    <TContext, TOutput, TSource = TOutput>(
-        schema: SC.Schema<TOutput, TSource>
-    ): PromptContextBuilder<TContext> =>
-    () =>
-        pipe(JSONSchema.make(schema), s =>
-            FX.succeed({schema: JSON.stringify(s)})
-        )
+export type MessageTemplate<out T extends BaseMessage = BaseMessage> = (
+    context: ReadonlyRecord<string, unknown>
+) => Effect<T>
 
-export interface PromptTemplate<in TContext, TOutput, TSource = TOutput> {
-    readonly schema: SC.Schema<TOutput, TSource>
-
-    render(context: TContext): Effect<readonly BaseMessage[]>
-}
-
-export abstract class AbstractPromptTemplate<
-    in TContext,
-    TOutput,
-    TSource = unknown
-> implements PromptTemplate<TContext, TOutput, TSource>
-{
-    constructor(
-        readonly builders: readonly PromptContextBuilder<TContext>[],
-        readonly schema: SC.Schema<TOutput, TSource>
-    ) {
-        this.doRender = this.doRender.bind(this)
-        this.render = this.render.bind(this)
-    }
-
-    protected abstract doRender(
-        context: ReadonlyRecord<string, unknown>
-    ): Effect<readonly BaseMessage[]>
-
-    render(context: TContext): Effect<readonly BaseMessage[]> {
-        return pipe(
-            this.builders,
-            A.append(createSchemaPromptContextBuilder(this.schema)),
-            traverseArray(b => b(context)),
-            FX.map(A.reduceRight({}, (a, b) => ({...a, ...b}))),
-            FX.flatMap(this.doRender)
-        )
-    }
-}
-
-export interface PromptExecutionResult<T> {
-    readonly output: T
-    readonly duration: Duration
-    readonly metadata: ReadonlyRecord<any, any>
-    readonly usage?: UsageMetadata
-}
+export type Prompt<TContext, TOutput> = (
+    context: TContext
+) => Effect<LlmResponse<TOutput>, LlmExecutionError | InvalidDataError>
 
 const parseContent = (
     content: MessageContent
@@ -103,49 +51,56 @@ const parseContent = (
 
 export const DefaultRetryTimes = 3
 
-export function runPrompt<TContext, TOutput, TSource = unknown>(
-    prompt: PromptTemplate<TContext, TOutput, TSource>,
-    model: BaseChatModel,
+export function createPrompt<TContext, TOutput, TSource = TOutput>(
+    templates: readonly MessageTemplate[],
+    builders: readonly ContextBuilder<TContext>[],
+    schema: SC.Schema<TOutput, TSource>,
+    runner: LlmRunner,
     options?: {
         readonly retryTimes?: number
         readonly parseOptions?: ParseOptions
-        readonly callOptions?: BaseChatModelCallOptions
     }
-): (
-    context: TContext
-) => Effect<
-    PromptExecutionResult<TOutput>,
-    LlmExecutionError | InvalidDataError
-> {
-    return flow(
-        prompt.render,
-        FX.flatMap(messages => {
+): Prompt<TContext, TOutput> {
+    return context =>
+        FX.gen(function* () {
+            const ctx = yield* pipe(
+                builders,
+                traverseArray(b => b(context)),
+                FX.map(
+                    A.reduceRight(
+                        {
+                            schema: JSON.stringify(JSONSchema.make(schema))
+                        },
+                        (a, b) => ({...a, ...b})
+                    )
+                )
+            )
+
+            const messages = yield* pipe(
+                templates,
+                traverseArray(b => b(ctx))
+            )
+
             const request = FX.gen(function* () {
-                const [duration, response] = yield* pipe(
-                    messages,
-                    runLlm(model, options?.callOptions),
-                    FX.timed
-                )
+                const response = yield* runner(messages)
 
-                const {content, response_metadata, usage_metadata} = response
+                const {duration, metadata, usage} = response
 
+                const content = yield* pipe(response.output, parseContent)
                 const output = yield* pipe(
-                    parseContent(content),
-                    FX.flatMap(parseJson(prompt.schema, options?.parseOptions))
+                    content,
+                    parseJson(schema, options?.parseOptions)
                 )
 
-                return {
-                    output,
-                    duration,
-                    metadata: response_metadata,
-                    usage: usage_metadata
-                }
+                return {output, duration, metadata, usage}
             })
 
-            return pipe(
+            return yield* pipe(
                 request,
                 FX.retryOrElse(
-                    Schedule.recurs(options?.retryTimes ?? DefaultRetryTimes),
+                    Schedule.recurs(
+                        (options?.retryTimes ?? DefaultRetryTimes) - 1
+                    ),
                     e => {
                         if (e._tag != "InvalidDataError") {
                             return FX.fail(e)
@@ -162,5 +117,4 @@ export function runPrompt<TContext, TOutput, TSource = unknown>(
                 )
             )
         })
-    )
 }

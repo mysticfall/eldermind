@@ -1,4 +1,6 @@
-import {Duration, pipe} from "effect"
+import {pipe} from "effect"
+import * as DU from "effect/Duration"
+import {Duration} from "effect/Duration"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
@@ -7,8 +9,13 @@ import {
     BaseChatModel,
     BaseChatModelCallOptions
 } from "@langchain/core/language_models/chat_models"
-import {AIMessageChunk, BaseMessage} from "@langchain/core/messages"
+import {
+    BaseMessage,
+    MessageContent,
+    UsageMetadata
+} from "@langchain/core/messages"
 import {BaseError} from "../common/Error"
+import {ReadonlyRecord} from "effect/Record"
 
 export const LlmModelId = pipe(
     SC.String,
@@ -124,7 +131,7 @@ export const LlmConfig = SC.Struct({
     endpoint: SC.optional(LlmEndpoint),
     apiKey: SC.optional(LlmApiKey),
     timeout: SC.optionalWith(SC.Duration, {
-        default: () => Duration.seconds(60)
+        default: () => DU.seconds(60)
     }),
     parameters: SC.optionalWith(LlmParameters, {
         default: () => LlmParameters.make({})
@@ -157,7 +164,7 @@ export const createOpenAICompatibleModel: LlmModelFactory<
     const fields: ChatOpenAIFields = {
         model,
         apiKey,
-        timeout: Duration.toSeconds(timeout),
+        timeout: DU.toSeconds(timeout),
         temperature,
         maxTokens,
         topP,
@@ -184,20 +191,38 @@ export class LlmExecutionError extends BaseError<LlmExecutionError>(
     }
 ) {}
 
-export function runLlm(
+export interface LlmResponse<T> {
+    readonly output: T
+    readonly duration: Duration
+    readonly metadata: ReadonlyRecord<any, any>
+    readonly usage?: UsageMetadata
+}
+
+export type LlmRunner = (
+    prompt: readonly BaseMessage[]
+) => Effect<LlmResponse<MessageContent>, LlmExecutionError>
+
+export function createLlmRunner(
     model: BaseChatModel,
     options?: BaseChatModelCallOptions
-): (
-    prompt: readonly BaseMessage[]
-) => Effect<AIMessageChunk, LlmExecutionError> {
+): LlmRunner {
     return messages =>
-        FX.tryPromise({
-            try: () => model.invoke([...messages], options),
-            catch: e => {
-                return new LlmExecutionError({
-                    message: e instanceof Error ? e.message : undefined,
-                    cause: e
-                })
-            }
-        })
+        pipe(
+            FX.tryPromise({
+                try: () => model.invoke([...messages], options),
+                catch: e => {
+                    return new LlmExecutionError({
+                        message: e instanceof Error ? e.message : e?.toString(),
+                        cause: e
+                    })
+                }
+            }),
+            FX.timed,
+            FX.map(([duration, response]) => ({
+                output: response.content,
+                duration,
+                metadata: response.response_metadata,
+                usage: response.usage_metadata
+            }))
+        )
 }
