@@ -46,8 +46,10 @@ console.log(text)
             marked(text, {renderer})
 
             expect(spy).toHaveBeenCalled()
-            expect(spy).toHaveReturnedWith(`    Lydia: I'm sworn to carry your burdens.
-    Dragonborn: What are you? Some sort of a mule?`)
+            expect(spy).toHaveReturnedWith(
+                `    Lydia: I'm sworn to carry your burdens.
+    Dragonborn: What are you? Some sort of a mule?`
+            )
         })
     })
 

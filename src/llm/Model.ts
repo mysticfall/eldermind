@@ -194,7 +194,7 @@ export class LlmExecutionError extends BaseError<LlmExecutionError>(
 export interface LlmResponse<T> {
     readonly output: T
     readonly duration: Duration
-    readonly metadata: ReadonlyRecord<any, any>
+    readonly metadata: ReadonlyRecord<string, unknown>
     readonly usage?: UsageMetadata
 }
 

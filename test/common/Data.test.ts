@@ -215,6 +215,8 @@ describe("validate", () => {
                 )
 
                 expect(error?._tag).toBe("InvalidDataError")
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 expect((error?.cause as unknown as any)._tag).toBe("ParseError")
 
                 expect(error?.message).contains(

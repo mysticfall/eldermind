@@ -19,7 +19,7 @@ export function makeIdentifier(text: string): string {
     return pipe(
         text,
         ST.trim,
-        ST.replaceAll(/[\s!@#$%^&*()\-=_+{}\[\]]+/g, "_"),
+        ST.replaceAll(/[\s!@#$%^&*()\-=_+{}[\]]+/g, "_"),
         ST.toLowerCase
     )
 }

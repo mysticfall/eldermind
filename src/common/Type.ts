@@ -8,4 +8,6 @@ export const traverseArray = TA.Traversable.traverse(applicative)
 
 export const traverseOption = TO.Traversable.traverse(applicative)
 
-export type ConstructorType<T> = T extends new (...args: infer A) => any ? A : never
+export type ConstructorType<T> = T extends new (...args: infer A) => unknown
+    ? A
+    : never
