@@ -43,7 +43,6 @@ describe("createHandlebarsMessageTemplateLoader", () => {
                 )
 
                 const template = yield* pipe(path, DataPath.make, loader)
-
                 const message = yield* template({
                     title
                 })
@@ -70,7 +69,6 @@ describe("createHandlebarsMessageTemplateLoader", () => {
                 )
 
                 const template = yield* pipe(path, DataPath.make, loader)
-
                 const message = yield* template({})
 
                 expect(message.getType()).toBe(type)
