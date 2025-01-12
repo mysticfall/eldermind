@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "private": false,
   "type": "module",
-  "main": "dist/eldermind.js",
+  "main": "dist/eldermind.umd.js",
+  "module": "dist/eldermind.es.js",
   "scripts": {
     "build": "vite build",
     "lint": "eslint .",
