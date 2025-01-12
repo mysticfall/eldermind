@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "private": false,
   "type": "module",
-  "main": "dist/eldermind.umd.js",
-  "module": "dist/eldermind.es.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/dts/index.d.ts",
   "scripts": {
     "build": "vite build && tsc -b --emitDeclarationOnly",
     "lint": "eslint .",
@@ -50,66 +50,110 @@
     "prettier": "^3.4.2",
     "typescript-eslint": "^8.19.1",
     "husky": "^9.1.7",
+    "glob": "^11.0.1",
     "@types/node": "^22.10.5",
     "@types/node-microphone": "^0.1.4"
   },
   "exports": {
-    "./package.json": "./package.json",
     ".": {
       "types": "./dist/dts/index.d.ts",
-      "import": "./dist/eldermind.es.js",
-      "default": "./dist/eldermind.umd.js"
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
     },
     "./common/Data": {
-      "types": "./dist/dts/common/Data.d.ts"
+      "types": "./dist/dts/common/Data.d.ts",
+      "import": "./dist/esm/common/Data.js",
+      "require": "./dist/cjs/common/Data.js"
     },
     "./common/Error": {
-      "types": "./dist/dts/common/Error.d.ts"
+      "types": "./dist/dts/common/Error.d.ts",
+      "import": "./dist/esm/common/Error.js",
+      "require": "./dist/cjs/common/Error.js"
     },
     "./common/File": {
-      "types": "./dist/dts/common/File.d.ts"
+      "types": "./dist/dts/common/File.d.ts",
+      "import": "./dist/esm/common/File.js",
+      "require": "./dist/cjs/common/File.js"
     },
     "./common/Id": {
-      "types": "./dist/dts/common/Id.d.ts"
+      "types": "./dist/dts/common/Id.d.ts",
+      "import": "./dist/esm/common/Id.js",
+      "require": "./dist/cjs/common/Id.js"
     },
     "./common/Json": {
-      "types": "./dist/dts/common/Json.d.ts"
+      "types": "./dist/dts/common/Json.d.ts",
+      "import": "./dist/esm/common/Json.js",
+      "require": "./dist/cjs/common/Json.js"
     },
     "./common/Type": {
-      "types": "./dist/dts/common/Type.d.ts"
+      "types": "./dist/dts/common/Type.d.ts",
+      "import": "./dist/esm/common/Type.js",
+      "require": "./dist/cjs/common/Type.js"
     },
     "./game/Game": {
-      "types": "./dist/dts/game/Game.d.ts"
+      "types": "./dist/dts/game/Game.d.ts",
+      "import": "./dist/esm/game/Game.js",
+      "require": "./dist/cjs/game/Game.js"
     },
     "./llm/Handlebars": {
-      "types": "./dist/dts/llm/Handlebars.d.ts"
+      "types": "./dist/dts/llm/Handlebars.d.ts",
+      "import": "./dist/esm/llm/Handlebars.js",
+      "require": "./dist/cjs/llm/Handlebars.js"
     },
     "./llm/Model": {
-      "types": "./dist/dts/llm/Model.d.ts"
+      "types": "./dist/dts/llm/Model.d.ts",
+      "import": "./dist/esm/llm/Model.js",
+      "require": "./dist/cjs/llm/Model.js"
     },
     "./llm/Prompt": {
-      "types": "./dist/dts/llm/Prompt.d.ts"
+      "types": "./dist/dts/llm/Prompt.d.ts",
+      "import": "./dist/esm/llm/Prompt.js",
+      "require": "./dist/cjs/llm/Prompt.js"
     },
     "./markdown/Data": {
-      "types": "./dist/dts/markdown/Data.d.ts"
+      "types": "./dist/dts/markdown/Data.d.ts",
+      "import": "./dist/esm/markdown/Data.js",
+      "require": "./dist/cjs/markdown/Data.js"
     },
     "./markdown/Parser": {
-      "types": "./dist/dts/markdown/Parser.d.ts"
+      "types": "./dist/dts/markdown/Parser.d.ts",
+      "import": "./dist/esm/markdown/Parser.js",
+      "require": "./dist/cjs/markdown/Parser.js"
     },
     "./markdown/Renderer": {
-      "types": "./dist/dts/markdown/Renderer.d.ts"
+      "types": "./dist/dts/markdown/Renderer.d.ts",
+      "import": "./dist/esm/markdown/Renderer.js",
+      "require": "./dist/cjs/markdown/Renderer.js"
     },
     "./scene/Markdown": {
-      "types": "./dist/dts/scene/Markdown.d.ts"
+      "types": "./dist/dts/scene/Markdown.d.ts",
+      "import": "./dist/esm/scene/Markdown.js",
+      "require": "./dist/cjs/scene/Markdown.js"
     },
     "./scene/Objective": {
-      "types": "./dist/dts/scene/Objective.d.ts"
+      "types": "./dist/dts/scene/Objective.d.ts",
+      "import": "./dist/esm/scene/Objective.js",
+      "require": "./dist/cjs/scene/Objective.js"
     },
     "./scene/Role": {
-      "types": "./dist/dts/scene/Role.d.ts"
+      "types": "./dist/dts/scene/Role.d.ts",
+      "import": "./dist/esm/scene/Role.js",
+      "require": "./dist/cjs/scene/Role.js"
     },
     "./scene/Scene": {
-      "types": "./dist/dts/scene/Scene.d.ts"
+      "types": "./dist/dts/scene/Scene.d.ts",
+      "import": "./dist/esm/scene/Scene.js",
+      "require": "./dist/cjs/scene/Scene.js"
+    },
+    "./*": {
+      "types": "./dist/dts/*.d.ts",
+      "import": "./dist/esm/*.js",
+      "require": "./dist/cjs/*.js"
     }
-  }
+  },
+  "files": [
+    "README.md",
+    "LICENSE.md",
+    "dist"
+  ]
 }

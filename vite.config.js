@@ -1,29 +1,38 @@
-// noinspection JSUnusedGlobalSymbols
-
 import {defineConfig} from "vite"
 import path from "path"
 import tsconfigPaths from "vite-tsconfig-paths"
+import {globSync} from "glob"
+import {fileURLToPath} from "node:url"
 
 export default defineConfig({
     plugins: [tsconfigPaths()],
     build: {
-        lib: {
-            entry: path.resolve(__dirname, "src/index.ts"),
-            name: "eldermind",
-            fileName: format => `eldermind.${format}.js`
-        },
         rollupOptions: {
-            external: ["path"],
-            output: {
-                globals: {}
-            }
-        }
-    },
-    test: {
-        coverage: {
-            provider: "v8",
-            reporter: ["json-summary", "html"],
-            exclude: ["docs"]
+            input: Object.fromEntries(
+                globSync("src/**/*.ts").map(file => [
+                    path.relative(
+                        "src",
+                        file.slice(0, file.length - path.extname(file).length)
+                    ),
+                    fileURLToPath(new URL(file, import.meta.url))
+                ])
+            ),
+            output: [
+                {
+                    entryFileNames: "[name].js",
+                    chunkFileNames: "[name]-[hash].js",
+                    format: "esm",
+                    dir: "dist/esm"
+                },
+                {
+                    entryFileNames: "[name].js",
+                    chunkFileNames: "[name]-[hash].js",
+                    format: "cjs",
+                    dir: "dist/cjs"
+                }
+            ],
+            external: ["path", "@skyrim-platform/skyrim-platform"],
+            preserveEntrySignatures: "allow-extension"
         }
     }
 })
