@@ -3,7 +3,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "noEmit": false,
-    "outDir": "./dist",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "lib": [
@@ -22,11 +21,14 @@
     "types": [
       "node",
       "vitest/globals"
-    ]
+    ],
+    "baseUrl": "./",
+    "rootDir": "src",
+    "outDir": "dist",
+    "declarationDir": "dist/dts"
   },
   "include": [
-    "./src",
-    "./test"
+    "./src"
   ],
   "exclude": [
     "./node_modules"

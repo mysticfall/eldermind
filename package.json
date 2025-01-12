@@ -5,8 +5,9 @@
   "type": "module",
   "main": "dist/eldermind.umd.js",
   "module": "dist/eldermind.es.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && tsc -b --emitDeclarationOnly",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "doc": "typedoc",
@@ -19,7 +20,7 @@
     "skryim platform"
   ],
   "dependencies": {
-    "skyrim-effect-client": "file:../skyrim-effect",
+    "skyrim-effect": "file:../skyrim-effect",
     "@skyrim-platform/skyrim-platform": "2.9.0",
     "dotenv": "^16.4.7",
     "effect": "3.12.1",
@@ -51,5 +52,64 @@
     "husky": "^9.1.7",
     "@types/node": "^22.10.5",
     "@types/node-microphone": "^0.1.4"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/dts/index.d.ts",
+      "import": "./dist/eldermind.es.js",
+      "default": "./dist/eldermind.umd.js"
+    },
+    "./common/Data": {
+      "types": "./dist/dts/common/Data.d.ts"
+    },
+    "./common/Error": {
+      "types": "./dist/dts/common/Error.d.ts"
+    },
+    "./common/File": {
+      "types": "./dist/dts/common/File.d.ts"
+    },
+    "./common/Id": {
+      "types": "./dist/dts/common/Id.d.ts"
+    },
+    "./common/Json": {
+      "types": "./dist/dts/common/Json.d.ts"
+    },
+    "./common/Type": {
+      "types": "./dist/dts/common/Type.d.ts"
+    },
+    "./game/Game": {
+      "types": "./dist/dts/game/Game.d.ts"
+    },
+    "./llm/Handlebars": {
+      "types": "./dist/dts/llm/Handlebars.d.ts"
+    },
+    "./llm/Model": {
+      "types": "./dist/dts/llm/Model.d.ts"
+    },
+    "./llm/Prompt": {
+      "types": "./dist/dts/llm/Prompt.d.ts"
+    },
+    "./markdown/Data": {
+      "types": "./dist/dts/markdown/Data.d.ts"
+    },
+    "./markdown/Parser": {
+      "types": "./dist/dts/markdown/Parser.d.ts"
+    },
+    "./markdown/Renderer": {
+      "types": "./dist/dts/markdown/Renderer.d.ts"
+    },
+    "./scene/Markdown": {
+      "types": "./dist/dts/scene/Markdown.d.ts"
+    },
+    "./scene/Objective": {
+      "types": "./dist/dts/scene/Objective.d.ts"
+    },
+    "./scene/Role": {
+      "types": "./dist/dts/scene/Role.d.ts"
+    },
+    "./scene/Scene": {
+      "types": "./dist/dts/scene/Scene.d.ts"
+    }
   }
 }

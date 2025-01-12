@@ -5,3 +5,4 @@ playground
 .idea
 *.iml
 .vscode
+tsconfig.tsbuildinfo

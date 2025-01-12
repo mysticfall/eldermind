@@ -44,9 +44,9 @@ importers:
       node-microphone:
         specifier: ^0.1.6
         version: 0.1.6
-      skyrim-effect-client:
+      skyrim-effect:
         specifier: file:../skyrim-effect
-        version: skyrim-effect@file:../skyrim-effect(@skyrim-platform/skyrim-platform@2.9.0)(effect@3.12.1)
+        version: file:../skyrim-effect(@skyrim-platform/skyrim-platform@2.9.0)(effect@3.12.1)
     devDependencies:
       '@effect/vitest':
         specifier: ^0.16.1
