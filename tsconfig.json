@@ -20,12 +20,13 @@
     "stripInternal": true,
     "skipLibCheck": true,
     "types": [
+      "node",
       "vitest/globals"
     ]
   },
   "include": [
     "./src",
-    "../../test"
+    "./test"
   ],
   "exclude": [
     "./node_modules"
