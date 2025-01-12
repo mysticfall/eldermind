@@ -1,11 +1,57 @@
+import {basename} from "path"
 import * as FX from "effect/Effect"
+import {Effect} from "effect/Effect"
+import * as O from "effect/Option"
+import * as ST from "effect/String"
 import Handlebars from "handlebars"
-import {InvalidDataError, TextDataLoader, TypedDataLoader} from "../common/Data"
+import {
+    DataPath,
+    InvalidDataError,
+    TextDataLoader,
+    TypedDataLoader
+} from "../common/Data"
 import {MessageTemplate} from "./Prompt"
 import {flow, pipe} from "effect"
 import {AIMessage, HumanMessage, SystemMessage} from "@langchain/core/messages"
+import {PlatformError} from "@effect/platform/Error"
 
 type HandlebarsMessageTemplateLoader = TypedDataLoader<MessageTemplate>
+
+function compile(
+    path: DataPath,
+    options?: CompileOptions
+): (text: string) => Effect<HandlebarsTemplateDelegate, InvalidDataError> {
+    return text =>
+        pipe(
+            FX.try(function () {
+                const template = Handlebars.compile(text, options)
+
+                //Eagerly validate the syntax of the template:
+                template({})
+
+                return template
+            }),
+            FX.catchTag("UnknownException", e =>
+                FX.fail(
+                    new InvalidDataError({
+                        message: pipe(
+                            e.error instanceof Error
+                                ? e.error.message
+                                : undefined,
+                            O.fromNullable,
+                            O.map(
+                                e => `Failed to compile template: ${path}\n${e}`
+                            ),
+                            O.getOrElse(
+                                () => `Failed to compile template: ${path}`
+                            )
+                        ),
+                        cause: e
+                    })
+                )
+            )
+        )
+}
 
 export function createHandlebarsMessageTemplateLoader(
     loader: TextDataLoader,
@@ -18,20 +64,7 @@ export function createHandlebarsMessageTemplateLoader(
         pipe(
             path,
             loader,
-            FX.flatMap(text =>
-                FX.try(() => Handlebars.compile(text, options?.compile))
-            ),
-            FX.catchTag("UnknownException", e =>
-                FX.fail(
-                    new InvalidDataError({
-                        message:
-                            e.error instanceof Error
-                                ? e.error.message
-                                : `Failed to compile Handlebars template: ${path}`,
-                        cause: e
-                    })
-                )
-            ),
+            FX.flatMap(compile(path, options?.compile)),
             FX.map(template =>
                 flow(
                     template,
@@ -53,5 +86,31 @@ export function createHandlebarsMessageTemplateLoader(
                     FX.succeed
                 )
             )
+        )
+}
+
+export function registerPartial(
+    loader: TextDataLoader
+): (
+    path: DataPath,
+    name?: string,
+    options?: CompileOptions
+) => Effect<void, InvalidDataError | PlatformError> {
+    return (path, name, options) =>
+        pipe(
+            path,
+            loader,
+            FX.flatMap(compile(path, options)),
+            FX.map(template => {
+                const partialName = pipe(
+                    name,
+                    O.fromNullable,
+                    O.map(ST.trim),
+                    O.filter(ST.isNonEmpty),
+                    O.getOrElse(() => basename(path))
+                )
+
+                Handlebars.registerPartial(partialName, template)
+            })
         )
 }

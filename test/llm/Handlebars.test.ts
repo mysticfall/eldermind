@@ -1,9 +1,13 @@
 import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
-import {createHandlebarsMessageTemplateLoader} from "../../src/llm/Handlebars"
-import {DataPath, TextDataLoader} from "../../src/common/Data"
+import {
+    createHandlebarsMessageTemplateLoader,
+    registerPartial
+} from "../../src/llm/Handlebars"
+import {DataPath, InvalidDataError, TextDataLoader} from "../../src/common/Data"
 import {pipe} from "effect"
+import Handlebars from "handlebars"
 
 describe("createHandlebarsMessageTemplateLoader", () => {
     it.effect.each<{
@@ -72,6 +76,78 @@ describe("createHandlebarsMessageTemplateLoader", () => {
                 const message = yield* template({})
 
                 expect(message.getType()).toBe(type)
+            })
+    )
+
+    it.effect(
+        "should return an InvalidDataError when given an invalid Handlebars template",
+        () =>
+            FX.gen(function* () {
+                const textLoader: TextDataLoader = () => FX.succeed("{{>game}")
+
+                const loader = pipe(
+                    textLoader,
+                    createHandlebarsMessageTemplateLoader
+                )
+
+                const error = yield* pipe(
+                    "invalid.md",
+                    DataPath.make,
+                    loader,
+                    FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
+                        FX.succeed(e.message)
+                    )
+                )
+
+                expect(error).toBe(`Failed to compile template: invalid.md
+Parse error on line 1:
+{{>game}
+-------^
+Expecting 'CLOSE_RAW_BLOCK', 'CLOSE', 'CLOSE_UNESCAPED', 'OPEN_SEXPR', 'CLOSE_SEXPR', 'ID', 'OPEN_BLOCK_PARAMS', 'STRING', 'NUMBER', 'BOOLEAN', 'UNDEFINED', 'NULL', 'DATA', 'SEP', got 'INVALID'`)
+            })
+    )
+})
+
+describe("registerPartial", () => {
+    it.effect(
+        "should read and register a Handlebars partial at the given path",
+        () =>
+            FX.gen(function* () {
+                const loader: TextDataLoader = path => FX.succeed(path)
+
+                const register = pipe(loader, registerPartial)
+                const path = pipe("data/Skyrim.md", DataPath.make)
+
+                yield* register(path, "game")
+
+                const text = Handlebars.compile("Skyrim: {{>game}}")({})
+
+                expect(text).toBe("Skyrim: data/Skyrim.md")
+            })
+    )
+
+    it.effect(
+        "should return an InvalidDataError when given an invalid Handlebars template",
+        () =>
+            FX.gen(function* () {
+                const loader: TextDataLoader = () => FX.succeed("{{>game}")
+
+                const register = pipe(loader, registerPartial)
+                const path = pipe("invalid.md", DataPath.make)
+
+                const error = yield* pipe(
+                    path,
+                    register,
+                    FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
+                        FX.succeed(e.message)
+                    )
+                )
+
+                expect(error).toBe(`Failed to compile template: invalid.md
+Parse error on line 1:
+{{>game}
+-------^
+Expecting 'CLOSE_RAW_BLOCK', 'CLOSE', 'CLOSE_UNESCAPED', 'OPEN_SEXPR', 'CLOSE_SEXPR', 'ID', 'OPEN_BLOCK_PARAMS', 'STRING', 'NUMBER', 'BOOLEAN', 'UNDEFINED', 'NULL', 'DATA', 'SEP', got 'INVALID'`)
             })
     )
 })
