@@ -23,7 +23,7 @@
     "skyrim-effect": "file:../skyrim-effect",
     "@skyrim-platform/skyrim-platform": "2.9.0",
     "dotenv": "^16.4.7",
-    "effect": "3.12.1",
+    "effect": "3.12.2",
     "@effect/platform": "^0.72.1",
     "@effect/platform-node": "^0.68.1",
     "@effect/typeclass": "^0.31.1",

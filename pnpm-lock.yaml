@@ -10,13 +10,13 @@ importers:
     dependencies:
       '@effect/platform':
         specifier: ^0.72.1
-        version: 0.72.1(effect@3.12.1)
+        version: 0.72.1(effect@3.12.2)
       '@effect/platform-node':
         specifier: ^0.68.1
-        version: 0.68.1(@effect/platform@0.72.1(effect@3.12.1))(effect@3.12.1)
+        version: 0.68.1(@effect/platform@0.72.1(effect@3.12.2))(effect@3.12.2)
       '@effect/typeclass':
         specifier: ^0.31.1
-        version: 0.31.1(effect@3.12.1)
+        version: 0.31.1(effect@3.12.2)
       '@langchain/core':
         specifier: ^0.3.29
         version: 0.3.29(openai@4.77.0(zod@3.24.1))
@@ -30,8 +30,8 @@ importers:
         specifier: ^16.4.7
         version: 16.4.7
       effect:
-        specifier: 3.12.1
-        version: 3.12.1
+        specifier: 3.12.2
+        version: 3.12.2
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -46,11 +46,11 @@ importers:
         version: 0.1.6
       skyrim-effect:
         specifier: file:../skyrim-effect
-        version: file:../skyrim-effect(@skyrim-platform/skyrim-platform@2.9.0)(effect@3.12.1)
+        version: file:../skyrim-effect(@skyrim-platform/skyrim-platform@2.9.0)(effect@3.12.2)
     devDependencies:
       '@effect/vitest':
         specifier: ^0.16.1
-        version: 0.16.1(effect@3.12.1)(vitest@2.1.8(@types/node@22.10.5))
+        version: 0.16.1(effect@3.12.2)(vitest@2.1.8(@types/node@22.10.5))
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.18.0
@@ -1192,8 +1192,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.12.1:
-    resolution: {integrity: sha512-aAZdh56Yp1ehOFYeMcHHctTtxfqm6kkOdZFTXK6Zf0QoaKKc1hPG6ocjrKOc0axE8JbG4eZw351ogNLrM4vo9w==}
+  effect@3.12.2:
+    resolution: {integrity: sha512-PslVtcxwapLj95icHZJ/ribCS4O26I4o8ga9zzSdLqRTPRBobwbLTJ2E/Bzim5knJjTutfNdVHOGzl8FW03K5Q==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -2168,18 +2168,18 @@ snapshots:
 
   '@cfworker/json-schema@4.0.3': {}
 
-  '@effect/platform-node-shared@0.22.1(@effect/platform@0.72.1(effect@3.12.1))(effect@3.12.1)':
+  '@effect/platform-node-shared@0.22.1(@effect/platform@0.72.1(effect@3.12.2))(effect@3.12.2)':
     dependencies:
-      '@effect/platform': 0.72.1(effect@3.12.1)
+      '@effect/platform': 0.72.1(effect@3.12.2)
       '@parcel/watcher': 2.5.0
-      effect: 3.12.1
+      effect: 3.12.2
       multipasta: 0.2.5
 
-  '@effect/platform-node@0.68.1(@effect/platform@0.72.1(effect@3.12.1))(effect@3.12.1)':
+  '@effect/platform-node@0.68.1(@effect/platform@0.72.1(effect@3.12.2))(effect@3.12.2)':
     dependencies:
-      '@effect/platform': 0.72.1(effect@3.12.1)
-      '@effect/platform-node-shared': 0.22.1(@effect/platform@0.72.1(effect@3.12.1))(effect@3.12.1)
-      effect: 3.12.1
+      '@effect/platform': 0.72.1(effect@3.12.2)
+      '@effect/platform-node-shared': 0.22.1(@effect/platform@0.72.1(effect@3.12.2))(effect@3.12.2)
+      effect: 3.12.2
       mime: 3.0.0
       undici: 7.2.0
       ws: 8.18.0
@@ -2187,19 +2187,19 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform@0.72.1(effect@3.12.1)':
+  '@effect/platform@0.72.1(effect@3.12.2)':
     dependencies:
-      effect: 3.12.1
+      effect: 3.12.2
       find-my-way-ts: 0.1.5
       multipasta: 0.2.5
 
-  '@effect/typeclass@0.31.1(effect@3.12.1)':
+  '@effect/typeclass@0.31.1(effect@3.12.2)':
     dependencies:
-      effect: 3.12.1
+      effect: 3.12.2
 
-  '@effect/vitest@0.16.1(effect@3.12.1)(vitest@2.1.8(@types/node@22.10.5))':
+  '@effect/vitest@0.16.1(effect@3.12.2)(vitest@2.1.8(@types/node@22.10.5))':
     dependencies:
-      effect: 3.12.1
+      effect: 3.12.2
       vitest: 2.1.8(@types/node@22.10.5)
 
   '@esbuild/aix-ppc64@0.21.5':
@@ -3016,7 +3016,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.12.1:
+  effect@3.12.2:
     dependencies:
       fast-check: 3.23.2
 
@@ -3684,10 +3684,10 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  skyrim-effect@file:../skyrim-effect(@skyrim-platform/skyrim-platform@2.9.0)(effect@3.12.1):
+  skyrim-effect@file:../skyrim-effect(@skyrim-platform/skyrim-platform@2.9.0)(effect@3.12.2):
     dependencies:
       '@skyrim-platform/skyrim-platform': 2.9.0
-      effect: 3.12.1
+      effect: 3.12.2
 
   source-map-js@1.2.1: {}
 
