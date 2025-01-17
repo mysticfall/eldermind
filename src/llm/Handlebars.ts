@@ -97,20 +97,22 @@ export function registerPartial(
     options?: CompileOptions
 ) => Effect<void, InvalidDataError | PlatformError> {
     return (path, name, options) =>
-        pipe(
-            path,
-            loader,
-            FX.flatMap(compile(path, options)),
-            FX.map(template => {
-                const partialName = pipe(
-                    name,
-                    O.fromNullable,
-                    O.map(ST.trim),
-                    O.filter(ST.isNonEmpty),
-                    O.getOrElse(() => basename(path))
-                )
+        FX.gen(function* () {
+            const read = yield* pipe(path, loader)
+            const template = yield* pipe(read, compile(path, options))
 
-                Handlebars.registerPartial(partialName, template)
-            })
-        )
+            const partialName = pipe(
+                name,
+                O.fromNullable,
+                O.map(ST.trim),
+                O.filter(ST.isNonEmpty),
+                O.getOrElse(() => basename(path))
+            )
+
+            yield* FX.logDebug(
+                `Registering Handlebars partial "${partialName}" from path: ${path}`
+            )
+
+            Handlebars.registerPartial(partialName, template)
+        })
 }
