@@ -127,6 +127,23 @@ describe("registerPartial", () => {
     )
 
     it.effect(
+        "should use the base name of the given file as the partial name when no name is provided",
+        () =>
+            FX.gen(function* () {
+                const loader: TextDataLoader = path => FX.succeed(path)
+
+                const register = pipe(loader, registerPartial)
+                const path = pipe("data/game.md", DataPath.make)
+
+                yield* register(path)
+
+                const text = Handlebars.compile("Skyrim: {{>game}}")({})
+
+                expect(text).toBe("Skyrim: data/game.md")
+            })
+    )
+
+    it.effect(
         "should return an InvalidDataError when given an invalid Handlebars template",
         () =>
             FX.gen(function* () {

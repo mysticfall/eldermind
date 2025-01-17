@@ -1,4 +1,4 @@
-import {basename} from "path"
+import {basename, extname} from "path"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as O from "effect/Option"
@@ -106,7 +106,7 @@ export function registerPartial(
                 O.fromNullable,
                 O.map(ST.trim),
                 O.filter(ST.isNonEmpty),
-                O.getOrElse(() => basename(path))
+                O.getOrElse(() => basename(path, extname(path)))
             )
 
             yield* FX.logDebug(
