@@ -1,0 +1,9 @@
+{
+  "name": "@skyrim-platform/skyrim-platform",
+  "version": "2.9.0",
+  "types": "index.d.ts",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

@@ -155,5 +155,10 @@
     "README.md",
     "LICENSE.md",
     "dist"
-  ]
+  ],
+  "pnpm": {
+    "overrides": {
+      "@skyrim-platform/skyrim-platform": "./mock/skyrim-platform"
+    }
+  }
 }
