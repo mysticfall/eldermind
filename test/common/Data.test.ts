@@ -219,8 +219,10 @@ describe("validate", () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 expect((error?.cause as unknown as any)._tag).toBe("ParseError")
 
-                expect(error?.message).contains(
-                    'Expected (string <-> number), actual "ABC"'
+                expect(error?.message).toBe(
+                    "(string <-> number)\n" +
+                        "└─ Transformation process failure\n" +
+                        '   └─ Unable to decode "ABC" into a number'
                 )
             })
     )
