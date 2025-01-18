@@ -189,6 +189,12 @@ const createSceneFromMarkdown = (source: MarkdownDocument) =>
             FX.map(([head]) => head)
         )
 
+        yield* FX.logDebug(
+            O.isSome(title)
+                ? `Loading a scene from a markdown document: (title: "${title.value}", metadata: ${JSON.stringify(metadata)})`
+                : `Loading a scene from an untitled markdown document: (metadata: ${JSON.stringify(metadata)})`
+        )
+
         const id = yield* parseId(title, metadata)
 
         const description = yield* pipe(
@@ -199,12 +205,18 @@ const createSceneFromMarkdown = (source: MarkdownDocument) =>
         const roles = yield* parseRoles(children)
         const objectives = yield* parseObjectives(children)
 
-        return yield* validate(Scene)({
+        const scene = yield* validate(Scene)({
             id,
             description,
             roles,
             objectives
         })
+
+        yield* FX.logTrace(
+            `Scene was loaded successfully: \n${JSON.stringify(scene, undefined, 2)}`
+        )
+
+        return scene
     })
 
 export function createMarkdownSceneLoader(
