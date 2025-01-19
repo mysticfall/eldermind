@@ -28,13 +28,97 @@ const schema = SC.Struct({
     description: "User"
 })
 
+type User = {
+    name: string
+}
+
+const user = {
+    name: "Anna"
+}
+
+describe("ContextBuilder", () => {
+    describe("merge", () => {
+        it.effect(
+            "should merge the given context builders into a single builder",
+            () =>
+                FX.gen(function* () {
+                    const name: ContextBuilder<User> = c => FX.succeed(c)
+                    const age: ContextBuilder<User> = _c =>
+                        FX.succeed({age: 42})
+
+                    const builder = ContextBuilder.merge(name, age)
+
+                    const context = yield* builder(user)
+
+                    expect(context).toHaveProperty("name", "Anna")
+                    expect(context).toHaveProperty("age", 42)
+                })
+        )
+    })
+
+    describe("union", () => {
+        it.effect(
+            "should return a context builder that creates a nested context from the given context builders",
+            () =>
+                FX.gen(function* () {
+                    const name: ContextBuilder<User> = c => FX.succeed(c)
+
+                    const lower: ContextBuilder<User> = c =>
+                        FX.succeed({
+                            name: c.name.toLowerCase()
+                        })
+
+                    const upper: ContextBuilder<User> = c =>
+                        FX.succeed({
+                            name: c.name.toUpperCase()
+                        })
+
+                    const builder = pipe(
+                        name,
+                        ContextBuilder.append({lower, upper})
+                    )
+
+                    const context = yield* builder(user)
+
+                    expect(context).toHaveProperty("name", "Anna")
+                    expect(context).toHaveProperty("lower", {name: "anna"})
+                    expect(context).toHaveProperty("upper", {name: "ANNA"})
+                })
+        )
+    })
+
+    describe("append", () => {
+        it.effect(
+            "should add given context builders to the parent as nested contexts",
+            () =>
+                FX.gen(function* () {
+                    const lower: ContextBuilder<User> = c =>
+                        FX.succeed({
+                            name: c.name.toLowerCase()
+                        })
+
+                    const upper: ContextBuilder<User> = c =>
+                        FX.succeed({
+                            name: c.name.toUpperCase()
+                        })
+
+                    const builder = pipe(
+                        ContextBuilder.union({
+                            lower,
+                            upper
+                        })
+                    )
+
+                    const context = yield* builder(user)
+
+                    expect(context).toHaveProperty("lower", {name: "anna"})
+                    expect(context).toHaveProperty("upper", {name: "ANNA"})
+                })
+        )
+    })
+})
+
 describe("createPrompt", () => {
-    const context = {
-        name: "Anna"
-    }
-
-    type Context = typeof context
-
     it.live("should create a prompt with the given information", () =>
         FX.gen(function* () {
             const templates: MessageTemplate[] = [
@@ -47,7 +131,7 @@ describe("createPrompt", () => {
                 ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
             ]
 
-            const builders: ContextBuilder<Context>[] = [ctx => FX.succeed(ctx)]
+            const builders: ContextBuilder<User>[] = [ctx => FX.succeed(ctx)]
 
             const model = new FakeChatModel({})
 
@@ -76,14 +160,14 @@ describe("createPrompt", () => {
                 )
             )
 
-            const response = yield* prompt(context)
+            const response = yield* prompt(user)
 
             expect(spy).toHaveBeenCalledWith(
                 [
                     new SystemMessage(
                         'Reply using this schema: {"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["name","age"],"properties":{"name":{"type":"string","description":"The name of the user"},"age":{"type":"number","description":"The age of the user"}},"additionalProperties":false,"description":"User"}'
                     ),
-                    new HumanMessage(`Who is ${context.name}?`)
+                    new HumanMessage(`Who is ${user.name}?`)
                 ],
                 undefined
             )
@@ -114,7 +198,7 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<Context>[] = [
+                const builders: ContextBuilder<User>[] = [
                     ctx => FX.succeed(ctx)
                 ]
 
@@ -128,7 +212,7 @@ describe("createPrompt", () => {
                 spy.mockRejectedValue("Who is Anna?")
 
                 const error = yield* pipe(
-                    context,
+                    user,
                     prompt,
                     FX.catchTag("LlmExecutionError", (e: LlmExecutionError) =>
                         FX.succeed(e.message)
@@ -147,7 +231,7 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<Context>[] = [
+                const builders: ContextBuilder<User>[] = [
                     ctx => FX.succeed(ctx)
                 ]
 
@@ -168,7 +252,7 @@ describe("createPrompt", () => {
                 )
 
                 const error = yield* pipe(
-                    context,
+                    user,
                     prompt,
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
@@ -191,7 +275,7 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<Context>[] = [
+                const builders: ContextBuilder<User>[] = [
                     ctx => FX.succeed(ctx)
                 ]
 
@@ -233,7 +317,7 @@ describe("createPrompt", () => {
                         })
                     )
 
-                const {output} = yield* pipe(context, prompt)
+                const {output} = yield* pipe(user, prompt)
 
                 expect(output.name).toBe("Anna")
                 expect(output.age).toBe(41)
@@ -248,7 +332,7 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<Context>[] = [
+                const builders: ContextBuilder<User>[] = [
                     ctx => FX.succeed(ctx)
                 ]
 
@@ -291,7 +375,7 @@ describe("createPrompt", () => {
                     )
 
                 const error = yield* pipe(
-                    context,
+                    user,
                     prompt,
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
