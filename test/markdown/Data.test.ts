@@ -13,7 +13,7 @@ describe("createMarkdownLoader", () => {
         FX.succeed(`test/markdown/fixtures/${path}`)
 
     it.scoped(
-        "should create a MarkdownDataLoader using the given path resolver",
+        "should create a MarkdownLoader using the given text file loader",
         () =>
             pipe(
                 FX.gen(function* () {

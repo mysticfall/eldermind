@@ -3,10 +3,10 @@ import {flow} from "effect"
 import {MarkdownDocument, parseMarkdown} from "./Parser"
 import {DataLoader, TextDataLoader} from "../common/Data"
 
-export type MarkdownDataLoader = DataLoader<MarkdownDocument>
+export type MarkdownLoader = DataLoader<MarkdownDocument>
 
 export function createMarkdownLoader(
     loader: TextDataLoader
-): MarkdownDataLoader {
+): MarkdownLoader {
     return flow(loader, FX.map(parseMarkdown))
 }

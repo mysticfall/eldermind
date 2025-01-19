@@ -9,7 +9,7 @@ import * as ST from "effect/String"
 import {flow, pipe} from "effect"
 import {renderMarkdown} from "../markdown/Renderer"
 import {traverseArray} from "../common/Type"
-import {MarkdownDataLoader} from "../markdown/Data"
+import {MarkdownLoader} from "../markdown/Data"
 import {Scene, SceneDataLoader, SceneDescription, SceneId} from "./Scene"
 import {
     SceneObjectiveExample,
@@ -220,7 +220,7 @@ const createSceneFromMarkdown = (source: MarkdownDocument) =>
     })
 
 export function createMarkdownSceneLoader(
-    loader: MarkdownDataLoader
+    loader: MarkdownLoader
 ): SceneDataLoader {
     return flow(loader, FX.flatMap(createSceneFromMarkdown))
 }
