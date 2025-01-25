@@ -12,7 +12,7 @@ import {FakeChatModel} from "@langchain/core/utils/testing"
 import {createPrompt, MessageTemplate} from "../../src/llm/Prompt"
 import {Duration, pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
-import {ContextBuilder} from "../../src/llm/Context"
+import {ContextBuilder} from "../../src/llm/Template"
 
 const schema = SC.Struct({
     name: SC.String.annotations({

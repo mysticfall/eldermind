@@ -18,8 +18,7 @@ import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../common/Json"
 import {InvalidDataError} from "../common/Data"
-import {ContextBuilder} from "./Context"
-import {Template} from "./Template"
+import {ContextBuilder, Template} from "./Template"
 
 export type MessageTemplate = (
     context: ReadonlyRecord<string, unknown>
