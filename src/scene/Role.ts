@@ -1,5 +1,6 @@
 import * as SC from "effect/Schema"
 import {pipe} from "effect"
+import {ActorId} from "skyrim-effect/game/Form"
 
 export const RoleId = pipe(
     SC.String,
@@ -50,3 +51,16 @@ export const Role = pipe(
 )
 
 export type Role = typeof Role.Type
+
+export const RoleMapping = pipe(
+    SC.Struct({
+        role: RoleId,
+        actor: ActorId
+    }),
+    SC.annotations({
+        title: "Role Mapping",
+        description: "A role for an actor in the scene"
+    })
+)
+
+export type RoleMapping = typeof RoleMapping.Type
