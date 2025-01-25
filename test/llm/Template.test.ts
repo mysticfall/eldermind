@@ -5,9 +5,9 @@ import {DataPath, TextDataLoader} from "../../src/common/Data"
 import {
     createTemplateLoader,
     TemplateCompiler
-} from "../../src/template/Template"
+} from "../../src/llm/Template"
 import {pipe} from "effect"
-import {TemplateContext} from "../../src/template/Context"
+import {TemplateContext} from "../../src/llm/Context"
 
 describe("createTemplateDataLoader", () => {
     const loader: TextDataLoader = (path: DataPath) =>

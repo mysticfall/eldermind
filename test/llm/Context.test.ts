@@ -2,7 +2,7 @@ import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import {pipe} from "effect"
-import {ContextBuilder} from "../../src/template/Context"
+import {ContextBuilder} from "../../src/llm/Context"
 
 type User = {
     name: string

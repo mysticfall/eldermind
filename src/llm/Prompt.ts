@@ -1,4 +1,10 @@
-import {BaseMessage, MessageContent} from "@langchain/core/messages"
+import {
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    MessageContent,
+    SystemMessage
+} from "@langchain/core/messages"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as E from "effect/Either"
@@ -7,59 +13,37 @@ import {ReadonlyRecord} from "effect/Record"
 import * as A from "effect/Array"
 import * as SC from "effect/Schema"
 import {JSONSchema, pipe, Schedule} from "effect"
-import {traverseArray, traverseRecord} from "../common/Type"
+import {traverseArray} from "../common/Type"
 import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../common/Json"
 import {InvalidDataError} from "../common/Data"
-
-export type ContextBuilder<TContext> = (
-    context: TContext
-) => Effect<ReadonlyRecord<string, unknown>>
-
-export namespace ContextBuilder {
-    export function union<TContext>(
-        builders: ReadonlyRecord<string, ContextBuilder<TContext>>
-    ): ContextBuilder<TContext> {
-        return context =>
-            pipe(
-                builders,
-                traverseRecord(b => b(context))
-            )
-    }
-
-    export function merge<TContext>(
-        ...builders: readonly ContextBuilder<TContext>[]
-    ): ContextBuilder<TContext> {
-        return context =>
-            pipe(
-                builders,
-                traverseArray(b => b(context)),
-                FX.map(A.reduce({}, (a, b) => ({...a, ...b})))
-            )
-    }
-
-    export function append<TContext>(
-        builders: ReadonlyRecord<string, ContextBuilder<TContext>>
-    ): (addTo: ContextBuilder<TContext>) => ContextBuilder<TContext> {
-        return addTo => context =>
-            pipe(
-                FX.Do,
-                FX.bind("parent", () => addTo(context)),
-                FX.bind("children", () =>
-                    pipe(
-                        builders,
-                        traverseRecord(b => b(context))
-                    )
-                ),
-                FX.map(({parent, children}) => ({...parent, ...children}))
-            )
-    }
-}
+import {ContextBuilder} from "./Context"
+import {Template} from "./Template"
 
 export type MessageTemplate = (
     context: ReadonlyRecord<string, unknown>
-) => Effect<BaseMessage>
+) => Effect<BaseMessage, InvalidDataError>
+
+export function createMessageTemplate(
+    template: Template,
+    messageType?: "system" | "human" | "ai"
+): MessageTemplate {
+    return (context: ReadonlyRecord<string, unknown>) =>
+        FX.gen(function* () {
+            const text = yield* template(context)
+
+            switch (messageType) {
+                case "human":
+                    return new HumanMessage(text)
+                case "ai":
+                    return new AIMessage(text)
+                case "system":
+                default:
+                    return new SystemMessage(text)
+            }
+        })
+}
 
 export type Prompt<TContext, TOutput> = (
     context: TContext
