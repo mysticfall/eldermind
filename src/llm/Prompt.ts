@@ -103,6 +103,15 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
                 traverseArray(b => b(ctx))
             )
 
+            yield* pipe(
+                messages,
+                traverseArray(m =>
+                    FX.logDebug(
+                        `Rendered a base message (${m.getType()}):\n${m.content}`
+                    )
+                )
+            )
+
             const request = FX.gen(function* () {
                 const response = yield* runner(messages)
 
