@@ -25,10 +25,9 @@ export type MessageTemplate = (
 ) => Effect<BaseMessage, InvalidDataError>
 
 export function createMessageTemplate(
-    template: Template,
     messageType?: "system" | "human" | "ai"
-): MessageTemplate {
-    return (context: ReadonlyRecord<string, unknown>) =>
+): (template: Template) => MessageTemplate {
+    return template => (context: ReadonlyRecord<string, unknown>) =>
         FX.gen(function* () {
             const text = yield* template(context)
 
