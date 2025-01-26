@@ -27,6 +27,7 @@ import {Actor} from "@skyrim-platform/skyrim-platform"
 import {ContextBuilder, TemplateContext} from "../../src/llm/Template"
 import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
+import {DialogueLine, DialogueText} from "../../src/scene/Dialogue"
 
 describe("createSessionContextBuilder", () => {
     const scene = Scene.make({
@@ -79,6 +80,12 @@ describe("createSessionContextBuilder", () => {
             RoleMapping.make({
                 role: RoleId.make("housecarl"),
                 actor: ActorId.make(0x000a2c94)
+            })
+        ],
+        history: [
+            DialogueLine.make({
+                speaker: RoleId.make("housecarl"),
+                text: DialogueText.make("I'm sworn to carry your burdens.")
             })
         ]
     })
@@ -170,6 +177,17 @@ describe("createSessionContextBuilder", () => {
 
                 expect(example1).toBeDefined()
                 expect(example1).toBe("Lydia: I'm sworn to carry your burdens.")
+
+                const history = context["history"]
+
+                expect(history).toSatisfy(Array.isArray)
+                expect(history).toHaveLength(1)
+
+                const line1 = (history as DialogueLine[])[0]
+
+                expect(line1).toBeDefined()
+                expect(line1.speaker).toBe("housecarl")
+                expect(line1.text).toBe("I'm sworn to carry your burdens.")
             })
     )
 

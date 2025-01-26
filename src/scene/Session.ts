@@ -15,6 +15,7 @@ import {
 } from "../llm/Template"
 import {traverseArray, traverseRecord} from "../common/Type"
 import {getActor} from "skyrim-effect/game/Form"
+import {DialogueLine} from "./Dialogue"
 
 export const SessionId = pipe(
     DataIdentifier,
@@ -31,7 +32,8 @@ export const Session = pipe(
     SC.Struct({
         id: SessionId,
         scene: Scene,
-        roles: SC.Array(RoleMapping)
+        roles: SC.Array(RoleMapping),
+        history: SC.Array(DialogueLine)
     }),
     SC.annotations({
         title: "Session",
@@ -189,7 +191,8 @@ export function createSessionContextBuilder(
                     FX.map(({description, roles, objectives}) => ({
                         description,
                         roles,
-                        objectives
+                        objectives,
+                        history: session.history
                     })),
                     FX.tap(context =>
                         FX.logDebug(
