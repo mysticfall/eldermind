@@ -218,6 +218,17 @@ export function createLlmRunner(
                 }
             }),
             FX.timed,
+            FX.tap(([duration, response]) =>
+                FX.gen(function* () {
+                    yield* FX.logDebug(
+                        `LLM request took ${DU.format(duration)} to complete.`
+                    )
+
+                    yield* FX.logDebug(
+                        `Received a response from the model:\n${JSON.stringify(response, undefined, 2)}`
+                    )
+                })
+            ),
             FX.map(([duration, response]) => ({
                 output: response.content,
                 duration,
