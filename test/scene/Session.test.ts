@@ -8,13 +8,7 @@ import {
     SessionId
 } from "../../src/scene/Session"
 import {Scene, SceneDescription, SceneId} from "../../src/scene/Scene"
-import {
-    Role,
-    RoleDescription,
-    RoleId,
-    RoleMapping,
-    RoleName
-} from "../../src/scene/Role"
+import {Role, RoleDescription, RoleId, RoleMapping} from "../../src/scene/Role"
 import {
     SceneObjective,
     SceneObjectiveExample,
@@ -33,21 +27,19 @@ describe("createSessionContextBuilder", () => {
     const scene = Scene.make({
         id: SceneId.make("visiting_sky_district"),
         description: SceneDescription.make(
-            "{{roles.player.name}} and {{roles.housecarl.name}} are vising the Sky District."
+            "{{player.name}} and {{housecarl.name}} are vising the Sky District."
         ),
         roles: [
             Role.make({
                 id: RoleId.make("player"),
-                name: RoleName.make("The Player"),
                 description: RoleDescription.make(
-                    "{{roles.player.name}} is the main character of the scene."
+                    "{{player.name}} is the main character of the scene."
                 )
             }),
             Role.make({
                 id: RoleId.make("housecarl"),
-                name: RoleName.make("The Housecarl"),
                 description: RoleDescription.make(
-                    "{{roles.housecarl.name}} is the housecarl of {{roles.player.name}}."
+                    "{{housecarl.name}} is the housecarl of {{player.name}}."
                 )
             })
         ],
@@ -55,14 +47,14 @@ describe("createSessionContextBuilder", () => {
             SceneObjective.make({
                 id: SceneObjectiveId.make("objective1"),
                 instruction: SceneObjectiveInstruction.make(
-                    "Ask {{roles.housecarl.name}} how she is."
+                    "Ask {{housecarl.name}} how she is."
                 ),
                 outcome: SceneObjectiveOutcome.make(
-                    "{{roles.housecarl.name}} replied to {{roles.player.name}}."
+                    "{{housecarl.name}} replied to {{player.name}}."
                 ),
                 examples: [
                     SceneObjectiveExample.make(
-                        "{{roles.housecarl.name}}: I'm sworn to carry your burdens."
+                        "{{housecarl.name}}: I'm sworn to carry your burdens."
                     )
                 ]
             })
@@ -90,7 +82,7 @@ describe("createSessionContextBuilder", () => {
         ]
     })
 
-    const actorContextBuilder: ContextBuilder<Actor> = actor =>
+    const findActor: ContextBuilder<Actor> = actor =>
         FX.succeed({
             id: actor.getFormID(),
             name: actor.getName()
@@ -119,13 +111,11 @@ describe("createSessionContextBuilder", () => {
             FX.gen(function* () {
                 const compiler = createHandlebarsTemplateCompiler()
 
-                const createSceneContextBuilder = createSessionContextBuilder(
-                    compiler,
-                    {actor: actorContextBuilder}
+                const buildSessionContext = yield* createSessionContextBuilder(
+                    scene,
+                    findActor,
+                    compiler
                 )
-
-                const buildSessionContext =
-                    yield* createSceneContextBuilder(scene)
 
                 const context = yield* buildSessionContext(session)
 
@@ -142,6 +132,7 @@ describe("createSessionContextBuilder", () => {
                 expect(player).toBeDefined()
                 expect(player["id"]).toBe(0x00000014)
                 expect(player["name"]).toBe("Anna")
+                expect(player["role"]).toBe("player")
                 expect(player["description"]).toBe(
                     "Anna is the main character of the scene."
                 )
@@ -153,6 +144,7 @@ describe("createSessionContextBuilder", () => {
                 expect(housecarl).toBeDefined()
                 expect(housecarl["id"]).toBe(0x000a2c94)
                 expect(housecarl["name"]).toBe("Lydia")
+                expect(housecarl["role"]).toBe("housecarl")
                 expect(housecarl["description"]).toBe(
                     "Lydia is the housecarl of Anna."
                 )
@@ -197,30 +189,29 @@ describe("createSessionContextBuilder", () => {
             FX.gen(function* () {
                 const compiler = createHandlebarsTemplateCompiler()
 
-                const createSceneContextBuilder = createSessionContextBuilder(
-                    compiler,
-                    {actor: actorContextBuilder}
-                )
-
                 const invalidScene = {
                     ...scene,
                     description: SceneDescription.make(
-                        "{{roles.player.name} is visiting the Sky District."
+                        "{{player.name} is visiting the Sky District."
                     )
                 }
 
                 const error = yield* pipe(
-                    createSceneContextBuilder(invalidScene),
+                    createSessionContextBuilder(
+                        invalidScene,
+                        findActor,
+                        compiler
+                    ),
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
                     )
                 )
 
                 expect(error).toBe(
-                    "Failed to compile template: {{roles.player.name} is visiting the Sky District.\n" +
+                    "Failed to compile template: {{player.name} is visiting the Sky District.\n" +
                         "Parse error on line 1:\n" +
-                        "{{roles.player.name} is visiting the Sk\n" +
-                        "-------------------^\n" +
+                        "{{player.name} is visiting the Sk\n" +
+                        "-------------^\n" +
                         "Expecting 'CLOSE_RAW_BLOCK', 'CLOSE', 'CLOSE_UNESCAPED', 'OPEN_SEXPR', 'CLOSE_SEXPR', " +
                         "'ID', 'OPEN_BLOCK_PARAMS', 'STRING', 'NUMBER', 'BOOLEAN', 'UNDEFINED', 'NULL', " +
                         "'DATA', 'SEP', got 'INVALID'"
@@ -234,13 +225,11 @@ describe("createSessionContextBuilder", () => {
             FX.gen(function* () {
                 const compiler = createHandlebarsTemplateCompiler()
 
-                const createSceneContextBuilder = createSessionContextBuilder(
-                    compiler,
-                    {actor: actorContextBuilder}
+                const buildSessionContext = yield* createSessionContextBuilder(
+                    scene,
+                    findActor,
+                    compiler
                 )
-
-                const buildSessionContext =
-                    yield* createSceneContextBuilder(scene)
 
                 const invalidSession = {
                     ...session,
@@ -261,7 +250,7 @@ describe("createSessionContextBuilder", () => {
                 )
 
                 expect(error).toBe(
-                    `Cannot find the mapped role "jarl" in scene "visiting_sky_district".`
+                    `Cannot find the mapped role "jarl" for actor "14".`
                 )
             })
     )

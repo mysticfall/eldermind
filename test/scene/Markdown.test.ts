@@ -42,14 +42,12 @@ describe("createMarkdownSceneLoader", () => {
                     expect(roles).length(2)
 
                     expect(roles[0].id).toBe("investigator")
-                    expect(roles[0].name).toBe("Investigator")
                     expect(roles[0].description).toBe(
                         "A figure aiming to uncover the truth " +
                             "behind the alleged sale of fake goods."
                     )
 
                     expect(roles[1].id).toBe("suspect")
-                    expect(roles[1].name).toBe("Suspect")
                     expect(roles[1].description).toBe(
                         "An individual accused of dishonesty and attempting to " +
                             "defend themselves or justify their actions."
