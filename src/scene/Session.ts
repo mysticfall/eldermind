@@ -1,11 +1,16 @@
-import {pipe} from "effect"
+import {flow, pipe} from "effect"
 import {DataIdentifier, InvalidDataError} from "../common/Data"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
-import {createRoleMappingsContextBuilder, RoleMapping} from "./Role"
+import * as R from "effect/Record"
+import {createRoleMappingsContextBuilder, RoleId, RoleMapping} from "./Role"
 import {Scene} from "./Scene"
-import {ContextBuilder, TemplateCompiler} from "../llm/Template"
+import {
+    ContextBuilder,
+    MissingContextDataError,
+    TemplateCompiler
+} from "../llm/Template"
 import {traverseArray} from "../common/Type"
 import {DialogueLine} from "./Dialogue"
 import {Actor} from "@skyrim-platform/skyrim-platform"
@@ -122,4 +127,30 @@ export function createSessionContextBuilder(
                 )
             )
     })
+}
+
+export function withSpeaker(
+    speaker: RoleId
+): (builder: ContextBuilder<Session>) => ContextBuilder<Session> {
+    return builder =>
+        flow(
+            builder,
+            FX.flatMap(context =>
+                pipe(
+                    context,
+                    R.get(speaker),
+                    FX.catchTag(
+                        "NoSuchElementException",
+                        () =>
+                            new MissingContextDataError({
+                                message: `No such role found in the context: "${speaker}".`
+                            })
+                    ),
+                    FX.map(role => ({
+                        ...context,
+                        speaker: role
+                    }))
+                )
+            )
+        )
 }

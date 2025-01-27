@@ -5,7 +5,8 @@ import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
 import {
     createSessionContextBuilder,
     Session,
-    SessionId
+    SessionId,
+    withSpeaker
 } from "../../src/scene/Session"
 import {Scene, SceneDescription, SceneId} from "../../src/scene/Scene"
 import {Role, RoleDescription, RoleId, RoleMapping} from "../../src/scene/Role"
@@ -23,86 +24,87 @@ import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
 import {DialogueLine, DialogueText} from "../../src/scene/Dialogue"
 
+const scene = Scene.make({
+    id: SceneId.make("visiting_sky_district"),
+    description: SceneDescription.make(
+        "{{player.name}} and {{housecarl.name}} are vising the Sky District."
+    ),
+    roles: [
+        Role.make({
+            id: RoleId.make("player"),
+            description: RoleDescription.make(
+                "{{player.name}} is the main character of the scene."
+            )
+        }),
+        Role.make({
+            id: RoleId.make("housecarl"),
+            description: RoleDescription.make(
+                "{{housecarl.name}} is the housecarl of {{player.name}}."
+            )
+        })
+    ],
+    objectives: [
+        SceneObjective.make({
+            id: SceneObjectiveId.make("objective1"),
+            instruction: SceneObjectiveInstruction.make(
+                "Ask {{housecarl.name}} how she is."
+            ),
+            outcome: SceneObjectiveOutcome.make(
+                "{{housecarl.name}} replied to {{player.name}}."
+            ),
+            examples: [
+                SceneObjectiveExample.make(
+                    "{{housecarl.name}}: I'm sworn to carry your burdens."
+                )
+            ]
+        })
+    ]
+})
+
+const session = Session.make({
+    id: SessionId.make("test_session"),
+    scene,
+    roles: [
+        RoleMapping.make({
+            role: RoleId.make("player"),
+            actor: ActorId.make(0x00000014)
+        }),
+        RoleMapping.make({
+            role: RoleId.make("housecarl"),
+            actor: ActorId.make(0x000a2c94)
+        })
+    ],
+    history: [
+        DialogueLine.make({
+            speaker: RoleId.make("housecarl"),
+            text: DialogueText.make("I'm sworn to carry your burdens.")
+        })
+    ]
+})
+
+const findActor: ContextBuilder<Actor> = actor =>
+    FX.succeed({
+        id: actor.getFormID(),
+        name: actor.getName()
+    })
+
+function installMocks() {
+    vi.mock(import("skyrim-effect/game/Form"), async importOriginal => {
+        const mod = await importOriginal()
+
+        return {
+            ...mod,
+            getActor: (id: ActorId) =>
+                FX.succeed({
+                    getFormID: () => id,
+                    getName: () => (id == 0x00000014 ? "Anna" : "Lydia")
+                } as unknown as Actor)
+        }
+    })
+}
+
 describe("createSessionContextBuilder", () => {
-    const scene = Scene.make({
-        id: SceneId.make("visiting_sky_district"),
-        description: SceneDescription.make(
-            "{{player.name}} and {{housecarl.name}} are vising the Sky District."
-        ),
-        roles: [
-            Role.make({
-                id: RoleId.make("player"),
-                description: RoleDescription.make(
-                    "{{player.name}} is the main character of the scene."
-                )
-            }),
-            Role.make({
-                id: RoleId.make("housecarl"),
-                description: RoleDescription.make(
-                    "{{housecarl.name}} is the housecarl of {{player.name}}."
-                )
-            })
-        ],
-        objectives: [
-            SceneObjective.make({
-                id: SceneObjectiveId.make("objective1"),
-                instruction: SceneObjectiveInstruction.make(
-                    "Ask {{housecarl.name}} how she is."
-                ),
-                outcome: SceneObjectiveOutcome.make(
-                    "{{housecarl.name}} replied to {{player.name}}."
-                ),
-                examples: [
-                    SceneObjectiveExample.make(
-                        "{{housecarl.name}}: I'm sworn to carry your burdens."
-                    )
-                ]
-            })
-        ]
-    })
-
-    const session = Session.make({
-        id: SessionId.make("test_session"),
-        scene,
-        roles: [
-            RoleMapping.make({
-                role: RoleId.make("player"),
-                actor: ActorId.make(0x00000014)
-            }),
-            RoleMapping.make({
-                role: RoleId.make("housecarl"),
-                actor: ActorId.make(0x000a2c94)
-            })
-        ],
-        history: [
-            DialogueLine.make({
-                speaker: RoleId.make("housecarl"),
-                text: DialogueText.make("I'm sworn to carry your burdens.")
-            })
-        ]
-    })
-
-    const findActor: ContextBuilder<Actor> = actor =>
-        FX.succeed({
-            id: actor.getFormID(),
-            name: actor.getName()
-        })
-
-    beforeEach(() => {
-        vi.mock(import("skyrim-effect/game/Form"), async importOriginal => {
-            const mod = await importOriginal()
-
-            return {
-                ...mod,
-                getActor: (id: ActorId) =>
-                    FX.succeed({
-                        getFormID: () => id,
-                        getName: () => (id == 0x00000014 ? "Anna" : "Lydia")
-                    } as unknown as Actor)
-            }
-        })
-    })
-
+    beforeEach(installMocks)
     afterEach(() => vi.restoreAllMocks())
 
     it.effect(
@@ -248,6 +250,37 @@ describe("createSessionContextBuilder", () => {
                 expect(error).toBe(
                     `Cannot find the mapped role "jarl" for actor "14".`
                 )
+            })
+    )
+})
+
+describe("withSpeaker", () => {
+    beforeEach(installMocks)
+    afterEach(() => vi.restoreAllMocks())
+
+    it.effect(
+        "should decorate the given session context builder to add a speaker information",
+        () =>
+            FX.gen(function* () {
+                const compiler = createHandlebarsTemplateCompiler()
+
+                const buildSessionContext = yield* createSessionContextBuilder(
+                    scene,
+                    findActor,
+                    compiler
+                )
+
+                const buildContextWithSpeaker = pipe(
+                    buildSessionContext,
+                    withSpeaker(RoleId.make("housecarl"))
+                )
+
+                const context = yield* pipe(session, buildContextWithSpeaker)
+
+                const speaker = context["speaker"] as unknown as TemplateContext
+
+                expect(speaker).toBeDefined()
+                expect(speaker["name"]).toBe("Lydia")
             })
     )
 })
