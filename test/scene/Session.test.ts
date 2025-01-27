@@ -123,11 +123,7 @@ describe("createSessionContextBuilder", () => {
                     "Anna and Lydia are vising the Sky District."
                 )
 
-                const roles = context["roles"] as unknown as TemplateContext
-
-                expect(roles).toBeDefined()
-
-                const player = roles["player"] as unknown as TemplateContext
+                const player = context["player"] as unknown as TemplateContext
 
                 expect(player).toBeDefined()
                 expect(player["id"]).toBe(0x00000014)
@@ -137,7 +133,7 @@ describe("createSessionContextBuilder", () => {
                     "Anna is the main character of the scene."
                 )
 
-                const housecarl = roles[
+                const housecarl = context[
                     "housecarl"
                 ] as unknown as TemplateContext
 
