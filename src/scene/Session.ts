@@ -117,6 +117,7 @@ export function createSessionContextBuilder(
                 FX.map(({description, roles, objectives}) => ({
                     ...roles,
                     description,
+                    roles,
                     objectives,
                     history: session.history
                 })),
