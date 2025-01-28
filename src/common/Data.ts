@@ -80,3 +80,14 @@ export function validate<TData, TSource>(
 export type TypedDataLoader<T> = (
     path: DataPath
 ) => Effect<T, InvalidDataError | PlatformError>
+
+export class MissingContextDataError extends BaseError<MissingContextDataError>(
+    "MissingContextDataError",
+    {
+        message: "Missing context data."
+    }
+) {}
+
+export type ContextBuilder<TData, TContext extends {} = {}> = (
+    context: TData
+) => Effect<TContext, MissingContextDataError>

@@ -1,17 +1,19 @@
 import * as SC from "effect/Schema"
 import {pipe} from "effect"
 import {ActorId, getActor} from "skyrim-effect/game/Form"
-import {
-    ContextBuilder,
-    MissingContextDataError,
-    TemplateCompiler
-} from "../llm/Template"
+import {TemplateCompiler} from "../llm/Template"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
-import {InvalidDataError} from "../common/Data"
+import {
+    ContextBuilder,
+    InvalidDataError,
+    MissingContextDataError
+} from "../common/Data"
 import * as A from "effect/Array"
 import * as R from "effect/Record"
+import {ReadonlyRecord} from "effect/Record"
 import {traverseRecord} from "../common/Type"
+import {ActorContext} from "../actor/Actor"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 
 export const RoleId = pipe(
@@ -20,7 +22,7 @@ export const RoleId = pipe(
     SC.brand("RoleId"),
     SC.annotations({
         title: "Role ID",
-        description: "Identifier of the role"
+        description: "A unique identifier of the role"
     })
 )
 
@@ -32,7 +34,7 @@ export const RoleDescription = pipe(
     SC.brand("RoleDescription"),
     SC.annotations({
         title: "Role Description",
-        description: "Description of the role"
+        description: "The description of the role."
     })
 )
 
@@ -45,7 +47,7 @@ export const Role = pipe(
     }),
     SC.annotations({
         title: "Role",
-        description: "A role for an actor in the scene"
+        description: "A role for an actor in the scene."
     })
 )
 
@@ -58,17 +60,35 @@ export const RoleMapping = pipe(
     }),
     SC.annotations({
         title: "Role Mapping",
-        description: "A role for an actor in the scene"
+        description: "A role for an actor in the scene."
     })
 )
 
 export type RoleMapping = typeof RoleMapping.Type
 
-export function createRoleMappingsContextBuilder(
+export const WithRole = pipe(
+    SC.Struct({
+        role: Role
+    }),
+    SC.annotations({
+        title: "With Role",
+        description: "A trait that assigns a specific role to the subject."
+    })
+)
+
+export type WithRole = typeof WithRole.Type
+
+export type RoleMappingsContext<out TActor extends ActorContext> =
+    ReadonlyRecord<RoleId, TActor & WithRole>
+
+export function createRoleMappingsContextBuilder<TActor extends ActorContext>(
     roles: readonly Role[],
-    findActor: ContextBuilder<Actor>,
+    actorContextBuilder: ContextBuilder<Actor, TActor>,
     compiler: TemplateCompiler
-): Effect<ContextBuilder<readonly RoleMapping[]>, InvalidDataError> {
+): Effect<
+    ContextBuilder<readonly RoleMapping[], RoleMappingsContext<TActor>>,
+    InvalidDataError
+> {
     return FX.gen(function* () {
         const templates = yield* pipe(
             roles,
@@ -79,7 +99,7 @@ export function createRoleMappingsContextBuilder(
 
         return mappings =>
             FX.gen(function* () {
-                const map = pipe(
+                const roleMap = pipe(
                     mappings,
                     A.map<readonly RoleMapping[], [RoleId, RoleMapping]>(m => [
                         m.role,
@@ -88,8 +108,8 @@ export function createRoleMappingsContextBuilder(
                     R.fromEntries
                 )
 
-                const initialContext = yield* pipe(
-                    map,
+                const actorMap = yield* pipe(
+                    roleMap,
                     traverseRecord(m =>
                         pipe(
                             m.actor,
@@ -102,15 +122,26 @@ export function createRoleMappingsContextBuilder(
                                         cause: e
                                     })
                             ),
-                            FX.flatMap(actor => findActor(actor)),
-                            FX.map(R.set("role", m.role))
+                            FX.flatMap(actorContextBuilder),
+                            FX.map(actor => ({
+                                actor,
+                                role: m.role
+                            }))
                         )
                     )
                 )
 
+                const initialContext = pipe(
+                    actorMap,
+                    R.map(({actor, role}) => ({
+                        ...actor,
+                        role
+                    }))
+                )
+
                 return yield* pipe(
-                    map,
-                    traverseRecord(({role, actor}) =>
+                    actorMap,
+                    traverseRecord(({actor, role}) =>
                         pipe(
                             templates,
                             R.get(role),
@@ -118,16 +149,21 @@ export function createRoleMappingsContextBuilder(
                                 "NoSuchElementException",
                                 () =>
                                     new MissingContextDataError({
-                                        message: `Cannot find the mapped role "${role}" for actor "${actor.toString(16)}".`
+                                        message: `Cannot find the mapped role "${role}" for actor "${actor.id.toString(16)}".`
                                     })
                             ),
                             FX.flatMap(template => template(initialContext)),
                             FX.map(description => ({
-                                ...initialContext[role],
-                                description
+                                ...actor,
+                                role: {
+                                    id: role,
+                                    description:
+                                        RoleDescription.make(description)
+                                }
                             }))
                         )
-                    )
+                    ),
+                    FX.map(R.mapKeys(k => RoleId.make(k)))
                 )
             })
     })

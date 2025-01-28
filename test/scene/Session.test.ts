@@ -5,11 +5,17 @@ import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
 import {
     createSessionContextBuilder,
     Session,
-    SessionId,
-    withSpeaker
+    SessionContext,
+    SessionId
 } from "../../src/scene/Session"
 import {Scene, SceneDescription, SceneId} from "../../src/scene/Scene"
-import {Role, RoleDescription, RoleId, RoleMapping} from "../../src/scene/Role"
+import {
+    createRoleMappingsContextBuilder,
+    Role,
+    RoleDescription,
+    RoleId,
+    RoleMapping
+} from "../../src/scene/Role"
 import {
     SceneObjective,
     SceneObjectiveExample,
@@ -19,10 +25,10 @@ import {
 } from "../../src/scene/Objective"
 import {ActorId} from "skyrim-effect/game/Form"
 import {Actor} from "@skyrim-platform/skyrim-platform"
-import {ContextBuilder, TemplateContext} from "../../src/llm/Template"
 import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
 import {DialogueLine, DialogueText} from "../../src/scene/Dialogue"
+import {actorContextBuilder} from "../../src/actor/Actor"
 
 const scene = Scene.make({
     id: SceneId.make("visiting_sky_district"),
@@ -82,12 +88,6 @@ const session = Session.make({
     ]
 })
 
-const findActor: ContextBuilder<Actor> = actor =>
-    FX.succeed({
-        id: actor.getFormID(),
-        name: actor.getName()
-    })
-
 function installMocks() {
     vi.mock(import("skyrim-effect/game/Form"), async importOriginal => {
         const mod = await importOriginal()
@@ -113,9 +113,16 @@ describe("createSessionContextBuilder", () => {
             FX.gen(function* () {
                 const compiler = createHandlebarsTemplateCompiler()
 
+                const roleMappingsContextBuilder =
+                    yield* createRoleMappingsContextBuilder(
+                        scene.roles,
+                        actorContextBuilder,
+                        compiler
+                    )
+
                 const buildSessionContext = yield* createSessionContextBuilder(
                     scene,
-                    findActor,
+                    roleMappingsContextBuilder,
                     compiler
                 )
 
@@ -125,51 +132,45 @@ describe("createSessionContextBuilder", () => {
                     "Anna and Lydia are vising the Sky District."
                 )
 
-                const roles = context["roles"] as unknown as TemplateContext
+                const roles = context["roles"]
 
                 expect(roles).toBeDefined()
 
-                const player = context["player"] as unknown as TemplateContext
+                const player = roles[RoleId.make("player")]
 
-                expect(player).toBeDefined()
-                expect(player["id"]).toBe(0x00000014)
-                expect(player["name"]).toBe("Anna")
-                expect(player["role"]).toBe("player")
-                expect(player["description"]).toBe(
+                expect(player?.id).toBe(0x00000014)
+                expect(player?.name).toBe("Anna")
+                expect(player?.role?.id).toBe("player")
+                expect(player?.role?.description).toBe(
                     "Anna is the main character of the scene."
                 )
-                expect(player).toBe(roles["player"])
 
-                const housecarl = context[
-                    "housecarl"
-                ] as unknown as TemplateContext
+                const housecarl = roles[RoleId.make("housecarl")]
 
-                expect(housecarl).toBeDefined()
-                expect(housecarl["id"]).toBe(0x000a2c94)
-                expect(housecarl["name"]).toBe("Lydia")
-                expect(housecarl["role"]).toBe("housecarl")
-                expect(housecarl["description"]).toBe(
+                expect(housecarl?.id).toBe(0x000a2c94)
+                expect(housecarl?.name).toBe("Lydia")
+                expect(housecarl?.role?.id).toBe("housecarl")
+                expect(housecarl?.role?.description).toBe(
                     "Lydia is the housecarl of Anna."
                 )
-                expect(housecarl).toBe(roles["housecarl"])
 
                 const objectives = context["objectives"]
 
                 expect(objectives).toSatisfy(Array.isArray)
                 expect(objectives).toHaveLength(1)
 
-                const objective1 = (objectives as TemplateContext[])[0]
+                const objective1 = objectives[0]
 
                 expect(objective1).toBeDefined()
-                expect(objective1["instruction"]).toBe("Ask Lydia how she is.")
-                expect(objective1["outcome"]).toBe("Lydia replied to Anna.")
+                expect(objective1.instruction).toBe("Ask Lydia how she is.")
+                expect(objective1.outcome).toBe("Lydia replied to Anna.")
 
-                const examples = objective1["examples"]
+                const examples = objective1.examples
 
                 expect(examples).toSatisfy(Array.isArray)
                 expect(examples).toHaveLength(1)
 
-                const example1 = (examples as TemplateContext[])[0]
+                const example1 = examples[0]
 
                 expect(example1).toBeDefined()
                 expect(example1).toBe("Lydia: I'm sworn to carry your burdens.")
@@ -200,10 +201,17 @@ describe("createSessionContextBuilder", () => {
                     )
                 }
 
+                const roleMappingsContextBuilder =
+                    yield* createRoleMappingsContextBuilder(
+                        scene.roles,
+                        actorContextBuilder,
+                        compiler
+                    )
+
                 const error = yield* pipe(
                     createSessionContextBuilder(
                         invalidScene,
-                        findActor,
+                        roleMappingsContextBuilder,
                         compiler
                     ),
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
@@ -229,9 +237,16 @@ describe("createSessionContextBuilder", () => {
             FX.gen(function* () {
                 const compiler = createHandlebarsTemplateCompiler()
 
+                const roleMappingsContextBuilder =
+                    yield* createRoleMappingsContextBuilder(
+                        scene.roles,
+                        actorContextBuilder,
+                        compiler
+                    )
+
                 const buildSessionContext = yield* createSessionContextBuilder(
                     scene,
-                    findActor,
+                    roleMappingsContextBuilder,
                     compiler
                 )
 
@@ -260,33 +275,45 @@ describe("createSessionContextBuilder", () => {
     )
 })
 
-describe("withSpeaker", () => {
+describe("SessionContext", () => {
     beforeEach(installMocks)
     afterEach(() => vi.restoreAllMocks())
 
-    it.effect(
-        "should decorate the given session context builder to add a speaker information",
-        () =>
-            FX.gen(function* () {
-                const compiler = createHandlebarsTemplateCompiler()
+    describe("withSpeaker", () => {
+        it.effect(
+            "should decorate the given session context builder to add a speaker information",
+            () =>
+                FX.gen(function* () {
+                    const compiler = createHandlebarsTemplateCompiler()
 
-                const buildSessionContext = yield* createSessionContextBuilder(
-                    scene,
-                    findActor,
-                    compiler
-                )
+                    const roleMappingsContextBuilder =
+                        yield* createRoleMappingsContextBuilder(
+                            scene.roles,
+                            actorContextBuilder,
+                            compiler
+                        )
 
-                const buildContextWithSpeaker = pipe(
-                    buildSessionContext,
-                    withSpeaker(RoleId.make("housecarl"))
-                )
+                    const buildSessionContext =
+                        yield* createSessionContextBuilder(
+                            scene,
+                            roleMappingsContextBuilder,
+                            compiler
+                        )
 
-                const context = yield* pipe(session, buildContextWithSpeaker)
+                    const buildContextWithSpeaker = pipe(
+                        buildSessionContext,
+                        SessionContext.withSpeaker(RoleId.make("housecarl"))
+                    )
 
-                const speaker = context["speaker"] as unknown as TemplateContext
+                    const context = yield* pipe(
+                        session,
+                        buildContextWithSpeaker
+                    )
 
-                expect(speaker).toBeDefined()
-                expect(speaker["name"]).toBe("Lydia")
-            })
-    )
+                    const speaker = context.speaker
+
+                    expect(speaker?.name).toBe("Lydia")
+                })
+        )
+    })
 })

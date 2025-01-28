@@ -11,9 +11,9 @@ import {
 } from "../../src/scene/Role"
 import {ActorId} from "skyrim-effect/game/Form"
 import {Actor} from "@skyrim-platform/skyrim-platform"
-import {ContextBuilder, TemplateContext} from "../../src/llm/Template"
 import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
+import {actorContextBuilder} from "../../src/actor/Actor"
 
 describe("createRoleMappingsContextBuilder", () => {
     const roles = [
@@ -42,12 +42,6 @@ describe("createRoleMappingsContextBuilder", () => {
         })
     ]
 
-    const findActor: ContextBuilder<Actor> = actor =>
-        FX.succeed({
-            id: actor.getFormID(),
-            name: actor.getName()
-        })
-
     beforeEach(() => {
         vi.mock(import("skyrim-effect/game/Form"), async importOriginal => {
             const mod = await importOriginal()
@@ -74,31 +68,27 @@ describe("createRoleMappingsContextBuilder", () => {
                 const buildRoleMappingsContext =
                     yield* createRoleMappingsContextBuilder(
                         roles,
-                        findActor,
+                        actorContextBuilder,
                         compiler
                     )
 
                 const context = yield* buildRoleMappingsContext(mappings)
 
-                const player = context["player"] as unknown as TemplateContext
+                const player = context[RoleId.make("player")]
 
-                expect(player).toBeDefined()
-                expect(player["id"]).toBe(0x00000014)
-                expect(player["name"]).toBe("Anna")
-                expect(player["role"]).toBe("player")
-                expect(player["description"]).toBe(
+                expect(player?.id).toBe(0x00000014)
+                expect(player?.name).toBe("Anna")
+                expect(player?.role?.id).toBe("player")
+                expect(player?.role?.description).toBe(
                     "Anna is the main character of the scene."
                 )
 
-                const housecarl = context[
-                    "housecarl"
-                ] as unknown as TemplateContext
+                const housecarl = context[RoleId.make("housecarl")]
 
-                expect(housecarl).toBeDefined()
-                expect(housecarl["id"]).toBe(0x000a2c94)
-                expect(housecarl["name"]).toBe("Lydia")
-                expect(housecarl["role"]).toBe("housecarl")
-                expect(housecarl["description"]).toBe(
+                expect(housecarl?.id).toBe(0x000a2c94)
+                expect(housecarl?.name).toBe("Lydia")
+                expect(housecarl?.role?.id).toBe("housecarl")
+                expect(housecarl?.role?.description).toBe(
                     "Lydia is the housecarl of Anna."
                 )
             })
@@ -120,7 +110,7 @@ describe("createRoleMappingsContextBuilder", () => {
                 const error = yield* pipe(
                     createRoleMappingsContextBuilder(
                         [invalidRole, roles[1]],
-                        findActor,
+                        actorContextBuilder,
                         compiler
                     ),
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
@@ -149,7 +139,7 @@ describe("createRoleMappingsContextBuilder", () => {
                 const buildRoleMappingsContext =
                     yield* createRoleMappingsContextBuilder(
                         roles,
-                        findActor,
+                        actorContextBuilder,
                         compiler
                     )
 
