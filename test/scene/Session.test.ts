@@ -5,8 +5,8 @@ import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
 import {
     createSessionContextBuilder,
     Session,
-    SessionContext,
-    SessionId
+    SessionId,
+    withSpeaker
 } from "../../src/scene/Session"
 import {Scene, SceneDescription, SceneId} from "../../src/scene/Scene"
 import {
@@ -275,45 +275,39 @@ describe("createSessionContextBuilder", () => {
     )
 })
 
-describe("SessionContext", () => {
+describe("withSpeaker", () => {
     beforeEach(installMocks)
     afterEach(() => vi.restoreAllMocks())
 
-    describe("withSpeaker", () => {
-        it.effect(
-            "should decorate the given session context builder to add a speaker information",
-            () =>
-                FX.gen(function* () {
-                    const compiler = createHandlebarsTemplateCompiler()
+    it.effect(
+        "should decorate the given session context builder to add a speaker information",
+        () =>
+            FX.gen(function* () {
+                const compiler = createHandlebarsTemplateCompiler()
 
-                    const roleMappingsContextBuilder =
-                        yield* createRoleMappingsContextBuilder(
-                            scene.roles,
-                            actorContextBuilder,
-                            compiler
-                        )
-
-                    const buildSessionContext =
-                        yield* createSessionContextBuilder(
-                            scene,
-                            roleMappingsContextBuilder,
-                            compiler
-                        )
-
-                    const buildContextWithSpeaker = pipe(
-                        buildSessionContext,
-                        SessionContext.withSpeaker(RoleId.make("housecarl"))
+                const roleMappingsContextBuilder =
+                    yield* createRoleMappingsContextBuilder(
+                        scene.roles,
+                        actorContextBuilder,
+                        compiler
                     )
 
-                    const context = yield* pipe(
-                        session,
-                        buildContextWithSpeaker
-                    )
+                const buildSessionContext = yield* createSessionContextBuilder(
+                    scene,
+                    roleMappingsContextBuilder,
+                    compiler
+                )
 
-                    const speaker = context.speaker
+                const buildContextWithSpeaker = pipe(
+                    buildSessionContext,
+                    withSpeaker(RoleId.make("housecarl"))
+                )
 
-                    expect(speaker?.name).toBe("Lydia")
-                })
-        )
-    })
+                const context = yield* pipe(session, buildContextWithSpeaker)
+
+                const speaker = context.speaker
+
+                expect(speaker?.name).toBe("Lydia")
+            })
+    )
 })

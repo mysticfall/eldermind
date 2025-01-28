@@ -163,38 +163,36 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
     })
 }
 
-export namespace SessionContext {
-    export function withSpeaker(speaker: RoleId): <
-        TContext extends SessionContext<TActor>,
-        TActor extends ActorContext
-    >(
-        builder: ContextBuilder<Session, TContext>
-    ) => ContextBuilder<
-        Session,
-        TContext & {
-            readonly speaker: ActorContext & WithRole
-        }
-    > {
-        return builder =>
-            flow(
-                builder,
-                FX.flatMap(context =>
-                    pipe(
-                        context.roles,
-                        R.get(speaker),
-                        FX.catchTag(
-                            "NoSuchElementException",
-                            () =>
-                                new MissingContextDataError({
-                                    message: `No such role found in the context: "${speaker}".`
-                                })
-                        ),
-                        FX.map(role => ({
-                            ...context,
-                            speaker: role
-                        }))
-                    )
+export function withSpeaker(speaker: RoleId): <
+    TContext extends SessionContext<TActor>,
+    TActor extends ActorContext
+>(
+    builder: ContextBuilder<Session, TContext>
+) => ContextBuilder<
+    Session,
+    TContext & {
+        readonly speaker: ActorContext & WithRole
+    }
+> {
+    return builder =>
+        flow(
+            builder,
+            FX.flatMap(context =>
+                pipe(
+                    context.roles,
+                    R.get(speaker),
+                    FX.catchTag(
+                        "NoSuchElementException",
+                        () =>
+                            new MissingContextDataError({
+                                message: `No such role found in the context: "${speaker}".`
+                            })
+                    ),
+                    FX.map(role => ({
+                        ...context,
+                        speaker: role
+                    }))
                 )
             )
-    }
+        )
 }
