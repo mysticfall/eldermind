@@ -19,6 +19,7 @@ import {parseJson} from "../common/Json"
 import {ContextBuilder, InvalidDataError} from "../common/Data"
 import {Template} from "./Template"
 import {ReadonlyRecord} from "effect/Record"
+import {extractCodeContent} from "../markdown/Parser"
 
 export type MessageTemplate = (
     context: ReadonlyRecord<string, unknown>
@@ -117,7 +118,14 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
 
                 const {duration, metadata, usage} = response
 
-                const content = yield* pipe(response.output, parseContent)
+                const content = yield* pipe(
+                    response.output,
+                    parseContent,
+                    FX.map(extractCodeContent)
+                )
+
+                FX.logTrace(`Sanitised LLM output: ${content}`)
+
                 const output = yield* pipe(
                     content,
                     parseJson(schema, options?.parseOptions)
