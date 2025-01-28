@@ -88,6 +88,6 @@ export class MissingContextDataError extends BaseError<MissingContextDataError>(
     }
 ) {}
 
-export type ContextBuilder<TData, TContext extends {} = {}> = (
+export type ContextBuilder<TData, TContext extends object = object> = (
     context: TData
 ) => Effect<TContext, MissingContextDataError>

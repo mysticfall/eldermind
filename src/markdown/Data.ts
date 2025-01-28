@@ -5,8 +5,6 @@ import {DataLoader, TextDataLoader} from "../common/Data"
 
 export type MarkdownLoader = DataLoader<MarkdownDocument>
 
-export function createMarkdownLoader(
-    loader: TextDataLoader
-): MarkdownLoader {
+export function createMarkdownLoader(loader: TextDataLoader): MarkdownLoader {
     return flow(loader, FX.map(parseMarkdown))
 }

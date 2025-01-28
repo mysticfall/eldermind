@@ -24,11 +24,11 @@ const schema = SC.Struct({
     description: "User"
 })
 
-type User = {
-    name: string
+interface User {
+    readonly name: string
 }
 
-const user = {
+const user: User = {
     name: "Anna"
 }
 

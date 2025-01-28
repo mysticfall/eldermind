@@ -49,7 +49,7 @@ export const Session = pipe(
 
 export type Session = typeof Session.Type
 
-export type SessionContext<TActor extends ActorContext> = {
+export interface SessionContext<TActor extends ActorContext> {
     readonly description: SceneDescription
     readonly roles: RoleMappingsContext<TActor>
     readonly objectives: readonly SceneObjective[]
