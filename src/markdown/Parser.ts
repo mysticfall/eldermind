@@ -130,3 +130,10 @@ export function parseMarkdown(text: string): MarkdownDocument {
         metadata: data
     }
 }
+
+const CodeBlock = /```[a-zA-Z0-9]*\n([\s\S]*?)\n```/
+
+export function extractCodeContent(text: string): string {
+    const match = text.match(CodeBlock)
+    return match ? match[1] : text
+}

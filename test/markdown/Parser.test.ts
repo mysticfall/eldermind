@@ -1,7 +1,7 @@
 import * as O from "effect/Option"
 import {Tokens} from "marked"
 import {describe, expect, it} from "vitest"
-import {parseMarkdown} from "../../src/markdown/Parser"
+import {extractCodeContent, parseMarkdown} from "../../src/markdown/Parser"
 
 describe("parseMarkdown", () => {
     it("should parse the given markdown text while preserving its hierarchical structure", () => {
@@ -177,5 +177,56 @@ Cats aim to dominate the world.
         expect(content[0].title).satisfy(O.isNone)
         expect(content[0].tokens).length(1)
         expect(content[0].tokens[0]).toHaveProperty("text", text)
+    })
+})
+
+describe("extractCodeContent", () => {
+    it("should extract the code block from the given markdown text", () => {
+        const markdownText = `Here is some code:
+
+\`\`\`javascript
+console.log("Hello, world!")
+return
+\`\`\`
+
+And some more text.`
+
+        const result = extractCodeContent(markdownText)
+
+        expect(result).toBe('console.log("Hello, world!")\nreturn')
+    })
+
+    it("should return the input text if no code block is present", () => {
+        const plainText = "This text does not contain any code blocks."
+
+        const result = extractCodeContent(plainText)
+
+        expect(result).toBe(plainText)
+    })
+
+    it("should handle an empty string", () => {
+        const emptyText = ""
+
+        const result = extractCodeContent(emptyText)
+
+        expect(result).toBe(emptyText)
+    })
+
+    it("should handle multiple code blocks by extracting the first one", () => {
+        const markdownText = `Here is a code snippet:
+
+\`\`\`python
+print("Hello from Python!")
+\`\`\`
+
+Another code block:
+
+\`\`\`javascript
+console.log("Hello from JavaScript!")
+\`\`\``
+
+        const result = extractCodeContent(markdownText)
+
+        expect(result).toBe('print("Hello from Python!")')
     })
 })
