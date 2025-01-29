@@ -1,9 +1,10 @@
 import {basename, extname} from "path"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
+import * as A from "effect/Array"
 import * as O from "effect/Option"
 import * as ST from "effect/String"
-import Handlebars from "handlebars"
+import Handlebars, {HelperDelegate} from "handlebars"
 import {DataPath, InvalidDataError, TextDataLoader} from "../common/Data"
 import {flow, pipe} from "effect"
 import {PlatformError} from "@effect/platform/Error"
@@ -84,3 +85,14 @@ export function registerPartial(
             Handlebars.registerPartial(partialName, template)
         })
 }
+
+export const multilineIndent: HelperDelegate = (
+    text: string,
+    indent: number = 4
+): string =>
+    pipe(
+        text,
+        ST.trim,
+        ST.split("\n"),
+        A.map(line => " ".repeat(indent) + line.trim())
+    ).join("\n")

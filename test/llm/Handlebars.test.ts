@@ -4,6 +4,7 @@ import * as FX from "effect/Effect"
 import {
     compileHandlebarsTemplate,
     createHandlebarsTemplateCompiler,
+    multilineIndent,
     registerPartial
 } from "../../src/llm/Handlebars"
 import {DataPath, InvalidDataError, TextDataLoader} from "../../src/common/Data"
@@ -154,4 +155,22 @@ describe("registerPartial", () => {
                 )
             })
     )
+})
+
+describe("multilineIndent", () => {
+    it("should add the specified indent to every line in the given text", () => {
+        const text = `  This is line 1
+This is line 2
+This is line 3`
+
+        expect(multilineIndent(text, 4)).toBe(`    This is line 1
+    This is line 2
+    This is line 3`)
+
+        expect(multilineIndent(text, 2)).toBe(
+            `  This is line 1
+  This is line 2
+  This is line 3`
+        )
+    })
 })
