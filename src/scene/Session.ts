@@ -4,7 +4,7 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as A from "effect/Array"
-import {RoleMappedContext, RoleMapping, RoleMappingsContext} from "./Role"
+import {RoleMappingsContainer, RoleMapping, RoleMappingsContext} from "./Role"
 import {Scene, SceneDescription} from "./Scene"
 import {TemplateCompiler} from "../llm/Template"
 import {traverseArray} from "../common/Type"
@@ -44,7 +44,7 @@ export const Session = pipe(
 export type Session = typeof Session.Type
 
 export interface SessionContext<TActor extends ActorContext>
-    extends RoleMappedContext<TActor> {
+    extends RoleMappingsContainer<TActor> {
     readonly description: SceneDescription
     readonly objectives: readonly Objective[]
     readonly history: readonly DialogueLine[]

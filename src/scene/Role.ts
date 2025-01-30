@@ -161,7 +161,7 @@ export function createRoleMappingsContextBuilder<TActor extends ActorContext>(
     })
 }
 
-export interface RoleMappedContext<TActor extends ActorContext> {
+export interface RoleMappingsContainer<TActor extends ActorContext> {
     readonly roles: RoleMappingsContext<TActor>
 }
 
@@ -173,7 +173,7 @@ export function withSpeaker(
     speaker: RoleId
 ): <
     TData,
-    TContext extends RoleMappedContext<TActor>,
+    TContext extends RoleMappingsContainer<TActor>,
     TActor extends ActorContext
 >(
     builder: ContextBuilder<TData, TContext>
