@@ -88,7 +88,7 @@ export function registerPartial(
 
 export const multilineIndent: HelperDelegate = (
     text: string,
-    indent: number = 4
+    indent = 4
 ): string =>
     pipe(
         text,
