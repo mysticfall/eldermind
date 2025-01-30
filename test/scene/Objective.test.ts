@@ -1,12 +1,12 @@
 import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import {
-    Objective,
     ObjectiveChecklist,
+    ObjectiveCompletion,
+    ObjectiveContext,
     ObjectiveId,
     ObjectiveInstruction,
     ObjectiveListContainer,
-    ObjectiveStatus,
     withActiveObjective
 } from "../../src/scene/Objective"
 import * as A from "effect/Array"
@@ -16,17 +16,17 @@ import {ContextBuilder} from "../../src/common/Data"
 
 describe("withActiveObjective", () => {
     const createList = (
-        ...statusList: readonly ObjectiveStatus[]
+        ...statusList: readonly ObjectiveCompletion[]
     ): ObjectiveListContainer => ({
         objectives: pipe(
             statusList,
-            A.map((status, i) =>
-                Objective.make({
+            A.map((completion, i) =>
+                ObjectiveContext.make({
                     id: ObjectiveId.make(`objective${i + 1}`),
                     instruction: ObjectiveInstruction.make("Some instruction."),
                     checklist: ObjectiveChecklist.make("A checklist."),
                     examples: A.empty(),
-                    status
+                    completion
                 })
             )
         )

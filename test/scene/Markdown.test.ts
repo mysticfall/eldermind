@@ -71,8 +71,6 @@ describe("createMarkdownSceneLoader", () => {
                             "Balgruuf: You must be mistaken. Perhaps another merchant deceived you."
                     )
 
-                    expect(objectives[0].status).toBe("incomplete")
-
                     expect(objectives[1].id).toBe("task_2")
                     expect(objectives[1].instruction).toBe(
                         "Pressure the _suspect_ to admit their wrongdoing."
@@ -96,8 +94,6 @@ describe("createMarkdownSceneLoader", () => {
                             "Lydia: The guards might. Your choice.\n" +
                             "Severio: All right, all right! Just keep your voice down."
                     )
-
-                    expect(objectives[1].status).toBe("incomplete")
                 }),
                 FX.provide(NodeContext.layer)
             )

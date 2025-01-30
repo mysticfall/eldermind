@@ -4,17 +4,20 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as A from "effect/Array"
-import {RoleMappingsContainer, RoleMapping, RoleMappingsContext} from "./Role"
+import * as O from "effect/Option"
+import {RoleMapping, RoleMappingsContainer, RoleMappingsContext} from "./Role"
 import {Scene, SceneDescription} from "./Scene"
 import {TemplateCompiler} from "../llm/Template"
 import {traverseArray} from "../common/Type"
 import {DialogueLine} from "./Dialogue"
 import {ActorContext} from "../actor/Actor"
 import {
-    Objective,
     ObjectiveChecklist,
+    ObjectiveCompletion,
     ObjectiveExample,
-    ObjectiveInstruction
+    ObjectiveInstruction,
+    ObjectiveListContainer,
+    ObjectiveState
 } from "./Objective"
 
 export const SessionId = pipe(
@@ -33,7 +36,12 @@ export const Session = pipe(
         id: SessionId,
         scene: Scene,
         roles: SC.Array(RoleMapping),
-        history: SC.Array(DialogueLine)
+        objectives: SC.optionalWith(SC.Array(ObjectiveState), {
+            default: () => A.empty()
+        }),
+        history: SC.optionalWith(SC.Array(DialogueLine), {
+            default: () => A.empty()
+        })
     }),
     SC.annotations({
         title: "Session",
@@ -44,9 +52,9 @@ export const Session = pipe(
 export type Session = typeof Session.Type
 
 export interface SessionContext<TActor extends ActorContext>
-    extends RoleMappingsContainer<TActor> {
+    extends RoleMappingsContainer<TActor>,
+        ObjectiveListContainer {
     readonly description: SceneDescription
-    readonly objectives: readonly Objective[]
     readonly history: readonly DialogueLine[]
 }
 
@@ -82,8 +90,7 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                         FX.bind("checklist", () => compiler(o.checklist)),
                         FX.bind("examples", () =>
                             pipe(o.examples, traverseArray(compiler))
-                        ),
-                        FX.bind("status", () => FX.succeed(o.status))
+                        )
                     )
                 )
             ),
@@ -129,7 +136,18 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                                         )
                                     )
                                 ),
-                                FX.bind("status", () => FX.succeed(o.status))
+                                FX.bind("completion", () =>
+                                    pipe(
+                                        session.objectives,
+                                        A.findFirst(s => s.id == o.id),
+                                        O.map(s => s.completion),
+                                        O.getOrElse(
+                                            () =>
+                                                "incomplete" as ObjectiveCompletion
+                                        ),
+                                        FX.succeed
+                                    )
+                                )
                             )
                         )
                     )

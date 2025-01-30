@@ -33,32 +33,45 @@ export const ObjectiveExample = pipe(
 
 export type ObjectiveExample = typeof ObjectiveExample.Type
 
-export const ObjectiveStatus = SC.Union(
+export const ObjectiveCompletion = SC.Union(
     SC.Literal("incomplete"),
     SC.Literal("complete"),
     SC.Literal("reverted")
 )
 
-export type ObjectiveStatus = typeof ObjectiveStatus.Type
+export type ObjectiveCompletion = typeof ObjectiveCompletion.Type
 
 export const Objective = SC.Struct({
     id: ObjectiveId,
     instruction: ObjectiveInstruction,
     checklist: ObjectiveChecklist,
-    examples: SC.Array(ObjectiveExample),
-    status: SC.optionalWith(ObjectiveStatus, {
-        default: () => "incomplete"
-    })
+    examples: SC.Array(ObjectiveExample)
 })
 
 export type Objective = typeof Objective.Type
 
+export const ObjectiveState = SC.Struct({
+    id: ObjectiveId,
+    completion: SC.optionalWith(ObjectiveCompletion, {
+        default: () => "incomplete"
+    })
+})
+
+export type ObjectiveState = typeof ObjectiveState.Type
+
+export const ObjectiveContext = SC.Struct({
+    ...Objective.fields,
+    ...ObjectiveState.fields
+})
+
+export type ObjectiveContext = typeof ObjectiveContext.Type
+
 export interface ObjectiveListContainer {
-    readonly objectives: readonly Objective[]
+    readonly objectives: readonly ObjectiveContext[]
 }
 
 export interface WithActiveObjective {
-    readonly activeObjective?: Objective
+    readonly activeObjective?: ObjectiveContext
 }
 
 export function withActiveObjective<
@@ -73,11 +86,11 @@ export function withActiveObjective<
             ...ctx,
             activeObjective: pipe(
                 ctx.objectives,
-                A.findFirst(o => o.status == "reverted"),
+                A.findFirst(o => o.completion == "reverted"),
                 O.orElse(() =>
                     pipe(
                         ctx.objectives,
-                        A.findFirst(o => o.status == "incomplete")
+                        A.findFirst(o => o.completion == "incomplete")
                     )
                 ),
                 O.getOrUndefined
