@@ -1,8 +1,6 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-npm run lint
-npm run coverage
-npm run make-badges
+pnpm run lint
+pnpm run coverage
+pnpm run make-badges
+pnpm run doc
 
 git add README.md

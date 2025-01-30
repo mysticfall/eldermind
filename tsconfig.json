@@ -29,8 +29,7 @@
     "declarationDir": "dist/dts"
   },
   "include": [
-    "./src",
-    "./test"
+    "./src"
   ],
   "exclude": [
     "./node_modules"

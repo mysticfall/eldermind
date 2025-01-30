@@ -34,5 +34,8 @@ export default defineConfig({
             external: ["path", "@skyrim-platform/skyrim-platform"],
             preserveEntrySignatures: "allow-extension"
         }
+    },
+    test: {
+        include: ["./test/**/*.test.ts"]
     }
 })

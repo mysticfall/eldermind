@@ -10,6 +10,10 @@ and [Skyrim Platform](https://www.nexusmods.com/skyrimspecialedition/mods/54909)
 Eldermind is currently in the proof-of-concept phase. At this stage, it is purely experimental and not yet ready for
 practical use.
 
+| Statements                  | Branches                | Functions                 | Lines             |
+| --------------------------- | ----------------------- | ------------------------- | ----------------- |
+| ![Statements](#statements#) | ![Branches](#branches#) | ![Functions](#functions#) | ![Lines](#lines#) |
+
 ## License
 
 Eldermind is an open-source project distributed under the terms of the [MIT License](LICENSE).
