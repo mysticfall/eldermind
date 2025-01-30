@@ -12,7 +12,7 @@ practical use.
 
 | Statements                  | Branches                | Functions                 | Lines             |
 | --------------------------- | ----------------------- | ------------------------- | ----------------- |
-| ![Statements](https://img.shields.io/badge/statements-61.93%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-81.83%25-yellow.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-51.65%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-61.93%25-red.svg?style=flat) |
+| ![Statements](https://img.shields.io/badge/statements-62.65%25-red.svg?style=flat) | ![Branches](https://img.shields.io/badge/branches-82.31%25-yellow.svg?style=flat) | ![Functions](https://img.shields.io/badge/functions-52.11%25-red.svg?style=flat) | ![Lines](https://img.shields.io/badge/lines-62.65%25-red.svg?style=flat) |
 
 ## License
 

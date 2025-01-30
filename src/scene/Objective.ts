@@ -1,5 +1,8 @@
-import {pipe} from "effect"
-import {DataIdentifier} from "../common/Data"
+import {flow, pipe} from "effect"
+import {ContextBuilder, DataIdentifier} from "../common/Data"
+import * as A from "effect/Array"
+import * as O from "effect/Option"
+import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
 
 export const ObjectiveId = pipe(DataIdentifier, SC.brand("ObjectiveId"))
@@ -49,3 +52,36 @@ export const Objective = SC.Struct({
 })
 
 export type Objective = typeof Objective.Type
+
+export interface ObjectiveListContainer {
+    readonly objectives: readonly Objective[]
+}
+
+export interface WithActiveObjective {
+    readonly activeObjective?: Objective
+}
+
+export function withActiveObjective<
+    TData,
+    TContext extends ObjectiveListContainer
+>(
+    builder: ContextBuilder<TData, TContext>
+): ContextBuilder<TData, TContext & WithActiveObjective> {
+    return flow(
+        builder,
+        FX.map(ctx => ({
+            ...ctx,
+            activeObjective: pipe(
+                ctx.objectives,
+                A.findFirst(o => o.status == "reverted"),
+                O.orElse(() =>
+                    pipe(
+                        ctx.objectives,
+                        A.findFirst(o => o.status == "incomplete")
+                    )
+                ),
+                O.getOrUndefined
+            )
+        }))
+    )
+}
