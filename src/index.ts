@@ -1,3 +1,4 @@
+export * as actor from "./actor"
 export * as common from "./common"
 export * as game from "./game"
 export * as llm from "./llm"
