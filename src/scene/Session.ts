@@ -161,17 +161,15 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
     })
 }
 
-export function withSpeaker(speaker: RoleId): <
-    TContext extends SessionContext<TActor>,
-    TActor extends ActorContext
->(
+export interface WithSpeaker<TActor> {
+    readonly speaker: TActor
+}
+
+export function withSpeaker(
+    speaker: RoleId
+): <TContext extends SessionContext<TActor>, TActor extends ActorContext>(
     builder: ContextBuilder<Session, TContext>
-) => ContextBuilder<
-    Session,
-    TContext & {
-        readonly speaker: ActorContext & WithRole
-    }
-> {
+) => ContextBuilder<Session, TContext & WithSpeaker<TActor & WithRole>> {
     return builder =>
         flow(
             builder,
