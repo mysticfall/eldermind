@@ -1,16 +1,10 @@
-import {flow, pipe} from "effect"
-import {
-    ContextBuilder,
-    DataIdentifier,
-    InvalidDataError,
-    MissingContextDataError
-} from "../common/Data"
+import {pipe} from "effect"
+import {ContextBuilder, DataIdentifier, InvalidDataError} from "../common/Data"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as A from "effect/Array"
-import * as R from "effect/Record"
-import {RoleId, RoleMapping, RoleMappingsContext, WithRole} from "./Role"
+import {RoleMappedContext, RoleMapping, RoleMappingsContext} from "./Role"
 import {Scene, SceneDescription} from "./Scene"
 import {TemplateCompiler} from "../llm/Template"
 import {traverseArray} from "../common/Type"
@@ -49,9 +43,9 @@ export const Session = pipe(
 
 export type Session = typeof Session.Type
 
-export interface SessionContext<TActor extends ActorContext> {
+export interface SessionContext<TActor extends ActorContext>
+    extends RoleMappedContext<TActor> {
     readonly description: SceneDescription
-    readonly roles: RoleMappingsContext<TActor>
     readonly objectives: readonly SceneObjective[]
     readonly history: readonly DialogueLine[]
 }
@@ -159,36 +153,4 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                 )
             )
     })
-}
-
-export interface WithSpeaker<TActor> {
-    readonly speaker: TActor
-}
-
-export function withSpeaker(
-    speaker: RoleId
-): <TContext extends SessionContext<TActor>, TActor extends ActorContext>(
-    builder: ContextBuilder<Session, TContext>
-) => ContextBuilder<Session, TContext & WithSpeaker<TActor & WithRole>> {
-    return builder =>
-        flow(
-            builder,
-            FX.flatMap(context =>
-                pipe(
-                    context.roles,
-                    R.get(speaker),
-                    FX.catchTag(
-                        "NoSuchElementException",
-                        () =>
-                            new MissingContextDataError({
-                                message: `No such role found in the context: "${speaker}".`
-                            })
-                    ),
-                    FX.map(role => ({
-                        ...context,
-                        speaker: role
-                    }))
-                )
-            )
-        )
 }

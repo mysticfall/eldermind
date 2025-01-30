@@ -5,8 +5,7 @@ import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
 import {
     createSessionContextBuilder,
     Session,
-    SessionId,
-    withSpeaker
+    SessionId
 } from "../../src/scene/Session"
 import {Scene, SceneDescription, SceneId} from "../../src/scene/Scene"
 import {
@@ -271,43 +270,6 @@ describe("createSessionContextBuilder", () => {
                 expect(error).toBe(
                     `Cannot find the mapped role "jarl" for actor "14".`
                 )
-            })
-    )
-})
-
-describe("withSpeaker", () => {
-    beforeEach(installMocks)
-    afterEach(() => vi.restoreAllMocks())
-
-    it.effect(
-        "should decorate the given session context builder to add a speaker information",
-        () =>
-            FX.gen(function* () {
-                const compiler = createHandlebarsTemplateCompiler()
-
-                const roleMappingsContextBuilder =
-                    yield* createRoleMappingsContextBuilder(
-                        scene.roles,
-                        actorContextBuilder,
-                        compiler
-                    )
-
-                const buildSessionContext = yield* createSessionContextBuilder(
-                    scene,
-                    roleMappingsContextBuilder,
-                    compiler
-                )
-
-                const buildContextWithSpeaker = pipe(
-                    buildSessionContext,
-                    withSpeaker(RoleId.make("housecarl"))
-                )
-
-                const context = yield* pipe(session, buildContextWithSpeaker)
-
-                const speaker = context.speaker
-
-                expect(speaker?.name).toBe("Lydia")
             })
     )
 })

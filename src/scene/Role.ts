@@ -1,5 +1,5 @@
 import * as SC from "effect/Schema"
-import {pipe} from "effect"
+import {flow, pipe} from "effect"
 import {ActorId, getActor} from "skyrim-effect/game/Form"
 import {TemplateCompiler} from "../llm/Template"
 import * as FX from "effect/Effect"
@@ -66,20 +66,12 @@ export const RoleMapping = pipe(
 
 export type RoleMapping = typeof RoleMapping.Type
 
-export const WithRole = pipe(
-    SC.Struct({
-        role: Role
-    }),
-    SC.annotations({
-        title: "With Role",
-        description: "A trait that assigns a specific role to the subject."
-    })
-)
-
-export type WithRole = typeof WithRole.Type
+export type RoleActor<TActor extends ActorContext> = TActor & {
+    readonly role: Role
+}
 
 export type RoleMappingsContext<out TActor extends ActorContext> =
-    ReadonlyRecord<RoleId, TActor & WithRole>
+    ReadonlyRecord<RoleId, RoleActor<TActor>>
 
 export function createRoleMappingsContextBuilder<TActor extends ActorContext>(
     roles: readonly Role[],
@@ -167,4 +159,44 @@ export function createRoleMappingsContextBuilder<TActor extends ActorContext>(
                 )
             })
     })
+}
+
+export interface RoleMappedContext<TActor extends ActorContext> {
+    readonly roles: RoleMappingsContext<TActor>
+}
+
+export interface WithSpeaker<TActor extends ActorContext> {
+    readonly speaker: RoleActor<TActor>
+}
+
+export function withSpeaker(
+    speaker: RoleId
+): <
+    TData,
+    TContext extends RoleMappedContext<TActor>,
+    TActor extends ActorContext
+>(
+    builder: ContextBuilder<TData, TContext>
+) => ContextBuilder<TData, TContext & WithSpeaker<TActor>> {
+    return builder =>
+        flow(
+            builder,
+            FX.flatMap(context =>
+                pipe(
+                    context.roles,
+                    R.get(speaker),
+                    FX.catchTag(
+                        "NoSuchElementException",
+                        () =>
+                            new MissingContextDataError({
+                                message: `No such role found in the context: "${speaker}".`
+                            })
+                    ),
+                    FX.map(role => ({
+                        ...context,
+                        speaker: role
+                    }))
+                )
+            )
+        )
 }
