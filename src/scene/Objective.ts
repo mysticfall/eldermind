@@ -2,53 +2,50 @@ import {pipe} from "effect"
 import {DataIdentifier} from "../common/Data"
 import * as SC from "effect/Schema"
 
-export const SceneObjectiveId = pipe(
-    DataIdentifier,
-    SC.brand("SceneObjectiveId")
-)
+export const ObjectiveId = pipe(DataIdentifier, SC.brand("ObjectiveId"))
 
-export type SceneObjectiveId = typeof SceneObjectiveId.Type
+export type ObjectiveId = typeof ObjectiveId.Type
 
-export const SceneObjectiveInstruction = pipe(
+export const ObjectiveInstruction = pipe(
     SC.String,
     SC.nonEmptyString(),
-    SC.brand("SceneObjectiveInstruction")
+    SC.brand("ObjectiveInstruction")
 )
 
-export type SceneObjectiveInstruction = typeof SceneObjectiveInstruction.Type
+export type ObjectiveInstruction = typeof ObjectiveInstruction.Type
 
-export const SceneObjectiveChecklist = pipe(
+export const ObjectiveChecklist = pipe(
     SC.String,
     SC.nonEmptyString(),
-    SC.brand("SceneObjectiveChecklist")
+    SC.brand("ObjectiveChecklist")
 )
 
-export type SceneObjectiveChecklist = typeof SceneObjectiveChecklist.Type
+export type ObjectiveChecklist = typeof ObjectiveChecklist.Type
 
-export const SceneObjectiveExample = pipe(
+export const ObjectiveExample = pipe(
     SC.String,
     SC.nonEmptyString(),
-    SC.brand("SceneObjectiveExample")
+    SC.brand("ObjectiveExample")
 )
 
-export type SceneObjectiveExample = typeof SceneObjectiveExample.Type
+export type ObjectiveExample = typeof ObjectiveExample.Type
 
-export const SceneObjectiveStatus = SC.Union(
+export const ObjectiveStatus = SC.Union(
     SC.Literal("incomplete"),
     SC.Literal("complete"),
     SC.Literal("reverted")
 )
 
-export type SceneObjectiveStatus = typeof SceneObjectiveStatus.Type
+export type ObjectiveStatus = typeof ObjectiveStatus.Type
 
-export const SceneObjective = SC.Struct({
-    id: SceneObjectiveId,
-    instruction: SceneObjectiveInstruction,
-    checklist: SceneObjectiveChecklist,
-    examples: SC.Array(SceneObjectiveExample),
-    status: SC.optionalWith(SceneObjectiveStatus, {
+export const Objective = SC.Struct({
+    id: ObjectiveId,
+    instruction: ObjectiveInstruction,
+    checklist: ObjectiveChecklist,
+    examples: SC.Array(ObjectiveExample),
+    status: SC.optionalWith(ObjectiveStatus, {
         default: () => "incomplete"
     })
 })
 
-export type SceneObjective = typeof SceneObjective.Type
+export type Objective = typeof Objective.Type

@@ -16,11 +16,11 @@ import {
     RoleMapping
 } from "../../src/scene/Role"
 import {
-    SceneObjective,
-    SceneObjectiveChecklist,
-    SceneObjectiveExample,
-    SceneObjectiveId,
-    SceneObjectiveInstruction
+    Objective,
+    ObjectiveChecklist,
+    ObjectiveExample,
+    ObjectiveId,
+    ObjectiveInstruction
 } from "../../src/scene/Objective"
 import {ActorId} from "skyrim-effect/game/Form"
 import {Actor} from "@skyrim-platform/skyrim-platform"
@@ -49,16 +49,16 @@ const scene = Scene.make({
         })
     ],
     objectives: [
-        SceneObjective.make({
-            id: SceneObjectiveId.make("objective1"),
-            instruction: SceneObjectiveInstruction.make(
+        Objective.make({
+            id: ObjectiveId.make("objective1"),
+            instruction: ObjectiveInstruction.make(
                 "Ask {{housecarl.name}} how she is."
             ),
-            checklist: SceneObjectiveChecklist.make(
+            checklist: ObjectiveChecklist.make(
                 "Did {{housecarl.name}} reply to {{player.name}}?"
             ),
             examples: [
-                SceneObjectiveExample.make(
+                ObjectiveExample.make(
                     "{{housecarl.name}}: I'm sworn to carry your burdens."
                 )
             ]

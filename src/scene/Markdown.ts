@@ -12,10 +12,10 @@ import {traverseArray} from "../common/Type"
 import {MarkdownLoader} from "../markdown/Data"
 import {Scene, SceneDataLoader, SceneDescription, SceneId} from "./Scene"
 import {
-    SceneObjectiveExample,
-    SceneObjectiveId,
-    SceneObjectiveInstruction,
-    SceneObjectiveChecklist
+    ObjectiveChecklist,
+    ObjectiveExample,
+    ObjectiveId,
+    ObjectiveInstruction
 } from "./Objective"
 import {MarkdownContent, MarkdownDocument} from "../markdown/Parser"
 import {RoleDescription, RoleId} from "./Role"
@@ -57,7 +57,7 @@ const parseChecklist = (children: readonly MarkdownContent[]) =>
                     message: "The task is missing a checklist."
                 })
         ),
-        FX.flatMap(validate(SceneObjectiveChecklist))
+        FX.flatMap(validate(ObjectiveChecklist))
     )
 
 const parseExamples = (children: readonly MarkdownContent[]) =>
@@ -85,7 +85,7 @@ const parseExamples = (children: readonly MarkdownContent[]) =>
                 )
             )
         ),
-        traverseArray(validate(SceneObjectiveExample))
+        traverseArray(validate(ObjectiveExample))
     )
 
 const parseRoles = (children: readonly MarkdownContent[]) =>
@@ -156,14 +156,14 @@ const parseObjectives = (children: readonly MarkdownContent[]) =>
                                         "The scene objective is missing a title."
                                 })
                         ),
-                        FX.flatMap(validate(SceneObjectiveId))
+                        FX.flatMap(validate(ObjectiveId))
                     )
                 ),
                 FX.bind("instruction", () =>
                     pipe(
                         [...tokens],
                         renderMarkdown,
-                        validate(SceneObjectiveInstruction)
+                        validate(ObjectiveInstruction)
                     )
                 ),
                 FX.bind("checklist", () => parseChecklist(children)),

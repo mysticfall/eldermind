@@ -11,10 +11,10 @@ import {traverseArray} from "../common/Type"
 import {DialogueLine} from "./Dialogue"
 import {ActorContext} from "../actor/Actor"
 import {
-    SceneObjective,
-    SceneObjectiveChecklist,
-    SceneObjectiveExample,
-    SceneObjectiveInstruction
+    Objective,
+    ObjectiveChecklist,
+    ObjectiveExample,
+    ObjectiveInstruction
 } from "./Objective"
 
 export const SessionId = pipe(
@@ -46,7 +46,7 @@ export type Session = typeof Session.Type
 export interface SessionContext<TActor extends ActorContext>
     extends RoleMappedContext<TActor> {
     readonly description: SceneDescription
-    readonly objectives: readonly SceneObjective[]
+    readonly objectives: readonly Objective[]
     readonly history: readonly DialogueLine[]
 }
 
@@ -111,13 +111,13 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                                 FX.bind("instruction", () =>
                                     pipe(
                                         o.instruction(roles),
-                                        FX.map(SceneObjectiveInstruction.make)
+                                        FX.map(ObjectiveInstruction.make)
                                     )
                                 ),
                                 FX.bind("checklist", () =>
                                     pipe(
                                         o.checklist(roles),
-                                        FX.map(SceneObjectiveChecklist.make)
+                                        FX.map(ObjectiveChecklist.make)
                                     )
                                 ),
                                 FX.bind("examples", () =>
@@ -125,9 +125,7 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                                         o.examples,
                                         traverseArray(e => e(roles)),
                                         FX.map(
-                                            A.map(e =>
-                                                SceneObjectiveExample.make(e)
-                                            )
+                                            A.map(e => ObjectiveExample.make(e))
                                         )
                                     )
                                 ),

@@ -2,7 +2,7 @@ import * as SC from "effect/Schema"
 import {DataIdentifier, TypedDataLoader} from "../common/Data"
 import * as A from "effect/Array"
 import {pipe} from "effect"
-import {SceneObjective} from "./Objective"
+import {Objective} from "./Objective"
 import {Role} from "./Role"
 
 export const SceneId = pipe(
@@ -32,7 +32,7 @@ export const Scene = SC.Struct({
     id: SceneId,
     description: SceneDescription,
     roles: SC.Array(Role),
-    objectives: SC.optionalWith(SC.Array(SceneObjective), {
+    objectives: SC.optionalWith(SC.Array(Objective), {
         default: () => A.empty()
     })
 })
