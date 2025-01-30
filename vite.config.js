@@ -36,6 +36,11 @@ export default defineConfig({
         }
     },
     test: {
-        include: ["./test/**/*.test.ts"]
+        include: ["./test/**/*.test.ts"],
+        coverage: {
+            provider: "v8",
+            reporter: ["json-summary", "html"],
+            exclude: ["docs"]
+        }
     }
 })
