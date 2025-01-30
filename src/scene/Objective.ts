@@ -17,13 +17,13 @@ export const SceneObjectiveInstruction = pipe(
 
 export type SceneObjectiveInstruction = typeof SceneObjectiveInstruction.Type
 
-export const SceneObjectiveOutcome = pipe(
+export const SceneObjectiveChecklist = pipe(
     SC.String,
     SC.nonEmptyString(),
-    SC.brand("SceneObjectiveOutcome")
+    SC.brand("SceneObjectiveChecklist")
 )
 
-export type SceneObjectiveOutcome = typeof SceneObjectiveOutcome.Type
+export type SceneObjectiveChecklist = typeof SceneObjectiveChecklist.Type
 
 export const SceneObjectiveExample = pipe(
     SC.String,
@@ -33,13 +33,21 @@ export const SceneObjectiveExample = pipe(
 
 export type SceneObjectiveExample = typeof SceneObjectiveExample.Type
 
+export const SceneObjectiveStatus = SC.Union(
+    SC.Literal("incomplete"),
+    SC.Literal("complete"),
+    SC.Literal("reverted")
+)
+
+export type SceneObjectiveStatus = typeof SceneObjectiveStatus.Type
+
 export const SceneObjective = SC.Struct({
     id: SceneObjectiveId,
     instruction: SceneObjectiveInstruction,
-    outcome: SceneObjectiveOutcome,
+    checklist: SceneObjectiveChecklist,
     examples: SC.Array(SceneObjectiveExample),
-    completed: SC.optionalWith(SC.Boolean, {
-        default: () => false
+    status: SC.optionalWith(SceneObjectiveStatus, {
+        default: () => "incomplete"
     })
 })
 

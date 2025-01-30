@@ -59,9 +59,8 @@ describe("createMarkdownSceneLoader", () => {
                     expect(objectives[0].instruction).toBe(
                         "Confront the _suspect_ about the alleged dishonesty."
                     )
-                    expect(objectives[0].outcome).toBe(
-                        "the _suspect_ acknowledges the accusation and either denies " +
-                            "or deflects it with an explanation."
+                    expect(objectives[0].checklist).toBe(
+                        "Does the _suspect_ either deny or deflect it with an explanation?"
                     )
 
                     expect(objectives[0].examples).length(1)
@@ -72,15 +71,15 @@ describe("createMarkdownSceneLoader", () => {
                             "Balgruuf: You must be mistaken. Perhaps another merchant deceived you."
                     )
 
-                    expect(objectives[0].completed).toBe(false)
+                    expect(objectives[0].status).toBe("incomplete")
 
                     expect(objectives[1].id).toBe("task_2")
                     expect(objectives[1].instruction).toBe(
                         "Pressure the _suspect_ to admit their wrongdoing."
                     )
-                    expect(objectives[1].outcome).toBe(
-                        "The _suspect_ either admits to deception or escalates " +
-                            "the confrontation by refusing to comply."
+                    expect(objectives[1].checklist).toBe(
+                        "Does the _suspect_ either admit to deception or escalate " +
+                            "the confrontation by refusing to comply?"
                     )
 
                     expect(objectives[1].examples).length(2)
@@ -98,7 +97,7 @@ describe("createMarkdownSceneLoader", () => {
                             "Severio: All right, all right! Just keep your voice down."
                     )
 
-                    expect(objectives[1].completed).toBe(false)
+                    expect(objectives[1].status).toBe("incomplete")
                 }),
                 FX.provide(NodeContext.layer)
             )

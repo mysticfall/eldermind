@@ -23,9 +23,9 @@ An individual accused of dishonesty and attempting to defend themselves or justi
 
 Confront the _suspect_ about the alleged dishonesty.
 
-#### Expected Outcome ####
+#### Checklist ####
 
-the _suspect_ acknowledges the accusation and either denies or deflects it with an explanation.
+Does the _suspect_ either deny or deflect it with an explanation?
 
 #### Examples ####
 
@@ -40,9 +40,9 @@ Example 1:
 
 Pressure the _suspect_ to admit their wrongdoing.
 
-#### Expected Outcome ####
+#### Checklist ####
 
-The _suspect_ either admits to deception or escalates the confrontation by refusing to comply.
+Does the _suspect_ either admit to deception or escalate the confrontation by refusing to comply?
 
 #### Examples ####
 

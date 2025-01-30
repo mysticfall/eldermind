@@ -18,10 +18,10 @@ import {
 } from "../../src/scene/Role"
 import {
     SceneObjective,
+    SceneObjectiveChecklist,
     SceneObjectiveExample,
     SceneObjectiveId,
-    SceneObjectiveInstruction,
-    SceneObjectiveOutcome
+    SceneObjectiveInstruction
 } from "../../src/scene/Objective"
 import {ActorId} from "skyrim-effect/game/Form"
 import {Actor} from "@skyrim-platform/skyrim-platform"
@@ -55,8 +55,8 @@ const scene = Scene.make({
             instruction: SceneObjectiveInstruction.make(
                 "Ask {{housecarl.name}} how she is."
             ),
-            outcome: SceneObjectiveOutcome.make(
-                "{{housecarl.name}} replied to {{player.name}}."
+            checklist: SceneObjectiveChecklist.make(
+                "Did {{housecarl.name}} reply to {{player.name}}?"
             ),
             examples: [
                 SceneObjectiveExample.make(
@@ -163,7 +163,7 @@ describe("createSessionContextBuilder", () => {
 
                 expect(objective1).toBeDefined()
                 expect(objective1.instruction).toBe("Ask Lydia how she is.")
-                expect(objective1.outcome).toBe("Lydia replied to Anna.")
+                expect(objective1.checklist).toBe("Did Lydia reply to Anna?")
 
                 const examples = objective1.examples
 

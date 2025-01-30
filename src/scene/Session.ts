@@ -18,9 +18,9 @@ import {DialogueLine} from "./Dialogue"
 import {ActorContext} from "../actor/Actor"
 import {
     SceneObjective,
+    SceneObjectiveChecklist,
     SceneObjectiveExample,
-    SceneObjectiveInstruction,
-    SceneObjectiveOutcome
+    SceneObjectiveInstruction
 } from "./Objective"
 
 export const SessionId = pipe(
@@ -85,11 +85,11 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                         FX.Do,
                         FX.bind("id", () => FX.succeed(o.id)),
                         FX.bind("instruction", () => compiler(o.instruction)),
-                        FX.bind("outcome", () => compiler(o.outcome)),
+                        FX.bind("checklist", () => compiler(o.checklist)),
                         FX.bind("examples", () =>
                             pipe(o.examples, traverseArray(compiler))
                         ),
-                        FX.bind("completed", () => FX.succeed(o.completed))
+                        FX.bind("status", () => FX.succeed(o.status))
                     )
                 )
             ),
@@ -120,10 +120,10 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                                         FX.map(SceneObjectiveInstruction.make)
                                     )
                                 ),
-                                FX.bind("outcome", () =>
+                                FX.bind("checklist", () =>
                                     pipe(
-                                        o.outcome(roles),
-                                        FX.map(SceneObjectiveOutcome.make)
+                                        o.checklist(roles),
+                                        FX.map(SceneObjectiveChecklist.make)
                                     )
                                 ),
                                 FX.bind("examples", () =>
@@ -137,9 +137,7 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
                                         )
                                     )
                                 ),
-                                FX.bind("completed", () =>
-                                    FX.succeed(o.completed)
-                                )
+                                FX.bind("status", () => FX.succeed(o.status))
                             )
                         )
                     )

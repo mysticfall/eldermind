@@ -15,7 +15,7 @@ import {
     SceneObjectiveExample,
     SceneObjectiveId,
     SceneObjectiveInstruction,
-    SceneObjectiveOutcome
+    SceneObjectiveChecklist
 } from "./Objective"
 import {MarkdownContent, MarkdownDocument} from "../markdown/Parser"
 import {RoleDescription, RoleId} from "./Role"
@@ -41,23 +41,23 @@ const parseId = (title: Option<string>, metadata: Record<string, string>) =>
         FX.flatMap(validate(SceneId))
     )
 
-const parseOutcome = (children: readonly MarkdownContent[]) =>
+const parseChecklist = (children: readonly MarkdownContent[]) =>
     pipe(
         children,
         A.findFirst(c =>
             pipe(
                 c.title,
-                O.exists(t => t.toLowerCase().includes("outcome"))
+                O.exists(t => t.toLowerCase().includes("checklist"))
             )
         ),
         O.map(c => renderMarkdown([...c.tokens])),
         E.fromOption(
             () =>
                 new InvalidDataError({
-                    message: "The task is missing expected outcome."
+                    message: "The task is missing a checklist."
                 })
         ),
-        FX.flatMap(validate(SceneObjectiveOutcome))
+        FX.flatMap(validate(SceneObjectiveChecklist))
     )
 
 const parseExamples = (children: readonly MarkdownContent[]) =>
@@ -166,7 +166,7 @@ const parseObjectives = (children: readonly MarkdownContent[]) =>
                         validate(SceneObjectiveInstruction)
                     )
                 ),
-                FX.bind("outcome", () => parseOutcome(children)),
+                FX.bind("checklist", () => parseChecklist(children)),
                 FX.bind("examples", () => parseExamples(children))
             )
         )
