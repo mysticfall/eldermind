@@ -28,6 +28,7 @@ import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
 import {DialogueLine, DialogueText} from "../../src/scene/Dialogue"
 import {actorContextBuilder} from "../../src/actor/Actor"
+import {GameTime} from "skyrim-effect/game/Time"
 
 const scene = Scene.make({
     id: SceneId.make("visiting_sky_district"),
@@ -82,7 +83,8 @@ const session = Session.make({
     history: [
         DialogueLine.make({
             speaker: RoleId.make("housecarl"),
-            text: DialogueText.make("I'm sworn to carry your burdens.")
+            text: DialogueText.make("I'm sworn to carry your burdens."),
+            time: GameTime.make(0)
         })
     ]
 })

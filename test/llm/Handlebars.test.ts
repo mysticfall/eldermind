@@ -1,15 +1,17 @@
-import {describe, expect} from "vitest"
+import {afterEach, beforeEach, describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import {
     compileHandlebarsTemplate,
     createHandlebarsTemplateCompiler,
     multilineIndent,
-    registerPartial
+    registerPartial,
+    sinceTime
 } from "../../src/llm/Handlebars"
 import {DataPath, InvalidDataError, TextDataLoader} from "../../src/common/Data"
 import {pipe} from "effect"
 import Handlebars from "handlebars"
+import {GameTime} from "skyrim-effect/game/Time"
 
 describe("compileHandlebarsTemplate", () => {
     it.effect("should compile the given text as a Handlebars template", () =>
@@ -172,5 +174,34 @@ This is line 3`
   This is line 2
   This is line 3`
         )
+    })
+})
+
+describe("sinceTime", () => {
+    beforeEach(() => {
+        vi.mock(import("skyrim-effect/game/Time"), async importOriginal => {
+            const mod = await importOriginal()
+
+            return {
+                ...mod,
+                getGameTime: () => GameTime.make(1)
+            }
+        })
+    })
+
+    afterEach(() => vi.restoreAllMocks())
+
+    it("should return the elapsed time since the given GameTime in a human readable format", () => {
+        const elapsed = (v: number) => pipe(GameTime.make(1 - v), sinceTime())
+
+        expect(elapsed(2.2 / 24)).toBe("2h 12m ago")
+        expect(elapsed(1.5 / 24 / 60)).toBe("1m 30s ago")
+        expect(elapsed(5 / 24 / 60 / 60)).toBe("5s ago")
+    })
+
+    it(`should return "now" if the elapsed time is less than a second`, () => {
+        const elapsed = pipe(GameTime.make(1 - 0.9 / 24 / 60 / 60), sinceTime())
+
+        expect(elapsed).toBe("just now")
     })
 })

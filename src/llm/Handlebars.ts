@@ -2,6 +2,7 @@ import {basename, extname} from "path"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as A from "effect/Array"
+import * as DU from "effect/Duration"
 import * as O from "effect/Option"
 import * as ST from "effect/String"
 import Handlebars, {HelperDelegate} from "handlebars"
@@ -9,6 +10,7 @@ import {DataPath, InvalidDataError, TextDataLoader} from "../common/Data"
 import {flow, pipe} from "effect"
 import {PlatformError} from "@effect/platform/Error"
 import {TemplateCompiler} from "./Template"
+import {asDuration, GameTime, getGameTime} from "skyrim-effect/game/Time"
 
 export function compileHandlebarsTemplate(
     options?: CompileOptions
@@ -96,3 +98,19 @@ export const multilineIndent: HelperDelegate = (
         ST.split("\n"),
         A.map(line => " ".repeat(indent) + line.trim())
     ).join("\n")
+
+export function sinceTime(clock: () => GameTime = getGameTime): HelperDelegate {
+    return (time: GameTime): string =>
+        pipe(
+            clock(),
+            asDuration,
+            DU.subtract(pipe(time, asDuration)),
+            DU.format,
+            ST.split(" "),
+            A.filter(s => !s.endsWith("ms") && !s.endsWith("ns")),
+            O.some,
+            O.filter(A.isNonEmptyArray),
+            O.map(A.append("ago")),
+            O.getOrElse(() => A.of("just now"))
+        ).join(" ")
+}
