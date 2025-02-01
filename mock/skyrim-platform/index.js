@@ -156,6 +156,12 @@ export class TreeObject {}
 
 export class Ui {}
 
+export class Utility {
+    static getCurrentGameTime() {
+        return 0
+    }
+}
+
 export class VisualEffect {}
 
 export class VoiceType {}
