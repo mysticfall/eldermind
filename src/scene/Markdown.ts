@@ -5,7 +5,7 @@ import * as E from "effect/Either"
 import * as O from "effect/Option"
 import {Option} from "effect/Option"
 import * as R from "effect/Record"
-import * as ST from "effect/String"
+import * as STR from "effect/String"
 import {flow, pipe} from "effect"
 import {renderMarkdown} from "../markdown/Renderer"
 import {traverseArray} from "../common/Type"
@@ -24,12 +24,12 @@ const parseId = (title: Option<string>, metadata: Record<string, string>) =>
     pipe(
         metadata,
         R.get("id"),
-        O.filter(ST.isNonEmpty),
+        O.filter(STR.isNonEmpty),
         O.orElse(() =>
             pipe(
                 title,
-                O.filter(ST.isNonEmpty),
-                O.map(flow(ST.toLowerCase, ST.replaceAll(" ", "_")))
+                O.filter(STR.isNonEmpty),
+                O.map(flow(STR.toLowerCase, STR.replaceAll(" ", "_")))
             )
         ),
         E.fromOption(
@@ -78,8 +78,8 @@ const parseExamples = (children: readonly MarkdownContent[]) =>
                     pipe(
                         [t],
                         renderMarkdown,
-                        ST.split("\n"),
-                        A.map(ST.trim),
+                        STR.split("\n"),
+                        A.map(STR.trim),
                         A.join("\n")
                     )
                 )

@@ -1,7 +1,7 @@
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
-import * as ST from "effect/String"
+import * as STR from "effect/String"
 import {flow, pipe} from "effect"
 import type {ParseOptions} from "effect/SchemaAST"
 import {BaseError} from "./Error"
@@ -18,9 +18,9 @@ export type DataIdentifier = typeof DataIdentifier.Type
 export function makeIdentifier(text: string): string {
     return pipe(
         text,
-        ST.trim,
-        ST.replaceAll(/[\s!@#$%^&*()\-=_+{}[\]]+/g, "_"),
-        ST.toLowerCase
+        STR.trim,
+        STR.replaceAll(/[\s!@#$%^&*()\-=_+{}[\]]+/g, "_"),
+        STR.toLowerCase
     )
 }
 

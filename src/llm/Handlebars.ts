@@ -4,7 +4,7 @@ import {Effect} from "effect/Effect"
 import * as A from "effect/Array"
 import * as DU from "effect/Duration"
 import * as O from "effect/Option"
-import * as ST from "effect/String"
+import * as STR from "effect/String"
 import Handlebars, {HelperDelegate} from "handlebars"
 import {DataPath, InvalidDataError, TextDataLoader} from "../common/Data"
 import {flow, pipe} from "effect"
@@ -75,8 +75,8 @@ export function registerPartial(
             const partialName = pipe(
                 name,
                 O.fromNullable,
-                O.map(ST.trim),
-                O.filter(ST.isNonEmpty),
+                O.map(STR.trim),
+                O.filter(STR.isNonEmpty),
                 O.getOrElse(() => basename(path, extname(path)))
             )
 
@@ -94,8 +94,8 @@ export const multilineIndent: HelperDelegate = (
 ): string =>
     pipe(
         text,
-        ST.trim,
-        ST.split("\n"),
+        STR.trim,
+        STR.split("\n"),
         A.map(line => " ".repeat(indent) + line.trim())
     ).join("\n")
 
@@ -106,7 +106,7 @@ export function sinceTime(clock: () => GameTime = getGameTime): HelperDelegate {
             asDuration,
             DU.subtract(pipe(time, asDuration)),
             DU.format,
-            ST.split(" "),
+            STR.split(" "),
             A.filter(s => !s.endsWith("ms") && !s.endsWith("ns")),
             O.some,
             O.filter(A.isNonEmptyArray),

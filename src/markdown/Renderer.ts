@@ -1,7 +1,7 @@
 import {marked, MarkedOptions, Parser, Renderer, Token, Tokens} from "marked"
 import {pipe} from "effect"
 import * as A from "effect/Array"
-import * as ST from "effect/String"
+import * as STR from "effect/String"
 
 /**
  * Options for rendering plain text using the {@link PlainTextRenderer}.
@@ -49,8 +49,8 @@ export class PlainTextRenderer implements Renderer {
         if (codeBlockStyle === "indented") {
             return pipe(
                 text.split("\n"),
-                A.map(ST.trim),
-                A.filter(ST.isNonEmpty),
+                A.map(STR.trim),
+                A.filter(STR.isNonEmpty),
                 A.map(line => "    " + line),
                 A.join("\n")
             )
@@ -179,6 +179,6 @@ export function renderMarkdown(
 ): string {
     return pipe(
         marked.parser(tokens, {renderer: new PlainTextRenderer(options)}),
-        ST.trim
+        STR.trim
     )
 }
