@@ -1,4 +1,3 @@
-import fs from "fs"
 import * as FX from "effect/Effect"
 import * as O from "effect/Option"
 import {pipe, Schedule} from "effect"
@@ -8,10 +7,7 @@ import Microphone from "node-microphone"
 import * as ST from "effect/Stream"
 import {Stream} from "effect/Stream"
 import {BaseError} from "../common/Error"
-import {FileSystem} from "@effect/platform/FileSystem"
-import {PlatformError} from "@effect/platform/Error"
-import * as os from "node:os"
-import {Path} from "@effect/platform/Path"
+import {Writable} from "stream"
 
 export class AudioSystemError extends BaseError<AudioSystemError>(
     "AudioSystemError",
@@ -21,7 +17,7 @@ export class AudioSystemError extends BaseError<AudioSystemError>(
 ) {}
 
 export interface Recording {
-    readonly file: string
+    readonly data: Uint8Array<ArrayBufferLike>
     readonly duration: Duration
 }
 
@@ -29,13 +25,14 @@ export interface RecordingOptions {
     startWhen: Stream<unknown>
     stopWhen: Stream<unknown>
     maxDuration?: Duration
-    directory?: string
-    prefix?: string
+    bitwidth?: 8 | 16 | 24
+    rate?: 8000 | 16000 | 44100
+    device?: "hw:0,0" | "plughw:1,0" | "default"
 }
 
 export function createRecordingStream(
     options: RecordingOptions
-): Stream<Recording, AudioSystemError | PlatformError, FileSystem | Path> {
+): Stream<Recording, AudioSystemError> {
     const maxDuration = pipe(
         options?.maxDuration,
         O.fromNullable,
@@ -43,48 +40,39 @@ export function createRecordingStream(
         O.getOrElse(() => DU.seconds(30))
     )
 
-    const {startWhen, stopWhen} = options
-
-    const targetFile = pipe(
-        FX.Do,
-        FX.bind("fs", () => FileSystem),
-        FX.bind("path", () => Path),
-        FX.bind("directory", ({fs, path}) =>
-            pipe(
-                options.directory,
-                FX.fromNullable,
-                FX.catchTag("NoSuchElementException", () =>
-                    FX.succeed(
-                        path.join(os.tmpdir(), "eldermind", "recordings")
-                    )
-                ),
-                FX.tap(dir => fs.makeDirectory(dir, {recursive: true}))
-            )
-        ),
-        FX.map(({path, directory}) =>
-            path.join(
-                directory,
-                `${options.prefix ?? "recording-"}${new Date().getTime()}.wav`
-            )
-        )
-    )
+    const {startWhen, stopWhen, bitwidth, rate, device} = options
 
     const record = pipe(
-        targetFile,
-        FX.tap(file => FX.logDebug(`Start recording: ${file}`)),
+        FX.logDebug("Start recording."),
         FX.tryMap({
-            try: file => {
-                const mic = new Microphone()
+            try: () => {
+                const mic = new Microphone({
+                    bitwidth,
+                    rate,
+                    device,
+                    channels: 1
+                })
 
-                const output = fs.createWriteStream(file)
+                const chunks: Buffer[] = []
+
+                const output = new Writable({
+                    write(chunk, encoding, callback) {
+                        chunks.push(
+                            Buffer.isBuffer(chunk)
+                                ? chunk
+                                : Buffer.from(chunk, encoding)
+                        )
+                        callback()
+                    }
+                })
+
                 const input = mic.startRecording()
 
                 input.pipe(output)
 
                 return {
-                    file,
                     mic,
-                    output
+                    chunks
                 }
             },
             catch: e =>
@@ -93,7 +81,7 @@ export function createRecordingStream(
                     cause: e
                 })
         }),
-        FX.flatMap(({mic, output, file}) =>
+        FX.flatMap(({mic, chunks}) =>
             pipe(
                 FX.void,
                 FX.repeat({
@@ -110,19 +98,19 @@ export function createRecordingStream(
                 }),
                 FX.timeout(maxDuration),
                 FX.catchTag("TimeoutException", () => FX.void),
-                FX.tap(() =>
-                    FX.gen(function* () {
-                        yield* FX.logDebug(`Stop recording: ${file}`)
-
-                        mic.stopRecording()
-                        output.close()
-                    })
-                ),
-                FX.as(file)
+                FX.map(() => {
+                    mic.stopRecording()
+                    return new Uint8Array(Buffer.concat(chunks))
+                }),
+                FX.tap(data =>
+                    FX.logDebug(
+                        `Recorded ${data.length.toLocaleString()} bytes.`
+                    )
+                )
             )
         ),
         FX.timed,
-        FX.map(([duration, file]) => ({file, duration}))
+        FX.map(([duration, data]) => ({data, duration}))
     )
 
     return pipe(
