@@ -1,6 +1,6 @@
 import {pipe} from "effect"
 import * as SC from "effect/Schema"
-import {RoleId} from "./Role"
+import {RoleId} from "../scene/Role"
 import {GameTime} from "skyrim-effect/game/Time"
 
 export const DialogueText = pipe(

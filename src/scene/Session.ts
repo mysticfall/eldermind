@@ -9,7 +9,7 @@ import {RoleMapping, RoleMappingsContainer, RoleMappingsContext} from "./Role"
 import {Scene, SceneDescription} from "./Scene"
 import {TemplateCompiler} from "../llm/Template"
 import {traverseArray} from "../common/Type"
-import {DialogueLine} from "./Dialogue"
+import {DialogueLine} from "../game/Dialogue"
 import {ActorContext} from "../actor/Actor"
 import {
     ObjectiveChecklist,

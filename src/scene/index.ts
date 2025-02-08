@@ -1,4 +1,3 @@
-export * as Dialogue from "./Dialogue"
 export * as Markdown from "./Markdown"
 export * as Objective from "./Objective"
 export * as Role from "./Role"

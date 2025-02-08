@@ -9,6 +9,7 @@ import {File, FormData} from "formdata-node"
 import {formData} from "@effect/platform/HttpBody"
 import {Scope} from "effect/Scope"
 import {parseJson} from "../common/Json"
+import {DialogueText} from "../game/Dialogue"
 
 export class SttServiceError extends BaseError<SttServiceError>(
     "SttServiceError",
@@ -16,13 +17,6 @@ export class SttServiceError extends BaseError<SttServiceError>(
         message: "Failed to transcribe the audio file."
     }
 ) {}
-
-export const Transcription = SC.String.pipe(
-    SC.nonEmptyString(),
-    SC.brand("Transcription")
-)
-
-export type Transcription = typeof Transcription.Type
 
 export const SttModelId = pipe(
     SC.String,
@@ -74,13 +68,13 @@ export type TranscriberConfig = typeof TranscriberConfig.Type
 
 export type Transcriber = (
     data: Uint8Array<ArrayBufferLike>
-) => Effect<Transcription, SttServiceError, Scope>
+) => Effect<DialogueText, SttServiceError, Scope>
 
 export function createOpenAICompatibleTranscriber(
     config: TranscriberConfig
 ): Effect<Transcriber, never, HttpClient> {
     const Response = SC.Struct({
-        text: Transcription
+        text: DialogueText
     })
 
     const {endpoint, model, apiKey} = config

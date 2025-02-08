@@ -26,7 +26,7 @@ import {ActorId} from "skyrim-effect/game/Form"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
-import {DialogueLine, DialogueText} from "../../src/scene/Dialogue"
+import {DialogueLine, DialogueText} from "../../src/game/Dialogue"
 import {actorContextBuilder} from "../../src/actor/Actor"
 import {GameTime} from "skyrim-effect/game/Time"
 
