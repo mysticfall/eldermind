@@ -112,6 +112,11 @@
       "import": "./dist/esm/llm/Prompt.js",
       "require": "./dist/cjs/llm/Prompt.js"
     },
+    "./llm/Template": {
+      "types": "./dist/dts/llm/Template.d.ts",
+      "import": "./dist/esm/llm/Template.js",
+      "require": "./dist/cjs/llm/Template.js"
+    },
     "./markdown/Data": {
       "types": "./dist/dts/markdown/Data.d.ts",
       "import": "./dist/esm/markdown/Data.js",
@@ -126,6 +131,11 @@
       "types": "./dist/dts/markdown/Renderer.d.ts",
       "import": "./dist/esm/markdown/Renderer.js",
       "require": "./dist/cjs/markdown/Renderer.js"
+    },
+    "./scene/Dialogue": {
+      "types": "./dist/dts/scene/Dialogue.d.ts",
+      "import": "./dist/esm/scene/Dialogue.js",
+      "require": "./dist/cjs/scene/Dialogue.js"
     },
     "./scene/Markdown": {
       "types": "./dist/dts/scene/Markdown.d.ts",
@@ -146,6 +156,11 @@
       "types": "./dist/dts/scene/Scene.d.ts",
       "import": "./dist/esm/scene/Scene.js",
       "require": "./dist/cjs/scene/Scene.js"
+    },
+    "./speech/Recorder": {
+      "types": "./dist/dts/scene/Recorder.d.ts",
+      "import": "./dist/esm/scene/Recorder.js",
+      "require": "./dist/cjs/scene/Recorder.js"
     },
     "./*": {
       "types": "./dist/dts/*.d.ts",
