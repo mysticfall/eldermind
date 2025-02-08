@@ -31,7 +31,7 @@ export default defineConfig({
                     dir: "dist/cjs"
                 }
             ],
-            external: ["path", "@skyrim-platform/skyrim-platform"],
+            external: ["path", "stream", "@skyrim-platform/skyrim-platform"],
             preserveEntrySignatures: "allow-extension"
         }
     },
