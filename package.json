@@ -163,10 +163,15 @@
       "import": "./dist/esm/scene/Recorder.js",
       "require": "./dist/cjs/scene/Recorder.js"
     },
-    "./speech/SpeechToTest": {
-      "types": "./dist/dts/scene/SpeechToTest.d.ts",
-      "import": "./dist/esm/scene/SpeechToTest.js",
-      "require": "./dist/cjs/scene/SpeechToTest.js"
+    "./speech/SpeechToText": {
+      "types": "./dist/dts/scene/SpeechToText.d.ts",
+      "import": "./dist/esm/scene/SpeechToText.js",
+      "require": "./dist/cjs/scene/SpeechToText.js"
+    },
+    "./speech/TextToSpeech": {
+      "types": "./dist/dts/scene/TextToSpeech.d.ts",
+      "import": "./dist/esm/scene/TextToSpeech.js",
+      "require": "./dist/cjs/scene/TextToSpeech.js"
     },
     "./*": {
       "types": "./dist/dts/*.d.ts",

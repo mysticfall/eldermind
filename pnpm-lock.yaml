@@ -1689,7 +1689,7 @@ packages:
     resolution: {directory: ../skyrim-effect, type: directory}
     peerDependencies:
       '@skyrim-platform/skyrim-platform': 2.9.0
-      effect: ^3.12.5
+      effect: ^3.12.10
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}

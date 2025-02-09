@@ -1,4 +1,4 @@
-import {ActorId} from "skyrim-effect/game/Form"
+import {ActorId} from "skyrim-effect/game/Actor"
 import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"

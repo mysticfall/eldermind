@@ -10,7 +10,7 @@ import {
     RoleMapping,
     withSpeaker
 } from "../../src/scene/Role"
-import {ActorId} from "skyrim-effect/game/Form"
+import {ActorId} from "skyrim-effect/game/Actor"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {flow, pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
@@ -43,7 +43,7 @@ const mappings = [
 ]
 
 function installMocks() {
-    vi.mock(import("skyrim-effect/game/Form"), async importOriginal => {
+    vi.mock(import("skyrim-effect/game/Actor"), async importOriginal => {
         const mod = await importOriginal()
 
         return {

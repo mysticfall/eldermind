@@ -2,7 +2,7 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {BaseError} from "../common/Error"
 import {HttpClient} from "@effect/platform/HttpClient"
-import {VoiceType} from "./VoiceType"
+import {StockVoiceType} from "skyrim-effect/game/VoiceType"
 import {DialogueText} from "../game/Dialogue"
 import {pipe} from "effect"
 import * as SC from "effect/Schema"
@@ -26,7 +26,7 @@ export class TtsServiceError extends BaseError<TtsServiceError>(
 
 export type SpeechGenerator = (
     text: DialogueText,
-    voice: VoiceType,
+    voice: StockVoiceType,
     outputFile: string
 ) => Effect<void, TtsServiceError | PlatformError, Scope>
 
