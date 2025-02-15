@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@skyrim-platform/skyrim-platform': ./mock/skyrim-platform
+  '@skyrim-platform/skyrim-platform': ./node_modules/skyrim-effect/mock/skyrim-platform
 
 importers:
 
@@ -27,8 +27,8 @@ importers:
         specifier: ^0.4.3
         version: 0.4.3(@langchain/core@0.3.39(openai@4.77.0(zod@3.24.1)))
       '@skyrim-platform/skyrim-platform':
-        specifier: ./mock/skyrim-platform
-        version: link:mock/skyrim-platform
+        specifier: ./node_modules/skyrim-effect/mock/skyrim-platform
+        version: link:node_modules/skyrim-effect/mock/skyrim-platform
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -52,7 +52,7 @@ importers:
         version: 0.1.6
       skyrim-effect:
         specifier: file:../skyrim-effect
-        version: file:../skyrim-effect(@skyrim-platform/skyrim-platform@mock+skyrim-platform)(effect@3.12.10)
+        version: file:../skyrim-effect(@skyrim-platform/skyrim-platform@node_modules+skyrim-effect+mock+skyrim-platform)(effect@3.12.10)
     devDependencies:
       '@effect/vitest':
         specifier: ^0.17.6
@@ -3443,9 +3443,9 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  skyrim-effect@file:../skyrim-effect(@skyrim-platform/skyrim-platform@mock+skyrim-platform)(effect@3.12.10):
+  skyrim-effect@file:../skyrim-effect(@skyrim-platform/skyrim-platform@node_modules+skyrim-effect+mock+skyrim-platform)(effect@3.12.10):
     dependencies:
-      '@skyrim-platform/skyrim-platform': link:mock/skyrim-platform
+      '@skyrim-platform/skyrim-platform': link:node_modules/skyrim-effect/mock/skyrim-platform
       effect: 3.12.10
 
   source-map-js@1.2.1: {}

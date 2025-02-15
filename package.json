@@ -186,7 +186,7 @@
   ],
   "pnpm": {
     "overrides": {
-      "@skyrim-platform/skyrim-platform": "./mock/skyrim-platform"
+      "@skyrim-platform/skyrim-platform": "./node_modules/skyrim-effect/mock/skyrim-platform"
     }
   },
   "typedocOptions": {

@@ -12,7 +12,6 @@ export default tseslint.config(
             "coverage/",
             "dist/",
             "docs/",
-            "mock/",
             "node_modules/",
             "playground/",
             "*.config.js",
