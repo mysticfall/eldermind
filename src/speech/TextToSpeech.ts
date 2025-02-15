@@ -80,7 +80,7 @@ export const AllTalkConfig = SC.Struct({
 
 export type AllTalkConfig = typeof AllTalkConfig.Type
 
-export function createLocalAllTalkSpeechGenerator(
+export function createAllTalkSpeechGenerator(
     config: AllTalkConfig
 ): Effect<SpeechGenerator, never, HttpClient | FileSystem> {
     const Response = SC.Struct({

@@ -9,14 +9,14 @@ import {
     AllTalkEndpoint,
     AllTalkSpeed,
     AllTalkTemperature,
-    createLocalAllTalkSpeechGenerator
+    createAllTalkSpeechGenerator
 } from "../../src/speech/TextToSpeech"
 import {DialogueText} from "../../src/game/Dialogue"
 import * as os from "node:os"
 import * as path from "node:path"
 import {NodeContext} from "@effect/platform-node"
 
-describe("createLocalAllTalkSpeechGenerator", () => {
+describe("createAllTalkSpeechGenerator", () => {
     it.scoped(
         "should return a SpeechGenerator instance for an AllTalk TTS endpoint",
         () =>
@@ -70,7 +70,7 @@ describe("createLocalAllTalkSpeechGenerator", () => {
                     )
 
                     const generate = yield* pipe(
-                        createLocalAllTalkSpeechGenerator({
+                        createAllTalkSpeechGenerator({
                             endpoint: AllTalkEndpoint.make(
                                 "http://localhost:8000"
                             ),
@@ -210,7 +210,7 @@ describe("createLocalAllTalkSpeechGenerator", () => {
                     )
 
                     const generate = yield* pipe(
-                        createLocalAllTalkSpeechGenerator(
+                        createAllTalkSpeechGenerator(
                             AllTalkConfig.make({
                                 endpoint: AllTalkEndpoint.make(
                                     "http://remote.alltalk.server"
@@ -290,7 +290,7 @@ describe("createLocalAllTalkSpeechGenerator", () => {
                     )
 
                     const generator = yield* pipe(
-                        createLocalAllTalkSpeechGenerator(
+                        createAllTalkSpeechGenerator(
                             AllTalkConfig.make({
                                 endpoint: AllTalkEndpoint.make(
                                     "http://remote.alltalk.server"
@@ -345,7 +345,7 @@ describe("createLocalAllTalkSpeechGenerator", () => {
                     )
 
                     const generator = yield* pipe(
-                        createLocalAllTalkSpeechGenerator(
+                        createAllTalkSpeechGenerator(
                             AllTalkConfig.make({
                                 endpoint: AllTalkEndpoint.make(
                                     "http://remote.alltalk.server"
