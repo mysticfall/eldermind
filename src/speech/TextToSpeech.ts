@@ -2,9 +2,10 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {BaseError} from "../common/Error"
 import {HttpClient} from "@effect/platform/HttpClient"
-import {StockVoiceType} from "skyrim-effect/game/VoiceType"
 import {DialogueText} from "../game/Dialogue"
 import {pipe} from "effect"
+import * as O from "effect/Option"
+import * as R from "effect/Record"
 import * as SC from "effect/Schema"
 import {FormData} from "formdata-node"
 import {formData} from "@effect/platform/HttpBody"
@@ -16,6 +17,10 @@ import * as path from "node:path"
 import {HttpClientResponse} from "@effect/platform/HttpClientResponse"
 import * as ST from "effect/Stream"
 import {HttpClientError} from "@effect/platform/HttpClientError"
+import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
+import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
+import {ActorHexId, getActorId, getSex, Sex} from "skyrim-effect/game/Actor"
+import {toHexId} from "skyrim-effect/game/Form"
 
 export class TtsServiceError extends BaseError<TtsServiceError>(
     "TtsServiceError",
@@ -26,9 +31,70 @@ export class TtsServiceError extends BaseError<TtsServiceError>(
 
 export type SpeechGenerator = (
     text: DialogueText,
-    voice: StockVoiceType,
+    speaker: Actor,
     outputFile: string
 ) => Effect<void, TtsServiceError | PlatformError, Scope>
+
+export type VoiceMapping = (speaker: Actor) => string
+
+export const GenericVoiceMappingConfig = pipe(
+    SC.Struct({
+        type: pipe(
+            SC.Record({key: StockVoiceType, value: SC.String}),
+            SC.partial,
+            SC.optional
+        ),
+        unique: pipe(
+            SC.Record({key: ActorHexId, value: SC.String}),
+            SC.optional
+        ),
+        fallback: SC.Record({key: Sex, value: SC.String})
+    }),
+    SC.annotations({
+        title: "Voice Mapping",
+        description: "Mapping between actors and voice names"
+    })
+)
+
+export type GenericVoiceMappingConfig = typeof GenericVoiceMappingConfig.Type
+
+export function createGenericVoiceMapping(
+    config: GenericVoiceMappingConfig
+): VoiceMapping {
+    const {type, unique, fallback} = config
+
+    const voiceForActor = (speaker: Actor) =>
+        pipe(
+            O.Do,
+            O.bind("mappings", () => O.fromNullable(unique)),
+            O.bind("key", () =>
+                pipe(speaker, getActorId, toHexId(ActorHexId), O.some)
+            ),
+            O.flatMap(({mappings, key}) => pipe(mappings, R.get(key)))
+        )
+
+    const voiceForType = (speaker: Actor) =>
+        pipe(
+            O.Do,
+            O.bind("mappings", () => O.fromNullable(type)),
+            O.bind("key", () => getStockVoiceType(speaker)),
+            O.flatMap(({mappings, key}) => pipe(mappings[key], O.fromNullable))
+        )
+
+    const voiceForSex = (speaker: Actor) => {
+        const base = speaker.getBaseObject() as ActorBase
+        const sex = getSex(base)
+
+        return fallback[sex]
+    }
+
+    return speaker =>
+        pipe(
+            voiceForActor(speaker),
+            O.orElse(() => voiceForType(speaker)),
+            O.getOrElse(() => voiceForSex(speaker))
+        )
+}
 
 export const AllTalkEndpoint = pipe(
     SC.String,
@@ -70,12 +136,15 @@ export const AllTalkConfig = SC.Struct({
     endpoint: SC.optionalWith(AllTalkEndpoint, {
         default: () => AllTalkEndpoint.make("http://localhost:8000")
     }),
-    speed: SC.optionalWith(AllTalkSpeed, {
-        default: () => AllTalkSpeed.make(1.0)
-    }),
+    speed: pipe(
+        SC.optionalWith(AllTalkSpeed, {
+            default: () => AllTalkSpeed.make(1.0)
+        })
+    ),
     temperature: SC.optionalWith(AllTalkTemperature, {
         default: () => AllTalkTemperature.make(1.0)
-    })
+    }),
+    voices: GenericVoiceMappingConfig
 })
 
 export type AllTalkConfig = typeof AllTalkConfig.Type
@@ -93,7 +162,7 @@ export function createAllTalkSpeechGenerator(
         output_cache_url: SC.String
     })
 
-    const {endpoint, speed, temperature} = config
+    const {endpoint, speed, temperature, voices} = config
 
     return FX.gen(function* () {
         const client = yield* HttpClient
@@ -121,8 +190,12 @@ export function createAllTalkSpeechGenerator(
                 cause: e
             })
 
-        return (text, voice, outputFile) =>
+        const voiceMappings = createGenericVoiceMapping(voices)
+
+        return (text, speaker, outputFile) =>
             FX.gen(function* () {
+                const voice = voiceMappings(speaker)
+
                 const fileName = path.basename(outputFile)
 
                 const dir = path.dirname(outputFile)

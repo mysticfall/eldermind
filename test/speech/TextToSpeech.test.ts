@@ -9,14 +9,173 @@ import {
     AllTalkEndpoint,
     AllTalkSpeed,
     AllTalkTemperature,
-    createAllTalkSpeechGenerator
+    createAllTalkSpeechGenerator,
+    createGenericVoiceMapping,
+    GenericVoiceMappingConfig
 } from "../../src/speech/TextToSpeech"
 import {DialogueText} from "../../src/game/Dialogue"
 import * as os from "node:os"
 import * as path from "node:path"
 import {NodeContext} from "@effect/platform-node"
+import {Actor} from "@skyrim-platform/skyrim-platform"
+import {ActorHexId} from "skyrim-effect/game/Actor"
+
+describe("createGenericVoiceMapping", () => {
+    const mockActorFemale: Actor = {
+        getFormID: () => 0x000a2c94,
+        getName: () => "Lydia",
+        getBaseObject: () => ({
+            getSex: () => 1
+        }),
+        getVoiceType: () => ({
+            getName: () => "FemaleEvenToned"
+        })
+    } as unknown as Actor
+
+    const mockActorMale: Actor = {
+        getFormID: () => 0x000a2c95,
+        getName: () => "Ulfric",
+        getBaseObject: () => ({
+            getSex: () => 0
+        }),
+        getVoiceType: () => ({
+            getName: () => "MaleNord"
+        })
+    } as unknown as Actor
+
+    it("should return a unique mapping if the actor's unique ID has a match", () => {
+        const config: GenericVoiceMappingConfig = {
+            unique: {
+                [ActorHexId.make("000A2C94")]: "unique-voice-female",
+                [ActorHexId.make("000A2C95")]: "unique-voice-male"
+            },
+            type: {},
+            fallback: {
+                female: "fallback-female",
+                male: "fallback-male",
+                none: "fallback-none"
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        expect(voiceMapping(mockActorFemale)).toBe("unique-voice-female")
+        expect(voiceMapping(mockActorMale)).toBe("unique-voice-male")
+    })
+
+    it("should return a voice type mapping if the type has a match and unique does not match", () => {
+        const config: GenericVoiceMappingConfig = {
+            type: {
+                FemaleEvenToned: "type-voice-female",
+                MaleNord: "type-voice-male"
+            },
+            fallback: {
+                female: "fallback-female",
+                male: "fallback-male",
+                none: "fallback-none"
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        expect(voiceMapping(mockActorFemale)).toBe("type-voice-female")
+        expect(voiceMapping(mockActorMale)).toBe("type-voice-male")
+    })
+
+    it("should return a fallback mapping if neither unique nor type has a match", () => {
+        const config: GenericVoiceMappingConfig = {
+            fallback: {
+                female: "fallback-female",
+                male: "fallback-male",
+                none: "fallback-none"
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        expect(voiceMapping(mockActorFemale)).toBe("fallback-female")
+        expect(voiceMapping(mockActorMale)).toBe("fallback-male")
+    })
+
+    it("should prioritize unique mapping over type and fallback", () => {
+        const config: GenericVoiceMappingConfig = {
+            unique: {
+                [ActorHexId.make("000A2C94")]: "unique-voice-female"
+            },
+            type: {
+                FemaleEvenToned: "type-voice-female",
+                MaleNord: "type-voice-male"
+            },
+            fallback: {
+                female: "fallback-female",
+                male: "fallback-male",
+                none: "fallback-none"
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        expect(voiceMapping(mockActorFemale)).toBe("unique-voice-female")
+        expect(voiceMapping(mockActorMale)).toBe("type-voice-male") // Falls back to type
+    })
+
+    it("should prioritize type mapping over fallback if unique mapping does not exist", () => {
+        const config: GenericVoiceMappingConfig = {
+            unique: {},
+            type: {
+                FemaleEvenToned: "type-voice-female",
+                MaleNord: "type-voice-male"
+            },
+            fallback: {
+                female: "fallback-female",
+                male: "fallback-male",
+                none: "fallback-none"
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        expect(voiceMapping(mockActorFemale)).toBe("type-voice-female")
+        expect(voiceMapping(mockActorMale)).toBe("type-voice-male")
+    })
+
+    it("should handle fallback mappings for actors with undefined sex", () => {
+        const mockActorUndefinedSex = {
+            getFormID: () => 0x000a2c96,
+            getName: () => "Unknown",
+            getBaseObject: () => ({
+                getSex: () => undefined // No sex defined
+            }),
+            getVoiceType: () => undefined
+        } as unknown as Actor
+
+        const config: GenericVoiceMappingConfig = {
+            type: {},
+            fallback: {
+                female: "fallback-female",
+                male: "fallback-male",
+                none: "fallback-none"
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        expect(voiceMapping(mockActorUndefinedSex)).toBe("fallback-none")
+    })
+})
 
 describe("createAllTalkSpeechGenerator", () => {
+    const speaker = {
+        getFormID: () => 0x000a2c94,
+        getName: () => "Lydia",
+        getBaseObject: () => ({
+            getSex: () => 1
+        }),
+        getVoiceType: () => ({
+            getName: () => "FemaleEvenToned"
+        })
+    } as unknown as Actor
+
     it.scoped(
         "should return a SpeechGenerator instance for an AllTalk TTS endpoint",
         () =>
@@ -75,7 +234,14 @@ describe("createAllTalkSpeechGenerator", () => {
                                 "http://localhost:8000"
                             ),
                             speed: AllTalkSpeed.make(0.7),
-                            temperature: AllTalkTemperature.make(0.8)
+                            temperature: AllTalkTemperature.make(0.8),
+                            voices: {
+                                fallback: {
+                                    female: "female01",
+                                    male: "male02",
+                                    none: "female05"
+                                }
+                            }
                         }),
                         FX.provide(TestLayer)
                     )
@@ -98,7 +264,7 @@ describe("createAllTalkSpeechGenerator", () => {
 
                     yield* generate(
                         DialogueText.make("You never should've come here!"),
-                        "FemaleYoungEager",
+                        speaker,
                         outputFile
                     )
 
@@ -129,9 +295,7 @@ describe("createAllTalkSpeechGenerator", () => {
                     expect(form.get("text_input")).toBe(
                         "You never should've come here!"
                     )
-                    expect(form.get("character_voice_gen")).toBe(
-                        "FemaleYoungEager.wav"
-                    )
+                    expect(form.get("character_voice_gen")).toBe("female01.wav")
                     expect(form.get("narrator_enabled")).toBe("false")
                     expect(form.get("output_file_name")).toBe("Dialogue001.wav")
                     expect(form.get("output_file_timestamp")).toBe("false")
@@ -214,7 +378,14 @@ describe("createAllTalkSpeechGenerator", () => {
                             AllTalkConfig.make({
                                 endpoint: AllTalkEndpoint.make(
                                     "http://remote.alltalk.server"
-                                )
+                                ),
+                                voices: {
+                                    fallback: {
+                                        female: "female01",
+                                        male: "male02",
+                                        none: "female05"
+                                    }
+                                }
                             })
                         ),
                         FX.provide(TestLayer)
@@ -238,7 +409,7 @@ describe("createAllTalkSpeechGenerator", () => {
 
                     yield* generate(
                         DialogueText.make("You never should've come here!"),
-                        "FemaleYoungEager",
+                        speaker,
                         outputFile
                     )
 
@@ -294,7 +465,14 @@ describe("createAllTalkSpeechGenerator", () => {
                             AllTalkConfig.make({
                                 endpoint: AllTalkEndpoint.make(
                                     "http://remote.alltalk.server"
-                                )
+                                ),
+                                voices: {
+                                    fallback: {
+                                        female: "female01",
+                                        male: "male02",
+                                        none: "female05"
+                                    }
+                                }
                             })
                         ),
                         FX.provide(TestLayer)
@@ -309,7 +487,7 @@ describe("createAllTalkSpeechGenerator", () => {
                     const message = yield* pipe(
                         generator(
                             DialogueText.make("You never should've come here!"),
-                            "FemaleYoungEager",
+                            speaker,
                             outputFile
                         ),
                         FX.catchAll(e => FX.succeed(e.message))
@@ -349,7 +527,14 @@ describe("createAllTalkSpeechGenerator", () => {
                             AllTalkConfig.make({
                                 endpoint: AllTalkEndpoint.make(
                                     "http://remote.alltalk.server"
-                                )
+                                ),
+                                voices: {
+                                    fallback: {
+                                        female: "female01",
+                                        male: "male02",
+                                        none: "female05"
+                                    }
+                                }
                             })
                         ),
                         FX.provide(TestLayer)
@@ -364,7 +549,7 @@ describe("createAllTalkSpeechGenerator", () => {
                     const message = yield* pipe(
                         generator(
                             DialogueText.make("You never should've come here!"),
-                            "FemaleYoungEager",
+                            speaker,
                             outputFile
                         ),
                         FX.catchAll(e => FX.succeed(e.message))
