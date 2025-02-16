@@ -1,6 +1,10 @@
 import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
+import * as CH from "effect/Chunk"
+import * as SI from "effect/Sink"
+import * as ST from "effect/Stream"
+import {Stream} from "effect/Stream"
 import {Layer, pipe} from "effect"
 import {FetchHttpClient} from "@effect/platform"
 import {FileSystem} from "@effect/platform/FileSystem"
@@ -19,6 +23,7 @@ import * as path from "node:path"
 import {NodeContext} from "@effect/platform-node"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {ActorHexId} from "skyrim-effect/game/Actor"
+import {BinaryData} from "../../src/common/Data"
 
 describe("createGenericVoiceMapping", () => {
     const mockActorFemale: Actor = {
@@ -176,6 +181,13 @@ describe("createAllTalkSpeechGenerator", () => {
         })
     } as unknown as Actor
 
+    const readStream = <E>(stream: Stream<BinaryData, E>) =>
+        pipe(
+            ST.run(stream, SI.collectAll()),
+            FX.flatMap(CH.head),
+            FX.map(v => new TextDecoder().decode(v))
+        )
+
     it.scoped(
         "should return a SpeechGenerator instance for an AllTalk TTS endpoint",
         () =>
@@ -246,26 +258,9 @@ describe("createAllTalkSpeechGenerator", () => {
                         FX.provide(TestLayer)
                     )
 
-                    const outputFile = path.join(
-                        os.tmpdir(),
-                        "eldermind",
-                        "Dialogue001.wav"
-                    )
-
-                    yield* FX.addFinalizer(() =>
-                        pipe(
-                            fs.remove(path.dirname(outputFile), {
-                                force: true,
-                                recursive: true
-                            }),
-                            FX.ignore
-                        )
-                    )
-
-                    yield* generate(
+                    const stream = yield* generate(
                         DialogueText.make("You never should've come here!"),
-                        speaker,
-                        outputFile
+                        speaker
                     )
 
                     expect(mockFetch).toHaveBeenCalledOnce()
@@ -297,19 +292,11 @@ describe("createAllTalkSpeechGenerator", () => {
                     )
                     expect(form.get("character_voice_gen")).toBe("female01.wav")
                     expect(form.get("narrator_enabled")).toBe("false")
-                    expect(form.get("output_file_name")).toBe("Dialogue001.wav")
-                    expect(form.get("output_file_timestamp")).toBe("false")
                     expect(form.get("autoplay")).toBe("false")
                     expect(form.get("temperature")).toBe("0.8")
                     expect(form.get("speed")).toBe("0.7")
 
-                    const outputExists = yield* fs.exists(outputFile)
-                    expect(outputExists).toBeTruthy()
-
-                    const generatedFileExists = yield* fs.exists(generatedFile)
-                    expect(generatedFileExists).toBeFalsy()
-
-                    const content = yield* fs.readFileString(outputFile)
+                    const content = yield* readStream(stream)
 
                     expect(content).toBe("Mock audio data")
                 }),
@@ -391,26 +378,9 @@ describe("createAllTalkSpeechGenerator", () => {
                         FX.provide(TestLayer)
                     )
 
-                    const outputFile = path.join(
-                        os.tmpdir(),
-                        "eldermind",
-                        "Dialogue001.wav"
-                    )
-
-                    yield* FX.addFinalizer(() =>
-                        pipe(
-                            fs.remove(path.dirname(outputFile), {
-                                force: true,
-                                recursive: true
-                            }),
-                            FX.ignore
-                        )
-                    )
-
-                    yield* generate(
+                    const stream = yield* generate(
                         DialogueText.make("You never should've come here!"),
-                        speaker,
-                        outputFile
+                        speaker
                     )
 
                     expect(mockFetch).toHaveBeenCalledTimes(2)
@@ -426,10 +396,7 @@ describe("createAllTalkSpeechGenerator", () => {
 
                     expect(body.method).toBe("GET")
 
-                    const outputExists = yield* fs.exists(outputFile)
-                    expect(outputExists).toBeTruthy()
-
-                    const content = yield* fs.readFileString(outputFile)
+                    const content = yield* readStream(stream)
 
                     expect(content).toBe("Mock audio data")
                 }),
@@ -478,17 +445,10 @@ describe("createAllTalkSpeechGenerator", () => {
                         FX.provide(TestLayer)
                     )
 
-                    const outputFile = path.join(
-                        os.tmpdir(),
-                        "eldermind",
-                        "Dialogue001.wav"
-                    )
-
                     const message = yield* pipe(
                         generator(
                             DialogueText.make("You never should've come here!"),
-                            speaker,
-                            outputFile
+                            speaker
                         ),
                         FX.catchAll(e => FX.succeed(e.message))
                     )
@@ -540,17 +500,10 @@ describe("createAllTalkSpeechGenerator", () => {
                         FX.provide(TestLayer)
                     )
 
-                    const outputFile = path.join(
-                        os.tmpdir(),
-                        "eldermind",
-                        "Dialogue001.wav"
-                    )
-
                     const message = yield* pipe(
                         generator(
                             DialogueText.make("You never should've come here!"),
-                            speaker,
-                            outputFile
+                            speaker
                         ),
                         FX.catchAll(e => FX.succeed(e.message))
                     )

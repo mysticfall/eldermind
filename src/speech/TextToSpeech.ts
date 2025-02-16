@@ -7,20 +7,19 @@ import {pipe} from "effect"
 import * as O from "effect/Option"
 import * as R from "effect/Record"
 import * as SC from "effect/Schema"
+import * as ST from "effect/Stream"
+import {Stream} from "effect/Stream"
 import {FormData} from "formdata-node"
 import {formData} from "@effect/platform/HttpBody"
 import {FileSystem} from "@effect/platform/FileSystem"
 import {parseJson} from "../common/Json"
-import {PlatformError} from "@effect/platform/Error"
 import {Scope} from "effect/Scope"
-import * as path from "node:path"
 import {HttpClientResponse} from "@effect/platform/HttpClientResponse"
-import * as ST from "effect/Stream"
-import {HttpClientError} from "@effect/platform/HttpClientError"
 import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
 import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
 import {ActorHexId, getActorId, getSex, Sex} from "skyrim-effect/game/Actor"
 import {toHexId} from "skyrim-effect/game/Form"
+import {BinaryData} from "../common/Data"
 
 export class TtsServiceError extends BaseError<TtsServiceError>(
     "TtsServiceError",
@@ -31,9 +30,8 @@ export class TtsServiceError extends BaseError<TtsServiceError>(
 
 export type SpeechGenerator = (
     text: DialogueText,
-    speaker: Actor,
-    outputFile: string
-) => Effect<void, TtsServiceError | PlatformError, Scope>
+    speaker: Actor
+) => Effect<Stream<BinaryData, TtsServiceError>, TtsServiceError, Scope>
 
 export type VoiceMapping = (speaker: Actor) => string
 
@@ -164,46 +162,51 @@ export function createAllTalkSpeechGenerator(
 
     const {endpoint, speed, temperature, voices} = config
 
+    const isLocal =
+        endpoint.toLowerCase().includes("://localhost") ||
+        endpoint.includes("://127.0.0.1")
+
+    const voiceMappings = createGenericVoiceMapping(voices)
+
+    const handleError =
+        (message: string) =>
+        <T>(e?: {_tag: T; message: string}) =>
+            new TtsServiceError({
+                message: e ? `${message}: ${e.message}` : `${message}.`,
+                cause: e
+            })
+
+    const invalidRequest = handleError("Invalid request to the TTS service")
+    const invalidResponse = handleError("Invalid response from the TTS service")
+    const unknownError = handleError(
+        "The request to the TTS service failed for an unknown reason"
+    )
+
+    const checkHttpResponse = (response: HttpClientResponse) =>
+        pipe(
+            response,
+            FX.liftPredicate(
+                r => r.status >= 200 && r.status < 300,
+                r =>
+                    new TtsServiceError({
+                        message: `The TTS service responded with status: ${r.status}`
+                    })
+            )
+        )
+
     return FX.gen(function* () {
         const client = yield* HttpClient
         const fs = yield* FileSystem
 
-        const isLocal =
-            endpoint.toLowerCase().includes("://localhost") ||
-            endpoint.includes("://127.0.0.1")
-
-        const checkHttpResponse = (response: HttpClientResponse) =>
-            pipe(
-                response,
-                FX.liftPredicate(
-                    r => r.status >= 200 && r.status < 300,
-                    r =>
-                        new TtsServiceError({
-                            message: `The TTS service responded with status: ${r.status}`
-                        })
-                )
-            )
-
-        const handleConnectionError = (e: HttpClientError) =>
-            new TtsServiceError({
-                message: `Failed to connect to the TTS service: ${e.message}`,
-                cause: e
-            })
-
-        const voiceMappings = createGenericVoiceMapping(voices)
-
-        return (text, speaker, outputFile) =>
+        return (text, speaker) =>
             FX.gen(function* () {
                 const voice = voiceMappings(speaker)
 
-                const fileName = path.basename(outputFile)
+                yield* FX.logDebug(`Generating speech for text: "${text}".`)
 
-                const dir = path.dirname(outputFile)
-                const dirExists = yield* fs.exists(dir)
-
-                if (!dirExists) {
-                    yield* fs.makeDirectory(dir, {recursive: true})
-                }
+                yield* FX.logDebug(
+                    `Using voice "${voice}" for actor ${speaker.getName()}.`
+                )
 
                 const form = new FormData()
 
@@ -212,8 +215,6 @@ export function createAllTalkSpeechGenerator(
                 form.append("language", "en")
                 form.append("character_voice_gen", `${voice}.wav`)
                 form.append("narrator_enabled", false)
-                form.append("output_file_name", fileName)
-                form.append("output_file_timestamp", false)
                 form.append("autoplay", false)
                 form.append("temperature", temperature)
                 form.append("speed", speed)
@@ -225,58 +226,53 @@ export function createAllTalkSpeechGenerator(
                         },
                         body: formData(form as globalThis.FormData)
                     }),
-                    FX.catchAll(handleConnectionError),
+                    FX.catchTag("RequestError", invalidRequest),
+                    FX.catchTag("ResponseError", invalidResponse),
                     FX.flatMap(checkHttpResponse)
                 )
 
                 const {output_file_path, output_file_url} = yield* pipe(
                     response.text,
                     FX.flatMap(parseJson(Response)),
-                    FX.catchAll(
-                        e =>
-                            new TtsServiceError({
-                                message: `Invalid response from the TTS service: ${e.message}`,
-                                cause: e
-                            })
-                    ),
+                    FX.catchTag("RequestError", invalidRequest),
+                    FX.catchTag("ResponseError", invalidResponse),
+                    FX.catchTag("InvalidDataError", invalidResponse),
                     FX.flatMap(r =>
                         r.status == "generate-success"
                             ? FX.succeed(r)
-                            : new TtsServiceError({
-                                  message:
-                                      "The request to the TTS service failed for an unknown reason."
-                              })
+                            : unknownError()
                     )
                 )
 
-                const exists = yield* fs.exists(outputFile)
-
-                if (exists) {
-                    yield* FX.logDebug(`Removing old TTS output: ${outputFile}`)
-                    yield* fs.remove(outputFile)
-                }
-
                 if (isLocal) {
                     yield* FX.logDebug(
-                        `Moving TTS output: from ${output_file_path} to ${outputFile}`
+                        `Speech file generated: ${output_file_path}.`
                     )
 
-                    yield* fs.rename(output_file_path, outputFile)
+                    FX.addFinalizer(() =>
+                        pipe(fs.remove(output_file_path), FX.ignore)
+                    )
+
+                    return pipe(
+                        fs.stream(output_file_path),
+                        ST.catchTag("BadArgument", unknownError),
+                        ST.catchTag("SystemError", unknownError)
+                    )
                 } else {
+                    yield* FX.logDebug(
+                        `Speech file generated: ${output_file_url}.`
+                    )
+
                     const {stream} = yield* pipe(
                         client.get([endpoint, output_file_url].join("")),
-                        FX.catchAll(handleConnectionError),
+                        FX.catchTag("RequestError", invalidRequest),
+                        FX.catchTag("ResponseError", invalidResponse),
                         FX.flatMap(checkHttpResponse)
                     )
 
-                    yield* pipe(
-                        ST.run(stream, fs.sink(outputFile)),
-                        FX.catchAll(
-                            e =>
-                                new TtsServiceError({
-                                    message: `Failed to download the output from the TTS service: ${e.message}`
-                                })
-                        )
+                    return pipe(
+                        stream,
+                        ST.catchTag("ResponseError", unknownError)
                     )
                 }
             })
