@@ -8,6 +8,7 @@ import * as ST from "effect/Stream"
 import {Stream} from "effect/Stream"
 import {BaseError} from "../common/Error"
 import {Writable} from "stream"
+import {BinaryData} from "../common/Data"
 
 export class AudioSystemError extends BaseError<AudioSystemError>(
     "AudioSystemError",
@@ -17,7 +18,7 @@ export class AudioSystemError extends BaseError<AudioSystemError>(
 ) {}
 
 export interface Recording {
-    readonly data: Uint8Array<ArrayBufferLike>
+    readonly data: BinaryData
     readonly duration: Duration
 }
 

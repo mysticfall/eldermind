@@ -10,6 +10,7 @@ import {formData} from "@effect/platform/HttpBody"
 import {Scope} from "effect/Scope"
 import {parseJson} from "../common/Json"
 import {DialogueText} from "../game/Dialogue"
+import {BinaryData} from "../common/Data"
 
 export class SttServiceError extends BaseError<SttServiceError>(
     "SttServiceError",
@@ -67,7 +68,7 @@ export const TranscriberConfig = SC.Struct({
 export type TranscriberConfig = typeof TranscriberConfig.Type
 
 export type Transcriber = (
-    data: Uint8Array<ArrayBufferLike>
+    data: BinaryData
 ) => Effect<DialogueText, SttServiceError, Scope>
 
 export function createOpenAICompatibleTranscriber(

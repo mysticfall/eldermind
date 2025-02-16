@@ -5,6 +5,7 @@ import {FileSystem} from "@effect/platform/FileSystem"
 import {flow, pipe} from "effect"
 import {PlatformError} from "@effect/platform/Error"
 import {
+    BinaryData,
     BinaryDataLoader,
     createTextDataLoader,
     DataPath,
@@ -15,7 +16,7 @@ const DefaultDecoder = new TextDecoder("UTF-8")
 
 export const readBinaryFile = (
     path: string
-): Effect<Uint8Array<ArrayBufferLike>, PlatformError, FileSystem> =>
+): Effect<BinaryData, PlatformError, FileSystem> =>
     pipe(
         FX.Do,
         FX.tap(() => FX.logTrace(`Reading text file: ${path}`)),
