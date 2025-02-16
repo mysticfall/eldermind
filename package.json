@@ -63,6 +63,11 @@
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./actor/Actor": {
+      "types": "./dist/dts/actor/Actor.d.ts",
+      "import": "./dist/esm/actor/Actor.js",
+      "require": "./dist/cjs/actor/Actor.js"
+    },
     "./common/Data": {
       "types": "./dist/dts/common/Data.d.ts",
       "import": "./dist/esm/common/Data.js",
@@ -159,19 +164,19 @@
       "require": "./dist/cjs/scene/Scene.js"
     },
     "./speech/Recorder": {
-      "types": "./dist/dts/scene/Recorder.d.ts",
-      "import": "./dist/esm/scene/Recorder.js",
-      "require": "./dist/cjs/scene/Recorder.js"
+      "types": "./dist/dts/speech/Recorder.d.ts",
+      "import": "./dist/esm/speech/Recorder.js",
+      "require": "./dist/cjs/speech/Recorder.js"
     },
     "./speech/SpeechToText": {
-      "types": "./dist/dts/scene/SpeechToText.d.ts",
-      "import": "./dist/esm/scene/SpeechToText.js",
-      "require": "./dist/cjs/scene/SpeechToText.js"
+      "types": "./dist/dts/speech/SpeechToText.d.ts",
+      "import": "./dist/esm/speech/SpeechToText.js",
+      "require": "./dist/cjs/speech/SpeechToText.js"
     },
     "./speech/TextToSpeech": {
-      "types": "./dist/dts/scene/TextToSpeech.d.ts",
-      "import": "./dist/esm/scene/TextToSpeech.js",
-      "require": "./dist/cjs/scene/TextToSpeech.js"
+      "types": "./dist/dts/speech/TextToSpeech.d.ts",
+      "import": "./dist/esm/speech/TextToSpeech.js",
+      "require": "./dist/cjs/speech/TextToSpeech.js"
     },
     "./*": {
       "types": "./dist/dts/*.d.ts",
