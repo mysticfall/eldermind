@@ -68,6 +68,11 @@
       "import": "./dist/esm/actor/Actor.js",
       "require": "./dist/cjs/actor/Actor.js"
     },
+    "./actor/Emotion": {
+      "types": "./dist/dts/actor/Emotion.d.ts",
+      "import": "./dist/esm/actor/Emotion.js",
+      "require": "./dist/cjs/actor/Emotion.js"
+    },
     "./common/Data": {
       "types": "./dist/dts/common/Data.d.ts",
       "import": "./dist/esm/common/Data.js",
