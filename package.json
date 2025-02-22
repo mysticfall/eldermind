@@ -183,6 +183,11 @@
       "import": "./dist/esm/speech/TextToSpeech.js",
       "require": "./dist/cjs/speech/TextToSpeech.js"
     },
+    "./speech/Voice": {
+      "types": "./dist/dts/speech/Voice.d.ts",
+      "import": "./dist/esm/speech/Voice.js",
+      "require": "./dist/cjs/speech/Voice.js"
+    },
     "./*": {
       "types": "./dist/dts/*.d.ts",
       "import": "./dist/esm/*.js",
