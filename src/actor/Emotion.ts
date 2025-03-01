@@ -23,7 +23,8 @@ export type EmotionType = typeof EmotionType.Type
 
 export const EmotionIntensity = pipe(
     SC.Number,
-    SC.clamp(0, 100),
+    SC.int(),
+    SC.between(0, 100),
     SC.brand("EmotionIntensity"),
     SC.annotations({
         title: "Emotion Intensity",
