@@ -17,7 +17,6 @@ import {Order} from "effect/Order"
 import * as SR from "effect/SynchronizedRef"
 import {SynchronizedRef} from "effect/SynchronizedRef"
 import {BaseError} from "../common/Error"
-import {Scope} from "effect/Scope"
 import {Emotion, EmotionIntensity, EmotionType} from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
 
@@ -164,41 +163,7 @@ export type VoiceFileEmotionMap = {
     Record<Exclude<EmotionType, "Neutral">, VoiceIntensityMap | Set<VoiceFile>>
 >
 
-export function reserveVoiceFile(
-    pool: VoiceFilePool,
-    retrySchedule: Schedule<number> = SCH.addDelay(
-        SCH.recurs(5),
-        () => "1 second"
-    )
-): Effect<CheckedOutVoiceFile, NoAvailableVoiceFileError> {
-    const checkout = pool.modifyEffect(p =>
-        pipe(
-            p.values().toArray(),
-            O.liftPredicate(A.isNonEmptyArray),
-            O.map(A.unprepend),
-            O.map(([head, tail]) => [head, new Set(tail)])
-        )
-    )
-
-    return pipe(
-        checkout,
-        FX.map(file => ({
-            file,
-            release: pipe(
-                pool,
-                SR.update(p => p.add(file))
-            )
-        })),
-        FX.tap(f => FX.logDebug(`Checked out voice file: ${f}`)),
-        FX.retry(retrySchedule),
-        FX.catchTag(
-            "NoSuchElementException",
-            () => new NoAvailableVoiceFileError()
-        )
-    )
-}
-
-export function reserveVoiceFileForEmotion(
+export function getVoicePoolForEmotion(
     emotions: VoiceFileEmotionMap
 ): Effect<(emotion: Emotion) => VoiceFilePool> {
     const {Neutral, ...others} = emotions
@@ -303,21 +268,41 @@ export function reserveVoiceFileForEmotion(
 }
 
 export function executeWithVoice(
-    voiceFile: Effect<CheckedOutVoiceFile, NoAvailableVoiceFileError>
+    pool: VoiceFilePool,
+    retrySchedule: Schedule<number> = SCH.addDelay(
+        SCH.recurs(5),
+        () => "1 second"
+    )
 ): <T, E, R = never>(
     task: (voice: VoiceFile) => Effect<T, E, R>
-) => Effect<T, E | NoAvailableVoiceFileError, R | Scope> {
-    return task =>
-        FX.gen(function* () {
-            const {file, release} = yield* voiceFile
+) => Effect<T, E | NoAvailableVoiceFileError, R> {
+    const checkout = pool.modifyEffect(p =>
+        pipe(
+            p.values().toArray(),
+            O.liftPredicate(A.isNonEmptyArray),
+            O.map(A.unprepend),
+            O.map(([head, tail]) => [head, new Set(tail)])
+        )
+    )
 
-            yield* FX.addFinalizer(() =>
-                FX.gen(function* () {
-                    yield* FX.logDebug(`Releasing voice file: ${file}`)
-                    yield* release
-                })
-            )
+    const acquire = pipe(
+        checkout,
+        FX.tap(f => FX.logDebug(`Checked out voice file: ${f}`)),
+        FX.retry(retrySchedule),
+        FX.catchTag(
+            "NoSuchElementException",
+            () => new NoAvailableVoiceFileError()
+        )
+    )
 
-            return yield* task(file)
-        }).pipe(FX.scoped)
+    const release = (file: VoiceFile) =>
+        pipe(
+            pool.modify(p => {
+                p.add(file)
+                return [file, p]
+            }),
+            FX.tap(f => FX.logDebug(`Released voice file: ${f}`))
+        )
+
+    return task => FX.acquireUseRelease(acquire, task, release)
 }
