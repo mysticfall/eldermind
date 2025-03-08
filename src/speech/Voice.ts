@@ -66,11 +66,6 @@ export class NoAvailableVoiceFileError extends BaseError<NoAvailableVoiceFileErr
     }
 ) {}
 
-export interface CheckedOutVoiceFile {
-    readonly file: VoiceFile
-    readonly release: Effect<void>
-}
-
 export const VoiceIntensityRange = pipe(
     SC.Struct({
         min: EmotionIntensity,
