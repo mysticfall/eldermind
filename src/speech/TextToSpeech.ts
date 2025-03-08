@@ -4,6 +4,7 @@ import {BaseError} from "../common/Error"
 import {HttpClient} from "@effect/platform/HttpClient"
 import {DialogueText} from "../game/Dialogue"
 import {pipe} from "effect"
+import * as A from "effect/Array"
 import * as O from "effect/Option"
 import * as R from "effect/Record"
 import * as SC from "effect/Schema"
@@ -20,6 +21,7 @@ import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
 import {ActorHexId, getActorId, getSex, Sex} from "skyrim-effect/game/Actor"
 import {toHexId} from "skyrim-effect/game/Form"
 import {BinaryData} from "../common/Data"
+import {Emotion, EmotionRangeMap, EmotionRangeValues} from "../actor/Emotion"
 
 export class TtsServiceError extends BaseError<TtsServiceError>(
     "TtsServiceError",
@@ -30,23 +32,35 @@ export class TtsServiceError extends BaseError<TtsServiceError>(
 
 export type SpeechGenerator = (
     text: DialogueText,
-    speaker: Actor
+    speaker: Actor,
+    emotion?: Emotion
 ) => Effect<Stream<BinaryData, TtsServiceError>, TtsServiceError, Scope>
 
-export type VoiceMapping = (speaker: Actor) => string
+export const TtsVoice = pipe(
+    SC.NonEmptyString,
+    SC.brand("TtsVoice"),
+    SC.annotations({
+        title: "TTS Voice",
+        description: "Voice to use when using a TTS service"
+    })
+)
+
+export type TtsVoice = typeof TtsVoice.Type
+
+export type TtsVoiceMapping = (speaker: Actor, emotion?: Emotion) => TtsVoice
 
 export const GenericVoiceMappingConfig = pipe(
     SC.Struct({
         type: pipe(
-            SC.Record({key: StockVoiceType, value: SC.String}),
+            SC.Record({key: StockVoiceType, value: EmotionRangeMap(TtsVoice)}),
             SC.partial,
             SC.optional
         ),
         unique: pipe(
-            SC.Record({key: ActorHexId, value: SC.String}),
+            SC.Record({key: ActorHexId, value: EmotionRangeMap(TtsVoice)}),
             SC.optional
         ),
-        fallback: SC.Record({key: Sex, value: SC.String})
+        fallback: SC.Record({key: Sex, value: EmotionRangeMap(TtsVoice)})
     }),
     SC.annotations({
         title: "Voice Mapping",
@@ -58,8 +72,34 @@ export type GenericVoiceMappingConfig = typeof GenericVoiceMappingConfig.Type
 
 export function createGenericVoiceMapping(
     config: GenericVoiceMappingConfig
-): VoiceMapping {
+): TtsVoiceMapping {
     const {type, unique, fallback} = config
+
+    const getEmotionMapping =
+        (mapping: EmotionRangeMap<TtsVoice>) => (emotion?: Emotion) =>
+            pipe(
+                emotion,
+                O.fromNullable,
+                O.flatMap(({type, intensity}) => {
+                    const valueForEmotion = mapping[type]
+
+                    if (SC.is(TtsVoice)(valueForEmotion)) {
+                        return O.some(valueForEmotion)
+                    }
+
+                    return pipe(
+                        valueForEmotion,
+                        O.liftPredicate(SC.is(EmotionRangeValues(TtsVoice))),
+                        A.fromOption,
+                        A.flatten,
+                        A.findFirst(
+                            ({min, max}) => min <= intensity && intensity <= max
+                        ),
+                        O.map(({value}) => value)
+                    )
+                }),
+                O.getOrElse(() => mapping.Neutral)
+            )
 
     const voiceForActor = (speaker: Actor) =>
         pipe(
@@ -68,7 +108,8 @@ export function createGenericVoiceMapping(
             O.bind("key", () =>
                 pipe(speaker, getActorId, toHexId(ActorHexId), O.some)
             ),
-            O.flatMap(({mappings, key}) => pipe(mappings, R.get(key)))
+            O.flatMap(({mappings, key}) => pipe(mappings, R.get(key))),
+            O.map(getEmotionMapping)
         )
 
     const voiceForType = (speaker: Actor) =>
@@ -76,22 +117,26 @@ export function createGenericVoiceMapping(
             O.Do,
             O.bind("mappings", () => O.fromNullable(type)),
             O.bind("key", () => getStockVoiceType(speaker)),
-            O.flatMap(({mappings, key}) => pipe(mappings[key], O.fromNullable))
+            O.flatMap(({mappings, key}) => pipe(mappings[key], O.fromNullable)),
+            O.map(getEmotionMapping)
         )
 
     const voiceForSex = (speaker: Actor) => {
         const base = speaker.getBaseObject() as ActorBase
         const sex = getSex(base)
 
-        return fallback[sex]
+        return pipe(fallback[sex], getEmotionMapping)
     }
 
-    return speaker =>
-        pipe(
+    return (speaker, emotion) => {
+        const voiceForEmotion = pipe(
             voiceForActor(speaker),
             O.orElse(() => voiceForType(speaker)),
             O.getOrElse(() => voiceForSex(speaker))
         )
+
+        return voiceForEmotion(emotion)
+    }
 }
 
 export const AllTalkEndpoint = pipe(
@@ -198,9 +243,9 @@ export function createAllTalkSpeechGenerator(
         const client = yield* HttpClient
         const fs = yield* FileSystem
 
-        return (text, speaker) =>
+        return (text, speaker, emotion) =>
             FX.gen(function* () {
-                const voice = voiceMappings(speaker)
+                const voice = voiceMappings(speaker, emotion)
 
                 yield* FX.logDebug(`Generating speech for text: "${text}".`)
 

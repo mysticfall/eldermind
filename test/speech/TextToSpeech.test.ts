@@ -15,7 +15,8 @@ import {
     AllTalkTemperature,
     createAllTalkSpeechGenerator,
     createGenericVoiceMapping,
-    GenericVoiceMappingConfig
+    GenericVoiceMappingConfig,
+    TtsVoice
 } from "../../src/speech/TextToSpeech"
 import {DialogueText} from "../../src/game/Dialogue"
 import * as os from "node:os"
@@ -24,6 +25,7 @@ import {NodeContext} from "@effect/platform-node"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {ActorHexId} from "skyrim-effect/game/Actor"
 import {BinaryData} from "../../src/common/Data"
+import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 
 describe("createGenericVoiceMapping", () => {
     const mockActorFemale: Actor = {
@@ -51,14 +53,18 @@ describe("createGenericVoiceMapping", () => {
     it("should return a unique mapping if the actor's unique ID has a match", () => {
         const config: GenericVoiceMappingConfig = {
             unique: {
-                [ActorHexId.make("000A2C94")]: "unique-voice-female",
-                [ActorHexId.make("000A2C95")]: "unique-voice-male"
+                [ActorHexId.make("000A2C94")]: {
+                    Neutral: TtsVoice.make("unique-voice-female")
+                },
+                [ActorHexId.make("000A2C95")]: {
+                    Neutral: TtsVoice.make("unique-voice-male")
+                }
             },
             type: {},
             fallback: {
-                female: "fallback-female",
-                male: "fallback-male",
-                none: "fallback-none"
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
             }
         }
 
@@ -68,16 +74,72 @@ describe("createGenericVoiceMapping", () => {
         expect(voiceMapping(mockActorMale)).toBe("unique-voice-male")
     })
 
+    it("should return a unique mapping over emotional ranges when specified", () => {
+        const config: GenericVoiceMappingConfig = {
+            unique: {
+                [ActorHexId.make("000A2C94")]: {
+                    Neutral: TtsVoice.make("unique-voice-female"),
+                    Happy: TtsVoice.make("unique-voice-female-happy"),
+                    Sad: TtsVoice.make("unique-voice-female-sad")
+                },
+                [ActorHexId.make("000A2C95")]: {
+                    Neutral: TtsVoice.make("unique-voice-male"),
+                    Happy: [
+                        {
+                            min: EmotionIntensity.make(0),
+                            max: EmotionIntensity.make(50),
+                            value: TtsVoice.make("unique-voice-male-happy")
+                        },
+                        {
+                            min: EmotionIntensity.make(51),
+                            max: EmotionIntensity.make(100),
+                            value: TtsVoice.make("unique-voice-male-very-happy")
+                        }
+                    ],
+                    Sad: TtsVoice.make("unique-voice-female-sad")
+                }
+            },
+            type: {},
+            fallback: {
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
+            }
+        }
+
+        const voiceMapping = createGenericVoiceMapping(config)
+
+        const veryHappy = Emotion.make({
+            type: "Happy",
+            intensity: EmotionIntensity.make(60)
+        })
+
+        const fear = Emotion.make({
+            type: "Fear",
+            intensity: EmotionIntensity.make(30)
+        })
+
+        expect(voiceMapping(mockActorFemale, veryHappy)).toBe(
+            "unique-voice-female-happy"
+        )
+
+        expect(voiceMapping(mockActorMale, veryHappy)).toBe(
+            "unique-voice-male-very-happy"
+        )
+
+        expect(voiceMapping(mockActorMale, fear)).toBe("unique-voice-male")
+    })
+
     it("should return a voice type mapping if the type has a match and unique does not match", () => {
         const config: GenericVoiceMappingConfig = {
             type: {
-                FemaleEvenToned: "type-voice-female",
-                MaleNord: "type-voice-male"
+                FemaleEvenToned: {Neutral: TtsVoice.make("type-voice-female")},
+                MaleNord: {Neutral: TtsVoice.make("type-voice-male")}
             },
             fallback: {
-                female: "fallback-female",
-                male: "fallback-male",
-                none: "fallback-none"
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
             }
         }
 
@@ -90,9 +152,9 @@ describe("createGenericVoiceMapping", () => {
     it("should return a fallback mapping if neither unique nor type has a match", () => {
         const config: GenericVoiceMappingConfig = {
             fallback: {
-                female: "fallback-female",
-                male: "fallback-male",
-                none: "fallback-none"
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
             }
         }
 
@@ -105,16 +167,18 @@ describe("createGenericVoiceMapping", () => {
     it("should prioritize unique mapping over type and fallback", () => {
         const config: GenericVoiceMappingConfig = {
             unique: {
-                [ActorHexId.make("000A2C94")]: "unique-voice-female"
+                [ActorHexId.make("000A2C94")]: {
+                    Neutral: TtsVoice.make("unique-voice-female")
+                }
             },
             type: {
-                FemaleEvenToned: "type-voice-female",
-                MaleNord: "type-voice-male"
+                FemaleEvenToned: {Neutral: TtsVoice.make("type-voice-female")},
+                MaleNord: {Neutral: TtsVoice.make("type-voice-male")}
             },
             fallback: {
-                female: "fallback-female",
-                male: "fallback-male",
-                none: "fallback-none"
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
             }
         }
 
@@ -128,13 +192,13 @@ describe("createGenericVoiceMapping", () => {
         const config: GenericVoiceMappingConfig = {
             unique: {},
             type: {
-                FemaleEvenToned: "type-voice-female",
-                MaleNord: "type-voice-male"
+                FemaleEvenToned: {Neutral: TtsVoice.make("type-voice-female")},
+                MaleNord: {Neutral: TtsVoice.make("type-voice-male")}
             },
             fallback: {
-                female: "fallback-female",
-                male: "fallback-male",
-                none: "fallback-none"
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
             }
         }
 
@@ -157,9 +221,9 @@ describe("createGenericVoiceMapping", () => {
         const config: GenericVoiceMappingConfig = {
             type: {},
             fallback: {
-                female: "fallback-female",
-                male: "fallback-male",
-                none: "fallback-none"
+                female: {Neutral: TtsVoice.make("fallback-female")},
+                male: {Neutral: TtsVoice.make("fallback-male")},
+                none: {Neutral: TtsVoice.make("fallback-none")}
             }
         }
 
@@ -249,9 +313,11 @@ describe("createAllTalkSpeechGenerator", () => {
                             temperature: AllTalkTemperature.make(0.8),
                             voices: {
                                 fallback: {
-                                    female: "female01",
-                                    male: "male02",
-                                    none: "female05"
+                                    female: {
+                                        Neutral: TtsVoice.make("female01")
+                                    },
+                                    male: {Neutral: TtsVoice.make("male02")},
+                                    none: {Neutral: TtsVoice.make("female05")}
                                 }
                             }
                         }),
@@ -368,9 +434,15 @@ describe("createAllTalkSpeechGenerator", () => {
                                 ),
                                 voices: {
                                     fallback: {
-                                        female: "female01",
-                                        male: "male02",
-                                        none: "female05"
+                                        female: {
+                                            Neutral: TtsVoice.make("female01")
+                                        },
+                                        male: {
+                                            Neutral: TtsVoice.make("male02")
+                                        },
+                                        none: {
+                                            Neutral: TtsVoice.make("female05")
+                                        }
                                     }
                                 }
                             })
@@ -435,9 +507,15 @@ describe("createAllTalkSpeechGenerator", () => {
                                 ),
                                 voices: {
                                     fallback: {
-                                        female: "female01",
-                                        male: "male02",
-                                        none: "female05"
+                                        female: {
+                                            Neutral: TtsVoice.make("female01")
+                                        },
+                                        male: {
+                                            Neutral: TtsVoice.make("male02")
+                                        },
+                                        none: {
+                                            Neutral: TtsVoice.make("female05")
+                                        }
                                     }
                                 }
                             })
@@ -490,9 +568,15 @@ describe("createAllTalkSpeechGenerator", () => {
                                 ),
                                 voices: {
                                     fallback: {
-                                        female: "female01",
-                                        male: "male02",
-                                        none: "female05"
+                                        female: {
+                                            Neutral: TtsVoice.make("female01")
+                                        },
+                                        male: {
+                                            Neutral: TtsVoice.make("male02")
+                                        },
+                                        none: {
+                                            Neutral: TtsVoice.make("female05")
+                                        }
                                     }
                                 }
                             })
