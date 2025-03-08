@@ -1,6 +1,4 @@
 import * as A from "effect/Array"
-import * as E from "effect/Either"
-import {Either} from "effect/Either"
 import * as O from "effect/Option"
 import {none} from "effect/Option"
 import * as R from "effect/Record"
@@ -17,7 +15,14 @@ import {Order} from "effect/Order"
 import * as SR from "effect/SynchronizedRef"
 import {SynchronizedRef} from "effect/SynchronizedRef"
 import {BaseError} from "../common/Error"
-import {Emotion, EmotionIntensity, EmotionType} from "../actor/Emotion"
+import {
+    Emotion,
+    EmotionIntensity,
+    EmotionRangeMap,
+    EmotionRangeValue,
+    EmotionRangeValues,
+    EmotionType
+} from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
 
 export const VoicePathConfig = pipe(
@@ -66,100 +71,40 @@ export class NoAvailableVoiceFileError extends BaseError<NoAvailableVoiceFileErr
     }
 ) {}
 
-export const VoiceIntensityRange = pipe(
-    SC.Struct({
-        min: EmotionIntensity,
-        max: EmotionIntensity,
-        voices: SC.Set(VoiceFile)
-    }),
-    SC.filter(
-        v =>
-            v.min <= v.max ||
-            `The "min" value (${v.min}) must be less than the "max" value (${v.max}).`
-    ),
+export const VoiceFilesForEmotionRange = pipe(
+    EmotionRangeValue(SC.Set(VoiceFile)),
     SC.annotations({
-        title: "Voice Intensity Range",
+        title: "Voice Files For Emotion Range",
         description:
             "A set of voice files for the range of emotional intensity."
     })
 )
 
-export type VoiceIntensityRange = typeof VoiceIntensityRange.Type
+export type VoiceFilesForEmotionRange = typeof VoiceFilesForEmotionRange.Type
 
-export const VoiceIntensityMap = pipe(
-    SC.Array(VoiceIntensityRange),
-    SC.filter(entries =>
-        pipe(
-            entries,
-            A.reduce(E.right(-1) as Either<number, string>, (acc, {min, max}) =>
-                pipe(
-                    acc,
-                    E.flatMap(last =>
-                        min == last + 1
-                            ? E.right(max)
-                            : E.left(
-                                  last == 0
-                                      ? "Voice intensity map must cover the full range of intensity (0-100)."
-                                      : "Voice intensity map must be contiguous."
-                              )
-                    )
-                )
-            ),
-            E.flatMap(last =>
-                last == 100
-                    ? E.right(true)
-                    : E.left(
-                          "Voice intensity map must cover the full range of intensity (0-100)."
-                      )
-            ),
-            E.merge
-        )
-    ),
+export const VoiceFilesForEmotionRanges = pipe(
+    EmotionRangeValues(SC.Set(VoiceFile)),
     SC.annotations({
-        title: "Voice Intensity Map",
+        title: "Voice Files For Emotion Ranges",
         description:
             "A set of voice files for the range of emotional intensity."
     })
 )
 
-export type VoiceIntensityMap = typeof VoiceIntensityMap.Type
+export type VoiceFilesForEmotionRanges = typeof VoiceFilesForEmotionRanges.Type
 
-export const VoiceFileEmotionMap = pipe(
-    SC.extend(
-        SC.Struct({
-            Neutral: SC.Set(VoiceFile)
-        }),
-        SC.partial(
-            SC.Record({
-                // Couldn't find a way to define Exclude<EmotionType, "Neutral"> that
-                // can be used as an index key:
-                key: SC.Union(
-                    SC.Literal("Anger"),
-                    SC.Literal("Disgust"),
-                    SC.Literal("Fear"),
-                    SC.Literal("Sad"),
-                    SC.Literal("Happy"),
-                    SC.Literal("Surprise"),
-                    SC.Literal("Puzzled")
-                ),
-                value: SC.Union(VoiceIntensityMap, SC.Set(VoiceFile))
-            })
-        )
-    ),
+export const VoiceFilesEmotionRangeMap = pipe(
+    EmotionRangeMap(SC.Set(VoiceFile)),
     SC.annotations({
-        title: "Voice File Emotion Map",
+        title: "Voice Files Emotion Range Map",
         description: "Mapping between emotion types and voice files."
     })
 )
 
-export type VoiceFileEmotionMap = {
-    Neutral: Set<VoiceFile>
-} & Partial<
-    Record<Exclude<EmotionType, "Neutral">, VoiceIntensityMap | Set<VoiceFile>>
->
+export type VoiceFilesEmotionRangeMap = EmotionRangeMap<Set<VoiceFile>>
 
 export function getVoicePoolForEmotion(
-    emotions: VoiceFileEmotionMap
+    emotions: VoiceFilesEmotionRangeMap
 ): Effect<(emotion: Emotion) => VoiceFilePool> {
     const {Neutral, ...others} = emotions
 
@@ -172,15 +117,15 @@ export function getVoicePoolForEmotion(
         type PoolFinder = (intensity: EmotionIntensity) => VoiceFilePool
 
         const createPoolFinder = (
-            entries: readonly VoiceIntensityRange[]
+            entries: readonly VoiceFilesForEmotionRange[]
         ): Effect<(intensity: EmotionIntensity) => VoiceFilePool> =>
             FX.gen(function* () {
                 const pools = yield* pipe(
                     entries.values(),
                     A.sort(byMin()),
-                    traverseArray(({voices, ...rest}) =>
+                    traverseArray(({value, ...rest}) =>
                         pipe(
-                            SR.make(voices),
+                            SR.make(value),
                             FX.map(pool => ({
                                 pool,
                                 ...rest
@@ -200,7 +145,7 @@ export function getVoicePoolForEmotion(
                     )
             })
 
-        const isMap = SC.is(VoiceIntensityMap)
+        const isMap = SC.is(VoiceFilesForEmotionRanges)
 
         const poolsForTypes = yield* pipe(
             others,
@@ -220,7 +165,7 @@ export function getVoicePoolForEmotion(
                                       type,
                                       ranges: isMap(value)
                                           ? value
-                                          : VoiceIntensityMap.make([
+                                          : VoiceFilesForEmotionRanges.make([
                                                 {
                                                     min: EmotionIntensity.make(
                                                         0
@@ -228,7 +173,7 @@ export function getVoicePoolForEmotion(
                                                     max: EmotionIntensity.make(
                                                         100
                                                     ),
-                                                    voices: value
+                                                    value
                                                 }
                                             ])
                                   }))
