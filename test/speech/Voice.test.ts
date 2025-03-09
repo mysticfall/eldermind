@@ -7,13 +7,16 @@ import {Fiber, TestClock} from "effect"
 import {
     executeWithVoice,
     getVoiceFilePath,
+    getVoicePoolForEmotion,
     NoAvailableVoiceFileError,
     VoiceFile,
+    VoiceFilesEmotionRangeMap,
     VoicePathConfig
 } from "../../src/speech/Voice"
 import {pipe} from "effect/Function"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {ActorHexId} from "skyrim-effect/game/Actor"
+import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 
 describe("getVoiceFilePath", () => {
     const mockActorFemale: Actor = {
@@ -91,6 +94,137 @@ describe("getVoiceFilePath", () => {
 
         expect(result).toBe("Sound/Voice/Eldermind.esp/FemaleEvenToned")
     })
+})
+
+describe("getVoicePoolForEmotion", () => {
+    it.effect(
+        "should return the correct pool for a specific emotion type and intensity",
+        () =>
+            FX.gen(function* () {
+                const happyEmotionRanges = [
+                    {
+                        min: EmotionIntensity.make(0),
+                        max: EmotionIntensity.make(50),
+                        value: new Set([VoiceFile.make("happy-low")])
+                    },
+                    {
+                        min: EmotionIntensity.make(51),
+                        max: EmotionIntensity.make(100),
+                        value: new Set([VoiceFile.make("happy-high")])
+                    }
+                ]
+
+                const emotionMap: VoiceFilesEmotionRangeMap = {
+                    Neutral: new Set([
+                        VoiceFile.make("neutral-voice1"),
+                        VoiceFile.make("neutral-voice2")
+                    ]),
+                    Happy: happyEmotionRanges,
+                    Sad: new Set([VoiceFile.make("sad-general")])
+                }
+
+                const voicePoolForEmotion =
+                    yield* getVoicePoolForEmotion(emotionMap)
+
+                const neutralEmotion = Emotion.make({
+                    type: "Neutral",
+                    intensity: EmotionIntensity.make(100)
+                })
+
+                const happyEmotionLow = Emotion.make({
+                    type: "Happy",
+                    intensity: EmotionIntensity.make(30)
+                })
+
+                const happyEmotionHigh = Emotion.make({
+                    type: "Happy",
+                    intensity: EmotionIntensity.make(75)
+                })
+
+                const sadEmotion = Emotion.make({
+                    type: "Sad",
+                    intensity: EmotionIntensity.make(50)
+                })
+
+                const angryEmotion = Emotion.make({
+                    type: "Anger",
+                    intensity: EmotionIntensity.make(80)
+                })
+
+                const neutralPool = yield* voicePoolForEmotion(neutralEmotion)
+                const happyPoolLow = yield* voicePoolForEmotion(happyEmotionLow)
+                const happyPoolHigh =
+                    yield* voicePoolForEmotion(happyEmotionHigh)
+                const sadPool = yield* voicePoolForEmotion(sadEmotion)
+                const angerPool = yield* voicePoolForEmotion(angryEmotion)
+
+                expect(neutralPool).toEqual(
+                    new Set(["neutral-voice1", "neutral-voice2"])
+                )
+
+                expect(happyPoolLow).toEqual(new Set(["happy-low"]))
+                expect(happyPoolHigh).toEqual(new Set(["happy-high"]))
+                expect(sadPool).toEqual(new Set(["sad-general"]))
+
+                expect(angerPool).toEqual(
+                    new Set(["neutral-voice1", "neutral-voice2"])
+                )
+            })
+    )
+
+    it.effect(
+        "should return fallback pool when emotion type is not mapped",
+        () =>
+            FX.gen(function* () {
+                const emotionMap: VoiceFilesEmotionRangeMap = {
+                    Neutral: new Set([
+                        VoiceFile.make("neutral-voice1"),
+                        VoiceFile.make("neutral-voice2")
+                    ])
+                }
+
+                const voicePoolForEmotion =
+                    yield* getVoicePoolForEmotion(emotionMap)
+
+                const fearEmotion = Emotion.make({
+                    type: "Fear",
+                    intensity: EmotionIntensity.make(30)
+                })
+
+                const fallbackPool = yield* voicePoolForEmotion(fearEmotion)
+
+                expect(fallbackPool).toEqual(
+                    new Set(["neutral-voice1", "neutral-voice2"])
+                )
+            })
+    )
+
+    it.effect(
+        "should return the neutral fallback pool when no specific emotion ranges exist",
+        () =>
+            FX.gen(function* () {
+                const neutralPoolSet = new Set([
+                    VoiceFile.make("neutral-1"),
+                    VoiceFile.make("neutral-2")
+                ])
+
+                const emotionMap: VoiceFilesEmotionRangeMap = {
+                    Neutral: neutralPoolSet
+                }
+
+                const voicePoolForEmotion =
+                    yield* getVoicePoolForEmotion(emotionMap)
+
+                const emotion = Emotion.make({
+                    type: "Happy",
+                    intensity: EmotionIntensity.make(20)
+                })
+
+                const pool = yield* voicePoolForEmotion(emotion)
+
+                expect(pool).toEqual(neutralPoolSet)
+            })
+    )
 })
 
 describe("executeWithVoice", () => {
