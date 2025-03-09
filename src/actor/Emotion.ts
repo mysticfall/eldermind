@@ -50,7 +50,7 @@ export const Emotion = pipe(
     }),
     SC.annotations({
         title: "Emotion",
-        description: "Emotion of an actor."
+        description: "Emotion of an actor"
     })
 )
 

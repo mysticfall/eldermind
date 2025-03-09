@@ -16,7 +16,7 @@ export const GamePath = pipe(
     SC.brand("GamePath"),
     SC.annotations({
         title: "Game Path",
-        description: "The absolute path to the base game folder"
+        description: "Absolute path to the base game folder"
     })
 )
 
@@ -27,7 +27,7 @@ export const SkyrimPath = pipe(
     SC.brand("SkyrimPath"),
     SC.annotations({
         title: "Game Path",
-        description: "The absolute path to the Skyrim installation folder"
+        description: "Absolute path to the Skyrim installation folder"
     })
 )
 

@@ -6,7 +6,7 @@ export const Identifier = SC.String.pipe(
     SC.brand("Identifier")
 ).annotations({
     title: "Identifier",
-    description: "A unique identifier data."
+    description: "Unique identifier for a resource"
 })
 
 export type Identifier = typeof Identifier.Type

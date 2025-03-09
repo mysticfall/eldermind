@@ -47,7 +47,7 @@ export const VoicePathConfig = pipe(
     }),
     SC.annotations({
         title: "Voice Path Configuration",
-        description: "Configuration for mapping actors to voice paths."
+        description: "Configuration for mapping actors to voice paths"
     })
 )
 
@@ -58,7 +58,7 @@ export const VoiceFile = pipe(
     SC.brand("VoiceFile"),
     SC.annotations({
         title: "Voice File",
-        description: "Name of a voice file without the extension."
+        description: "Name of a voice file without the extension"
     })
 )
 
@@ -127,7 +127,7 @@ export const VoiceFilesEmotionRangeMap = pipe(
     EmotionRangeMap(SC.Set(VoiceFile)),
     SC.annotations({
         title: "Voice Files Emotion Range Map",
-        description: "Mapping between emotion types and voice files."
+        description: "Mapping between emotion types and voice files"
     })
 )
 

@@ -22,7 +22,7 @@ export const RoleId = pipe(
     SC.brand("RoleId"),
     SC.annotations({
         title: "Role ID",
-        description: "A unique identifier of the role"
+        description: "Unique identifier of the role"
     })
 )
 
@@ -34,7 +34,7 @@ export const RoleDescription = pipe(
     SC.brand("RoleDescription"),
     SC.annotations({
         title: "Role Description",
-        description: "The description of the role."
+        description: "Description of the role"
     })
 )
 
@@ -47,7 +47,7 @@ export const Role = pipe(
     }),
     SC.annotations({
         title: "Role",
-        description: "A role for an actor in the scene."
+        description: "Role for an actor in the scene"
     })
 )
 
@@ -60,7 +60,7 @@ export const RoleMapping = pipe(
     }),
     SC.annotations({
         title: "Role Mapping",
-        description: "A role for an actor in the scene."
+        description: "Role for an actor in the scene"
     })
 )
 

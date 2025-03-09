@@ -30,7 +30,7 @@ export const DataPath = SC.String.pipe(
     SC.brand("DataPath")
 ).annotations({
     title: "Data Path",
-    description: "The path to a specific game data."
+    description: "Path to a specific game data"
 })
 
 export type DataPath = typeof DataPath.Type

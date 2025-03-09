@@ -12,7 +12,7 @@ export const ActorContext = pipe(
     }),
     SC.annotations({
         title: "Actor Context",
-        description: "Basic information of an actor."
+        description: "Basic information of an actor"
     })
 )
 

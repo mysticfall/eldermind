@@ -10,7 +10,7 @@ export const SceneId = pipe(
     SC.brand("SceneId"),
     SC.annotations({
         title: "Scene ID",
-        description: "The unique identifier of the scene."
+        description: "Unique identifier of the scene"
     })
 )
 
@@ -22,7 +22,7 @@ export const SceneDescription = pipe(
     SC.brand("SceneDescription"),
     SC.annotations({
         title: "Scene Description",
-        description: "A short description of the scene."
+        description: "Short description of the scene"
     })
 )
 

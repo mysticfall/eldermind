@@ -25,7 +25,7 @@ export const SessionId = pipe(
     SC.brand("SessionId"),
     SC.annotations({
         title: "Session ID",
-        description: "The unique identifier of the Session."
+        description: "Unique identifier of the session"
     })
 )
 
@@ -45,7 +45,7 @@ export const Session = pipe(
     }),
     SC.annotations({
         title: "Session",
-        description: "An active instance of a scene."
+        description: "Active instance of a scene"
     })
 )
 
