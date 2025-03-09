@@ -7,8 +7,8 @@ import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as SCH from "effect/Schedule"
 import {Schedule} from "effect/Schedule"
-import {StockVoiceType} from "skyrim-effect/game/VoiceType"
-import {ActorHexId, Sex} from "skyrim-effect/game/Actor"
+import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
+import {ActorHexId, getActorHexId, getSex, Sex} from "skyrim-effect/game/Actor"
 import {flow, pipe} from "effect"
 import * as ORD from "effect/Order"
 import {Order} from "effect/Order"
@@ -24,6 +24,8 @@ import {
     EmotionType
 } from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
+import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
+import * as path from "node:path"
 
 export const VoicePathConfig = pipe(
     SC.Struct({
@@ -63,6 +65,34 @@ export const VoiceFile = pipe(
 export type VoiceFile = typeof VoiceFile.Type
 
 export type VoiceFilePool = SynchronizedRef<Set<VoiceFile>>
+
+export function getVoiceFilePath(
+    config: VoicePathConfig
+): (speaker: Actor) => string {
+    const {root, overrides, fallback} = config
+
+    return speaker =>
+        pipe(
+            getStockVoiceType(speaker),
+            O.getOrElse<string>(() =>
+                pipe(
+                    overrides,
+                    O.fromNullable,
+                    O.flatMap(flow(R.get(getActorHexId(speaker)))),
+                    O.getOrElse(
+                        () =>
+                            fallback[
+                                //FIXME Handle the case when `null` is returned (e.g. throwing a FormError).
+                                getSex(speaker.getActorOwner() as ActorBase)
+                            ]
+                    )
+                )
+            ),
+            A.make,
+            A.prepend(root),
+            s => path.join(...s)
+        )
+}
 
 export class NoAvailableVoiceFileError extends BaseError<NoAvailableVoiceFileError>(
     "NoAvailableVoiceFileError",
