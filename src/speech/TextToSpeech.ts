@@ -122,7 +122,8 @@ export function createGenericVoiceMapping(
         )
 
     const voiceForSex = (speaker: Actor) => {
-        const base = speaker.getBaseObject() as ActorBase
+        //FIXME Handle the case when `null` is returned (e.g. throwing a FormError).
+        const base = speaker.getActorOwner() as ActorBase
         const sex = getSex(base)
 
         return pipe(fallback[sex], getEmotionMapping)

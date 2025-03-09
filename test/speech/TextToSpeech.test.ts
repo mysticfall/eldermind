@@ -31,7 +31,7 @@ describe("createGenericVoiceMapping", () => {
     const mockActorFemale: Actor = {
         getFormID: () => 0x000a2c94,
         getName: () => "Lydia",
-        getBaseObject: () => ({
+        getActorOwner: () => ({
             getSex: () => 1
         }),
         getVoiceType: () => ({
@@ -42,7 +42,7 @@ describe("createGenericVoiceMapping", () => {
     const mockActorMale: Actor = {
         getFormID: () => 0x000a2c95,
         getName: () => "Ulfric",
-        getBaseObject: () => ({
+        getActorOwner: () => ({
             getSex: () => 0
         }),
         getVoiceType: () => ({
@@ -212,7 +212,7 @@ describe("createGenericVoiceMapping", () => {
         const mockActorUndefinedSex = {
             getFormID: () => 0x000a2c96,
             getName: () => "Unknown",
-            getBaseObject: () => ({
+            getActorOwner: () => ({
                 getSex: () => undefined // No sex defined
             }),
             getVoiceType: () => undefined
@@ -237,7 +237,7 @@ describe("createAllTalkSpeechGenerator", () => {
     const speaker = {
         getFormID: () => 0x000a2c94,
         getName: () => "Lydia",
-        getBaseObject: () => ({
+        getActorOwner: () => ({
             getSex: () => 1
         }),
         getVoiceType: () => ({
