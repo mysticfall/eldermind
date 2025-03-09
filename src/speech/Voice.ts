@@ -7,7 +7,7 @@ import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as SCH from "effect/Schedule"
 import {Schedule} from "effect/Schedule"
-import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
+import {getStockVoiceType} from "skyrim-effect/game/VoiceType"
 import {ActorHexId, getActorHexId, getSex, Sex} from "skyrim-effect/game/Actor"
 import {flow, pipe} from "effect"
 import * as ORD from "effect/Order"
@@ -26,32 +26,52 @@ import {
 import {traverseArray} from "../common/Type"
 import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
 import * as path from "node:path"
+import {DataPath} from "../common/Data"
 
-export const VoicePathConfig = pipe(
-    SC.Struct({
-        root: SC.NonEmptyString,
-        overrides: pipe(
-            SC.Record({key: ActorHexId, value: SC.NonEmptyString}),
-            SC.optional
-        ),
-        fallback: SC.optionalWith(
-            SC.Record({key: Sex, value: StockVoiceType}),
-            {
-                default: () => ({
-                    male: "MaleEvenToned",
-                    female: "FemaleEvenToned",
-                    none: "MaleEvenToned"
-                })
-            }
-        )
-    }),
+export const VoiceRootPath = pipe(
+    SC.NonEmptyString,
+    SC.brand("VoiceRootPath"),
     SC.annotations({
-        title: "Voice Path Configuration",
-        description: "Configuration for mapping actors to voice paths"
+        title: "Voice Root Path",
+        description:
+            "Root path for the voice data(e.g. 'Sound/Voice/Eldermind.esp')"
     })
 )
 
-export type VoicePathConfig = typeof VoicePathConfig.Type
+export type VoicePath = typeof VoiceRootPath.Type
+
+export const VoiceFolder = pipe(
+    SC.NonEmptyString,
+    SC.brand("VoiceFolder"),
+    SC.annotations({
+        title: "Voice Folder",
+        description: "Name of a voice file without the extension"
+    })
+)
+
+export type VoiceFolder = typeof VoiceFolder.Type
+
+export const VoiceFolderConfig = pipe(
+    SC.Struct({
+        overrides: pipe(
+            SC.Record({key: ActorHexId, value: VoiceFolder}),
+            SC.optional
+        ),
+        fallback: SC.optionalWith(SC.Record({key: Sex, value: VoiceFolder}), {
+            default: () => ({
+                male: VoiceFolder.make("MaleEvenToned"),
+                female: VoiceFolder.make("FemaleEvenToned"),
+                none: VoiceFolder.make("MaleEvenToned")
+            })
+        })
+    }),
+    SC.annotations({
+        title: "Voice Folder Configuration",
+        description: "Configuration for mapping actors to voice folders"
+    })
+)
+
+export type VoiceFolderConfig = typeof VoiceFolderConfig.Type
 
 export const VoiceFile = pipe(
     SC.NonEmptyString,
@@ -66,12 +86,17 @@ export type VoiceFile = typeof VoiceFile.Type
 
 export type VoiceFilePool = SynchronizedRef<Set<VoiceFile>>
 
-export function getVoiceFilePath(
-    config: VoicePathConfig
-): (speaker: Actor) => string {
-    const {root, overrides, fallback} = config
+export type VoicePathResolver = (
+    extension: ".lip" | ".wav" | ".fuz"
+) => DataPath
 
-    return speaker =>
+export function createVoicePathResolver(
+    root: VoicePath,
+    config: VoiceFolderConfig
+): (speaker: Actor, file: VoiceFile) => VoicePathResolver {
+    const {overrides, fallback} = config
+
+    return (speaker, file) => extension =>
         pipe(
             getStockVoiceType(speaker),
             O.getOrElse<string>(() =>
@@ -90,7 +115,8 @@ export function getVoiceFilePath(
             ),
             A.make,
             A.prepend(root),
-            s => path.join(...s)
+            s => path.join(...s, `${file}${extension}`),
+            DataPath.make
         )
 }
 

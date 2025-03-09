@@ -5,20 +5,22 @@ import * as SCH from "effect/Schedule"
 import * as SR from "effect/SynchronizedRef"
 import {Fiber, TestClock} from "effect"
 import {
+    createVoicePathResolver,
     executeWithVoice,
-    getVoiceFilePath,
     getVoicePoolForEmotion,
     NoAvailableVoiceFileError,
     VoiceFile,
     VoiceFilesEmotionRangeMap,
-    VoicePathConfig
+    VoiceFolder,
+    VoiceFolderConfig,
+    VoiceRootPath
 } from "../../src/speech/Voice"
 import {pipe} from "effect/Function"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {ActorHexId} from "skyrim-effect/game/Actor"
 import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 
-describe("getVoiceFilePath", () => {
+describe("createVoicePathResolver", () => {
     const mockActorFemale: Actor = {
         getFormID: () => 0x000a2c94,
         getName: () => "Lydia",
@@ -41,58 +43,63 @@ describe("getVoiceFilePath", () => {
         })
     } as unknown as Actor
 
+    const root = VoiceRootPath.make("Data/Sound/Voice/Eldermind.esp")
+    const file = VoiceFile.make("Eldermind_Dialogue_00001827_1")
+
     it("should return a voice file path matching the given actor's voice type", () => {
-        const config: VoicePathConfig = {
-            root: "Sound/Voice/Eldermind.esp",
+        const config: VoiceFolderConfig = {
             fallback: {
-                male: "MaleEvenToned",
-                female: "FemaleEvenToned",
-                none: "FemaleCommoner"
+                male: VoiceFolder.make("MaleEvenToned"),
+                female: VoiceFolder.make("FemaleEvenToned"),
+                none: VoiceFolder.make("FemaleCommoner")
             }
         }
 
-        const getPath = getVoiceFilePath(config)
+        const resolver = createVoicePathResolver(root, config)
+        const getPath = resolver(mockActorMale, file)
 
-        const result = getPath(mockActorMale)
-
-        expect(result).toBe("Sound/Voice/Eldermind.esp/MaleNord")
+        expect(getPath(".wav")).toBe(`${root}/MaleNord/${file}.wav`)
+        expect(getPath(".lip")).toBe(`${root}/MaleNord/${file}.lip`)
+        expect(getPath(".fuz")).toBe(`${root}/MaleNord/${file}.fuz`)
     })
 
     it("should allow overriding voice files for unique actors", () => {
-        const config: VoicePathConfig = {
-            root: "Sound/Voice/Eldermind.esp",
+        const config: VoiceFolderConfig = {
             overrides: {
-                [ActorHexId.make("000A2C94")]: "SomeModdedLydiaVoice"
+                [ActorHexId.make("000A2C94")]: VoiceFolder.make(
+                    "SomeModdedLydiaVoice"
+                )
             },
             fallback: {
-                male: "MaleEvenToned",
-                female: "FemaleEvenToned",
-                none: "FemaleCommoner"
+                male: VoiceFolder.make("MaleEvenToned"),
+                female: VoiceFolder.make("FemaleEvenToned"),
+                none: VoiceFolder.make("FemaleCommoner")
             }
         }
 
-        const getPath = getVoiceFilePath(config)
+        const resolver = createVoicePathResolver(root, config)
+        const getPath = resolver(mockActorFemale, file)
 
-        const result = getPath(mockActorFemale)
-
-        expect(result).toBe("Sound/Voice/Eldermind.esp/SomeModdedLydiaVoice")
+        expect(getPath(".wav")).toBe(`${root}/SomeModdedLydiaVoice/${file}.wav`)
+        expect(getPath(".lip")).toBe(`${root}/SomeModdedLydiaVoice/${file}.lip`)
+        expect(getPath(".fuz")).toBe(`${root}/SomeModdedLydiaVoice/${file}.fuz`)
     })
 
     it("should use a gender specific path when no override exists for the given unique actor", () => {
-        const config: VoicePathConfig = {
-            root: "Sound/Voice/Eldermind.esp",
+        const config: VoiceFolderConfig = {
             fallback: {
-                male: "MaleEvenToned",
-                female: "FemaleEvenToned",
-                none: "FemaleCommoner"
+                male: VoiceFolder.make("MaleEvenToned"),
+                female: VoiceFolder.make("FemaleEvenToned"),
+                none: VoiceFolder.make("FemaleCommoner")
             }
         }
 
-        const getPath = getVoiceFilePath(config)
+        const resolver = createVoicePathResolver(root, config)
+        const getPath = resolver(mockActorFemale, file)
 
-        const result = getPath(mockActorFemale)
-
-        expect(result).toBe("Sound/Voice/Eldermind.esp/FemaleEvenToned")
+        expect(getPath(".wav")).toBe(`${root}/FemaleEvenToned/${file}.wav`)
+        expect(getPath(".lip")).toBe(`${root}/FemaleEvenToned/${file}.lip`)
+        expect(getPath(".fuz")).toBe(`${root}/FemaleEvenToned/${file}.fuz`)
     })
 })
 
