@@ -40,7 +40,16 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reporter: ["json-summary", "html"],
-            exclude: ["docs", "coverage", "dist", "playground", "test"]
+            exclude: [
+                "docs",
+                "coverage",
+                "dist",
+                "playground",
+                "test",
+                "**/index.ts",
+                "*.config.js",
+                "*.config.mjs"
+            ]
         }
     }
 })
