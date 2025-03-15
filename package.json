@@ -168,6 +168,11 @@
       "import": "./dist/esm/scene/Scene.js",
       "require": "./dist/cjs/scene/Scene.js"
     },
+    "./speech/LipSync": {
+      "types": "./dist/dts/speech/LipSync.d.ts",
+      "import": "./dist/esm/speech/LipSync.js",
+      "require": "./dist/cjs/speech/LipSync.js"
+    },
     "./speech/Recorder": {
       "types": "./dist/dts/speech/Recorder.d.ts",
       "import": "./dist/esm/speech/Recorder.js",
