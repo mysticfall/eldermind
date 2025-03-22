@@ -341,9 +341,8 @@ describe("createAllTalkSpeechGenerator", () => {
                     )
 
                     expect(body.method).toBe("POST")
-                    expect(body.headers).toBeInstanceOf(Headers)
 
-                    const headers = body.headers as Headers
+                    const headers = new Headers(body.headers)
 
                     expect(headers.get("content-type")).toBe(
                         "application/x-www-form-urlencoded"

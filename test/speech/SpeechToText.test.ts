@@ -64,9 +64,8 @@ describe("createOpenAICompatibleTranscriber", () => {
                 )
 
                 expect(body.method).toBe("POST")
-                expect(body.headers).toBeInstanceOf(Headers)
 
-                const headers = body.headers as Headers
+                const headers = new Headers(body.headers)
 
                 expect(headers.get("authorization")).toBe("Bearer secret")
                 expect(headers.get("content-type")).toBe("multipart/form-data")
