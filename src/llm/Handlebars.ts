@@ -12,13 +12,16 @@ import {PlatformError} from "@effect/platform/Error"
 import {TemplateCompiler} from "./Template"
 import {asDuration, GameTime, getGameTime} from "skyrim-effect/game/Time"
 
+// Allow referencing the actual instance from a different module:
+export const HandlebarsInstance = Handlebars
+
 export function compileHandlebarsTemplate(
     options?: CompileOptions
 ): (source: string) => Effect<HandlebarsTemplateDelegate, InvalidDataError> {
     return text =>
         pipe(
             FX.try(function () {
-                const template = Handlebars.compile(text, options)
+                const template = HandlebarsInstance.compile(text, options)
 
                 //Eagerly validate the syntax of the template:
                 template({})
@@ -84,7 +87,7 @@ export function registerPartial(
                 `Registering Handlebars partial "${partialName}" from path: ${path}`
             )
 
-            Handlebars.registerPartial(partialName, template)
+            HandlebarsInstance.registerPartial(partialName, template)
         })
 }
 
