@@ -348,18 +348,21 @@ describe("createAllTalkSpeechGenerator", () => {
                         "application/x-www-form-urlencoded"
                     )
 
-                    expect(body.body).toBeDefined()
+                    const buffer = body.body as Uint8Array
+                    const params = new TextDecoder().decode(buffer).split("&")
 
-                    const form = body.body as FormData
-
-                    expect(form.get("text_input")).toBe(
-                        "You never should've come here!"
+                    expect(new Set(params)).toEqual(
+                        new Set([
+                            "text_input=You never should've come here!",
+                            "text_filtering=standard",
+                            "language=en",
+                            "character_voice_gen=female01.wav",
+                            "narrator_enabled=false",
+                            "autoplay=false",
+                            "temperature=0.8",
+                            "speed=0.7"
+                        ])
                     )
-                    expect(form.get("character_voice_gen")).toBe("female01.wav")
-                    expect(form.get("narrator_enabled")).toBe("false")
-                    expect(form.get("autoplay")).toBe("false")
-                    expect(form.get("temperature")).toBe("0.8")
-                    expect(form.get("speed")).toBe("0.7")
 
                     const content = yield* readStream(stream)
 
@@ -531,7 +534,7 @@ describe("createAllTalkSpeechGenerator", () => {
                     )
 
                     expect(message).toBe(
-                        "The TTS service responded with status: 500"
+                        "The TTS service responded with status: (500) Internal Server Error"
                     )
                 }),
                 FX.provide(NodeContext.layer)

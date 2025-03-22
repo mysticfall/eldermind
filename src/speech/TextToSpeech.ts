@@ -2,6 +2,7 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {BaseError} from "../common/Error"
 import {HttpClient} from "@effect/platform/HttpClient"
+import {text as asText} from "@effect/platform/HttpBody"
 import {DialogueText} from "../game/Dialogue"
 import {pipe} from "effect"
 import * as A from "effect/Array"
@@ -10,8 +11,6 @@ import * as R from "effect/Record"
 import * as SC from "effect/Schema"
 import * as ST from "effect/Stream"
 import {Stream} from "effect/Stream"
-import {FormData} from "formdata-node"
-import {formData} from "@effect/platform/HttpBody"
 import {FileSystem} from "@effect/platform/FileSystem"
 import {parseJson} from "../common/Json"
 import {Scope} from "effect/Scope"
@@ -196,15 +195,18 @@ export type AllTalkConfig = typeof AllTalkConfig.Type
 export function createAllTalkSpeechGenerator(
     config: AllTalkConfig
 ): Effect<SpeechGenerator, never, HttpClient | FileSystem> {
-    const Response = SC.Struct({
-        status: SC.Union(
-            SC.Literal("generate-success"),
-            SC.Literal("generate-failure")
-        ),
-        output_file_path: SC.String,
-        output_file_url: SC.String,
-        output_cache_url: SC.String
-    })
+    const Response = SC.Union(
+        SC.Struct({
+            status: SC.Literal("generate-success"),
+            output_file_path: SC.String,
+            output_file_url: SC.String,
+            output_cache_url: SC.String
+        }),
+        SC.Struct({
+            status: SC.Literal("generate-failure"),
+            error: SC.String
+        })
+    )
 
     const {endpoint, speed, temperature, voices} = config
 
@@ -229,16 +231,23 @@ export function createAllTalkSpeechGenerator(
     )
 
     const checkHttpResponse = (response: HttpClientResponse) =>
-        pipe(
-            response,
-            FX.liftPredicate(
-                r => r.status >= 200 && r.status < 300,
-                r =>
-                    new TtsServiceError({
-                        message: `The TTS service responded with status: ${r.status}`
-                    })
-            )
-        )
+        FX.gen(function* () {
+            const {status} = response
+
+            if (status < 200 || status >= 300) {
+                const text = yield* pipe(
+                    response.text,
+                    FX.map(text => `(${status}) ${text}`),
+                    FX.catchAll(() => FX.succeed(status))
+                )
+
+                yield* new TtsServiceError({
+                    message: `The TTS service responded with status: ${text}`
+                })
+            }
+
+            return response
+        })
 
     return FX.gen(function* () {
         const client = yield* HttpClient
@@ -254,23 +263,32 @@ export function createAllTalkSpeechGenerator(
                     `Using voice "${voice}" for actor ${speaker.getName()}.`
                 )
 
-                const form = new FormData()
+                const data = {
+                    text_input: text,
+                    text_filtering: "standard",
+                    language: "en",
+                    character_voice_gen: `${voice}.wav`,
+                    narrator_enabled: false,
+                    autoplay: false,
+                    temperature: temperature,
+                    speed: speed
+                }
 
-                form.append("text_input", text)
-                form.append("text_filtering", "standard")
-                form.append("language", "en")
-                form.append("character_voice_gen", `${voice}.wav`)
-                form.append("narrator_enabled", false)
-                form.append("autoplay", false)
-                form.append("temperature", temperature)
-                form.append("speed", speed)
+                yield* FX.logTrace(data)
 
                 const response = yield* pipe(
                     client.post(`${endpoint}/api/tts-generate`, {
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: formData(form as globalThis.FormData)
+                        body: pipe(
+                            data,
+                            R.toEntries,
+                            A.map(e => e.join("=")),
+                            A.join("&"),
+                            text =>
+                                asText(
+                                    text,
+                                    "application/x-www-form-urlencoded"
+                                )
+                        )
                     }),
                     FX.catchTag("RequestError", invalidRequest),
                     FX.catchTag("ResponseError", invalidResponse),
@@ -279,6 +297,9 @@ export function createAllTalkSpeechGenerator(
 
                 const {output_file_path, output_file_url} = yield* pipe(
                     response.text,
+                    FX.tap(text =>
+                        FX.logDebug(`Response from the server: ${text}`)
+                    ),
                     FX.flatMap(parseJson(Response)),
                     FX.catchTag("RequestError", invalidRequest),
                     FX.catchTag("ResponseError", invalidResponse),
@@ -286,7 +307,9 @@ export function createAllTalkSpeechGenerator(
                     FX.flatMap(r =>
                         r.status == "generate-success"
                             ? FX.succeed(r)
-                            : unknownError()
+                            : handleError(
+                                  `The server returned an error: ${r.error}`
+                              )()
                     )
                 )
 
