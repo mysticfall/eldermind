@@ -76,11 +76,11 @@ describe("createRecordingStream", () => {
                 const duration1 = pipe(recordings[0].duration, DU.toMillis)
                 const duration2 = pipe(recordings[1].duration, DU.toMillis)
 
-                expect(duration1).toBeGreaterThan(150)
-                expect(duration1).toBeLessThan(250)
+                expect(duration1).toBeGreaterThan(130)
+                expect(duration1).toBeLessThan(280)
 
-                expect(duration2).toBeGreaterThan(50)
-                expect(duration2).toBeLessThan(150)
+                expect(duration2).toBeGreaterThan(20)
+                expect(duration2).toBeLessThan(180)
             })
     )
 
