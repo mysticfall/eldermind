@@ -44,7 +44,6 @@ export default defineConfig({
                 "docs",
                 "coverage",
                 "dist",
-                "playground",
                 "test",
                 "**/index.ts",
                 "*.config.js",

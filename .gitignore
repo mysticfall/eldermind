@@ -2,11 +2,7 @@ node_modules
 dist
 docs
 coverage
-playground
 .idea
 *.iml
 .vscode
 tsconfig.tsbuildinfo
-
-# Ignore workspace config for local test modules:
-pnpm-workspace.yaml

@@ -13,7 +13,6 @@ export default tseslint.config(
             "dist/",
             "docs/",
             "node_modules/",
-            "playground/",
             "*.config.js",
             "*.config.mjs"
         ]
