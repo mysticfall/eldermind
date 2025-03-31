@@ -9,6 +9,7 @@
   "scripts": {
     "prepare": "husky",
     "build": "vite build && tsc -b --emitDeclarationOnly",
+    "build:debug": "vite build --mode development && tsc -b --emitDeclarationOnly",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
     "doc": "typedoc",
@@ -21,20 +22,21 @@
     "skryim platform"
   ],
   "dependencies": {
+    "skyrim-effect": "file:../skyrim-effect",
+    "formdata-node": "^6.0.3",
+    "gray-matter": "^4.0.3",
+    "handlebars": "^4.7.8",
+    "marked": "^15.0.7",
+    "node-microphone": "^0.1.6"
+  },
+  "peerDependencies": {
+    "effect": "3.14.3",
     "@effect/platform": "^0.80.3",
     "@effect/platform-node": "^0.76.6",
     "@effect/typeclass": "^0.33.3",
     "@langchain/core": "^0.3.43",
     "@langchain/openai": "^0.5.2",
-    "@skyrim-platform/skyrim-platform": "2.9.0",
-    "dotenv": "^16.4.7",
-    "effect": "3.14.3",
-    "formdata-node": "^6.0.3",
-    "gray-matter": "^4.0.3",
-    "handlebars": "^4.7.8",
-    "marked": "^15.0.7",
-    "node-microphone": "^0.1.6",
-    "skyrim-effect": "file:../skyrim-effect"
+    "@skyrim-platform/skyrim-platform": "2.9.0"
   },
   "devDependencies": {
     "@effect/vitest": "^0.20.3",
@@ -50,6 +52,9 @@
     "husky": "^9.1.7",
     "istanbul-badges-readme": "^1.9.0",
     "prettier": "^3.5.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "rollup-plugin-external-globals": "^0.13.0",
+    "rollup-plugin-node-externals": "^8.0.0",
     "typedoc": "^0.28.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
