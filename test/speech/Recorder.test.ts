@@ -4,7 +4,7 @@ import * as FX from "effect/Effect"
 import {createRecordingStream} from "../../src/speech/Recorder"
 import * as DU from "effect/Duration"
 import * as ST from "effect/Stream"
-import {Chunk, pipe} from "effect"
+import {Chunk, Fiber, pipe, TestClock} from "effect"
 import * as SCH from "effect/Schedule"
 import {PassThrough} from "node:stream"
 
@@ -31,42 +31,26 @@ describe("createRecordingStream", () => {
 
     const mockData = new TextEncoder().encode("Mock audio data")
 
-    it.scopedLive(
-        "should create a stream that starts emits the recorded audio",
+    it.effect(
+        "should create a stream that emits the recorded audio when receiving an event",
         () =>
             FX.gen(function* () {
-                const ticks = yield* pipe(
-                    100,
-                    DU.millis,
-                    SCH.spaced,
-                    ST.fromSchedule,
-                    ST.share({capacity: "unbounded"})
-                )
-
-                const onStart = yield* pipe(
-                    ticks,
-                    ST.filter(d => d == 0 || d == 5),
-                    ST.share({capacity: "unbounded"})
-                )
-
-                const onStop = yield* pipe(
-                    ticks,
-                    ST.filter(d => d == 2 || d == 6),
-                    ST.share({capacity: "unbounded"})
-                )
-
                 const stream = createRecordingStream({
-                    startWhen: onStart,
-                    stopWhen: onStop,
-                    maxDuration: DU.seconds(1)
+                    event: pipe(DU.seconds(2), SCH.spaced, ST.fromSchedule),
+                    maxDuration: DU.seconds(3)
                 })
 
-                const recordings = yield* pipe(
+                const fiber = yield* pipe(
                     stream,
-                    ST.timeout(DU.seconds(1)),
+                    ST.take(2),
                     ST.runCollect,
-                    FX.map(Chunk.toReadonlyArray)
+                    FX.map(Chunk.toReadonlyArray),
+                    FX.fork
                 )
+
+                yield* TestClock.adjust("8 seconds")
+
+                const recordings = yield* Fiber.join(fiber)
 
                 expect(recordings).toHaveLength(2)
 
@@ -76,30 +60,31 @@ describe("createRecordingStream", () => {
                 const duration1 = pipe(recordings[0].duration, DU.toMillis)
                 const duration2 = pipe(recordings[1].duration, DU.toMillis)
 
-                expect(duration1).toBeGreaterThan(130)
-                expect(duration1).toBeLessThan(280)
-
-                expect(duration2).toBeGreaterThan(20)
-                expect(duration2).toBeLessThan(180)
+                expect(duration1).toBe(2000)
+                expect(duration2).toBe(2000)
             })
     )
 
-    it.scopedLive(
+    it.effect(
         "should end the recording when a stop event isn't received until the timeout",
         () =>
             FX.gen(function* () {
                 const stream = createRecordingStream({
-                    startWhen: ST.make(true),
-                    stopWhen: ST.never,
+                    event: pipe(DU.seconds(1), SCH.fromDelay, ST.fromSchedule),
                     maxDuration: DU.seconds(1)
                 })
 
-                const recordings = yield* pipe(
+                const fiber = yield* pipe(
                     stream,
-                    ST.timeout(DU.seconds(2)),
+                    ST.take(1),
                     ST.runCollect,
-                    FX.map(Chunk.toReadonlyArray)
+                    FX.map(Chunk.toReadonlyArray),
+                    FX.fork
                 )
+
+                yield* TestClock.adjust("3 seconds")
+
+                const recordings = yield* Fiber.join(fiber)
 
                 expect(recordings).toHaveLength(1)
 

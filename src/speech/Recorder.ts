@@ -23,8 +23,7 @@ export interface Recording {
 }
 
 export interface RecordingOptions {
-    startWhen: Stream<unknown>
-    stopWhen: Stream<unknown>
+    event: Stream<unknown>
     maxDuration?: Duration
     bitwidth?: 8 | 16 | 24
     rate?: 8000 | 16000 | 44100
@@ -41,7 +40,7 @@ export function createRecordingStream(
         O.getOrElse(() => DU.seconds(30))
     )
 
-    const {startWhen, stopWhen, bitwidth, rate, device} = options
+    const {event, bitwidth, rate, device} = options
 
     const record = pipe(
         FX.logDebug("Start recording."),
@@ -91,7 +90,7 @@ export function createRecordingStream(
                     ),
                     until: () =>
                         pipe(
-                            stopWhen,
+                            event,
                             ST.take(1),
                             ST.runCollect,
                             FX.map(c => c.length > 0)
@@ -115,7 +114,9 @@ export function createRecordingStream(
     )
 
     return pipe(
-        startWhen,
-        ST.flatMap(() => pipe(record, ST.fromEffect))
+        event,
+        ST.take(1),
+        ST.flatMap(() => pipe(record, ST.fromEffect)),
+        ST.repeat(Schedule.forever)
     )
 }
