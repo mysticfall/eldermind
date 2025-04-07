@@ -3,7 +3,7 @@ import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
 import {ContextBuilder} from "../common/Data"
-import {Actor} from "@skyrim-platform/skyrim-platform"
+import {Actor} from "skyrimPlatform"
 
 export const ActorContext = pipe(
     SC.Struct({
