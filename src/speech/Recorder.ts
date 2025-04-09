@@ -50,7 +50,8 @@ export function createRecordingStream(
                     bitwidth,
                     rate,
                     device,
-                    channels: 1
+                    channels: 1,
+                    additionalParameters: ["-q"]
                 })
 
                 const chunks: Buffer[] = []
