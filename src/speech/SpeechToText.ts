@@ -5,7 +5,7 @@ import * as O from "effect/Option"
 import {BaseError} from "../common/Error"
 import {pipe} from "effect"
 import {HttpClient} from "@effect/platform/HttpClient"
-import {File, FormData} from "formdata-node"
+import {FormData} from "formdata-node"
 import {formData} from "@effect/platform/HttpBody"
 import {Scope} from "effect/Scope"
 import {parseJson} from "../common/Json"
@@ -80,15 +80,12 @@ export function createOpenAICompatibleTranscriber(
 
     const {endpoint, model, apiKey} = config
 
-    const headers = {
-        "Content-Type": "multipart/form-data",
-        ...pipe(
-            apiKey,
-            O.fromNullable,
-            O.map(v => ({Authorization: `Bearer ${v}`})),
-            O.getOrElse(() => ({}))
-        )
-    }
+    const headers = pipe(
+        apiKey,
+        O.fromNullable,
+        O.map(v => ({Authorization: `Bearer ${v}`})),
+        O.getOrElse(() => ({}))
+    )
 
     return FX.gen(function* () {
         const client = yield* HttpClient

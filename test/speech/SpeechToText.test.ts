@@ -68,7 +68,6 @@ describe("createOpenAICompatibleTranscriber", () => {
                 const headers = new Headers(body.headers)
 
                 expect(headers.get("authorization")).toBe("Bearer secret")
-                expect(headers.get("content-type")).toBe("multipart/form-data")
 
                 expect(body.body).toBeDefined()
 
@@ -80,7 +79,10 @@ describe("createOpenAICompatibleTranscriber", () => {
 
                 const file = form.get("file") as File
 
-                expect(file.size).toBe(data.length)
+                const content = yield* FX.promise(() => file.text())
+
+                expect(file.type).toBe("audio/x-wav")
+                expect(content).toEqual("Mock audio data")
             })
     )
 
