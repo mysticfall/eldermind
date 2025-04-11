@@ -44,9 +44,6 @@ importers:
       marked:
         specifier: ^15.0.7
         version: 15.0.7
-      node-microphone:
-        specifier: ^0.1.6
-        version: 0.1.6
       skyrim-effect:
         specifier: file:../skyrim-effect
         version: file:../skyrim-effect(@skyrim-platform/skyrim-platform@node_modules+skyrim-effect+mock+skyrim-platform)(effect@3.14.3)
@@ -66,9 +63,6 @@ importers:
       '@types/node':
         specifier: ^22.13.14
         version: 22.13.14
-      '@types/node-microphone':
-        specifier: ^0.1.4
-        version: 0.1.4
       '@vitest/coverage-v8':
         specifier: ^3.1.1
         version: 3.1.1(vitest@3.1.1(@types/node@22.13.14)(tsx@4.19.2)(yaml@2.7.0))
@@ -932,9 +926,6 @@ packages:
 
   '@types/node-fetch@2.6.12':
     resolution: {integrity: sha512-8nneRWKCg3rMtF69nLQJnOYUcbafYeFSjqkw3jCRLsqkWFlHaoQrr5mXmofFGOx3DKn7UfmBMyov8ySvLRVldA==}
-
-  '@types/node-microphone@0.1.4':
-    resolution: {integrity: sha512-rAiDwS9VpxbtmV+H+/cKf8cmfMZT0+4+8APmy5irKw/myLsN3Y9NDHkAuPjn9VARy+ge2o7OAl2LNhwx2CrDPw==}
 
   '@types/node@18.19.68':
     resolution: {integrity: sha512-QGtpFH1vB99ZmTa63K4/FU8twThj4fuVSBkGddTp7uIL/cuoLWIUSL2RcOaigBhfR+hg5pgGkBnkoOxrTVBMKw==}
@@ -2877,10 +2868,6 @@ snapshots:
     dependencies:
       '@types/node': 22.13.14
       form-data: 4.0.1
-
-  '@types/node-microphone@0.1.4':
-    dependencies:
-      '@types/node': 22.13.14
 
   '@types/node@18.19.68':
     dependencies:
