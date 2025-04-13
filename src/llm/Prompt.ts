@@ -11,6 +11,8 @@ import * as E from "effect/Either"
 import {Either} from "effect/Either"
 import * as A from "effect/Array"
 import * as SC from "effect/Schema"
+import * as SCH from "effect/Scheduler"
+import {Scheduler} from "effect/Scheduler"
 import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
 import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
@@ -82,8 +84,11 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
     options?: {
         readonly retryTimes?: number
         readonly parseOptions?: ParseOptions
+        readonly contextScheduler?: Scheduler
     }
 ): Prompt<TContext, TOutput> {
+    const scheduler = options?.contextScheduler ?? SCH.defaultScheduler
+
     return context =>
         FX.gen(function* () {
             const ctx = yield* pipe(
@@ -99,9 +104,14 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
                 )
             )
 
+            yield* FX.logDebug(
+                `Context was built from ${builders.length} builders.`
+            )
+
             const messages = yield* pipe(
                 templates,
-                traverseArray(b => b(ctx))
+                traverseArray(b => b(ctx)),
+                FX.withScheduler(scheduler)
             )
 
             yield* pipe(
