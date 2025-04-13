@@ -98,7 +98,7 @@ function installMocks() {
             getActor: (id: ActorId) =>
                 FX.succeed({
                     getFormID: () => id,
-                    getName: () => (id == 0x00000014 ? "Anna" : "Lydia")
+                    getDisplayName: () => (id == 0x00000014 ? "Anna" : "Lydia")
                 } as unknown as Actor)
         }
     })

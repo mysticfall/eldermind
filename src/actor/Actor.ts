@@ -23,5 +23,5 @@ export const actorContextBuilder: ContextBuilder<Actor, ActorContext> = (
 ) =>
     FX.succeed({
         id: ActorId.make(context.getFormID()),
-        name: ActorName.make(context.getName())
+        name: ActorName.make(context.getDisplayName())
     })
