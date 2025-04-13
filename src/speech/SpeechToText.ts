@@ -67,8 +67,14 @@ export const TranscriberConfig = SC.Struct({
 
 export type TranscriberConfig = typeof TranscriberConfig.Type
 
+export interface TranscriberOptions {
+    readonly prompt?: string
+    readonly hotWords?: string
+}
+
 export type Transcriber = (
-    data: BinaryData
+    data: BinaryData,
+    options?: TranscriberOptions
 ) => Effect<DialogueText, SttServiceError, Scope>
 
 export function createOpenAICompatibleTranscriber(
@@ -90,7 +96,7 @@ export function createOpenAICompatibleTranscriber(
     return FX.gen(function* () {
         const client = yield* HttpClient
 
-        return data =>
+        return (data, options) =>
             FX.gen(function* () {
                 const form = new FormData()
 
@@ -100,6 +106,14 @@ export function createOpenAICompatibleTranscriber(
                     "file",
                     new File([data], "recording.wav", {type: "audio/x-wav"})
                 )
+
+                if (options?.prompt) {
+                    form.append("prompt", options.prompt)
+                }
+
+                if (options?.hotWords) {
+                    form.append("hotwords", options.hotWords)
+                }
 
                 const response = yield* pipe(
                     client.post(`${endpoint}/v1/audio/transcriptions`, {

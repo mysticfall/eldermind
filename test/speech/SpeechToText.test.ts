@@ -48,7 +48,10 @@ describe("createOpenAICompatibleTranscriber", () => {
 
                 const data = new TextEncoder().encode("Mock audio data")
 
-                const transcribe = yield* pipe(data, transcriber)
+                const transcribe = yield* transcriber(data, {
+                    prompt: "Use proper punctuation",
+                    hotWords: "Lydia"
+                })
 
                 expect(transcribe).toBe("You never should've come here!")
 
@@ -75,6 +78,8 @@ describe("createOpenAICompatibleTranscriber", () => {
 
                 expect(form.get("model")).toBe("fast-whisper")
                 expect(form.get("language")).toBe("en")
+                expect(form.get("prompt")).toBe("Use proper punctuation")
+                expect(form.get("hotwords")).toBe("Lydia")
                 expect(form.get("file")).toBeDefined()
 
                 const file = form.get("file") as File
