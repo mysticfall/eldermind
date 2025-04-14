@@ -122,7 +122,7 @@ export function createGenericVoiceMapping(
 
     const voiceForSex = (speaker: Actor) => {
         //FIXME Handle the case when `null` is returned (e.g. throwing a FormError).
-        const base = speaker.getActorOwner() as ActorBase
+        const base = speaker.getLeveledActorBase() as ActorBase
         const sex = getSex(base)
 
         return pipe(fallback[sex], getEmotionMapping)
@@ -260,7 +260,7 @@ export function createAllTalkSpeechGenerator(
                 yield* FX.logDebug(`Generating speech for text: "${text}".`)
 
                 yield* FX.logDebug(
-                    `Using voice "${voice}" for actor ${speaker.getName()}.`
+                    `Using voice "${voice}" for actor ${speaker.getDisplayName()}.`
                 )
 
                 const data = {

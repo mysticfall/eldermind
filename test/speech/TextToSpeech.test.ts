@@ -30,8 +30,8 @@ import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 describe("createGenericVoiceMapping", () => {
     const mockActorFemale: Actor = {
         getFormID: () => 0x000a2c94,
-        getName: () => "Lydia",
-        getActorOwner: () => ({
+        getDisplayName: () => "Lydia",
+        getLeveledActorBase: () => ({
             getSex: () => 1
         }),
         getVoiceType: () => ({
@@ -41,8 +41,8 @@ describe("createGenericVoiceMapping", () => {
 
     const mockActorMale: Actor = {
         getFormID: () => 0x000a2c95,
-        getName: () => "Ulfric",
-        getActorOwner: () => ({
+        getDisplayName: () => "Ulfric",
+        getLeveledActorBase: () => ({
             getSex: () => 0
         }),
         getVoiceType: () => ({
@@ -211,8 +211,8 @@ describe("createGenericVoiceMapping", () => {
     it("should handle fallback mappings for actors with undefined sex", () => {
         const mockActorUndefinedSex = {
             getFormID: () => 0x000a2c96,
-            getName: () => "Unknown",
-            getActorOwner: () => ({
+            getDisplayName: () => "Unknown",
+            getLeveledActorBase: () => ({
                 getSex: () => undefined // No sex defined
             }),
             getVoiceType: () => undefined
@@ -236,8 +236,8 @@ describe("createGenericVoiceMapping", () => {
 describe("createAllTalkSpeechGenerator", () => {
     const speaker = {
         getFormID: () => 0x000a2c94,
-        getName: () => "Lydia",
-        getActorOwner: () => ({
+        getDisplayName: () => "Lydia",
+        getLeveledActorBase: () => ({
             getSex: () => 1
         }),
         getVoiceType: () => ({
