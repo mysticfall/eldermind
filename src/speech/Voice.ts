@@ -24,7 +24,7 @@ import {
     EmotionType
 } from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
-import {Actor, ActorBase} from "skyrimPlatform"
+import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
 import * as path from "node:path"
 import {DataPath} from "../common/Data"
 

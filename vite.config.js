@@ -18,7 +18,7 @@ export default defineConfig(({mode}) => {
                 peerDeps: true
             }),
             externalGlobals({
-                skyrimPlatform: "skyrimPlatform"
+                "@skyrim-platform/skyrim-platform": "skyrimPlatform"
             })
         ],
         build: {
@@ -49,29 +49,13 @@ export default defineConfig(({mode}) => {
                         dir: "dist/cjs"
                     }
                 ],
+                external: ["skyrimPlatform", "effect"],
                 preserveEntrySignatures: "allow-extension",
                 plugins: [nodeResolve()]
             },
             minify: !isDebug,
             sourcemap: isDebug,
             target: "esnext"
-        },
-        test: {
-            include: ["./test/**/*.test.ts"],
-            setupFiles: "./test/setup.ts",
-            coverage: {
-                provider: "v8",
-                reporter: ["json-summary", "html"],
-                exclude: [
-                    "docs",
-                    "coverage",
-                    "dist",
-                    "test",
-                    "**/index.ts",
-                    "*.config.js",
-                    "*.config.mjs"
-                ]
-            }
         }
     }
 })

@@ -14,7 +14,7 @@ import * as R from "effect/Record"
 import {ReadonlyRecord} from "effect/Record"
 import {traverseRecord} from "../common/Type"
 import {ActorContext} from "../actor/Actor"
-import {Actor} from "skyrimPlatform"
+import {Actor} from "@skyrim-platform/skyrim-platform"
 
 export const RoleId = pipe(
     SC.String,
