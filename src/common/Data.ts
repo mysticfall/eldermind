@@ -26,7 +26,9 @@ export function makeIdentifier(text: string): string {
 
 export const DataPath = SC.String.pipe(
     SC.nonEmptyString(),
-    SC.pattern(/^(?!.*\/\/)[\p{L}\p{N}_\-.]+(?:\/[\p{L}\p{N}_\-.]+)*$/u),
+    SC.pattern(
+        /^(?!.*\/\/)(?!\s)[\p{L}\p{N}_\-. ]*[\p{L}\p{N}_\-. ](?:\/[\p{L}\p{N}_\-. ]*[\p{L}\p{N}_\-. ])*$/u
+    ),
     SC.brand("DataPath")
 ).annotations({
     title: "Data Path",

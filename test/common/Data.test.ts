@@ -112,7 +112,8 @@ describe("DataPath", () => {
         "noextension", // File without an extension
         "nested/path/to/file", // Deeper valid structure
         "relative/../path/to/file.txt", // Relative traversal, now valid
-        "./folder/file.json" // Relative path starting with `./`, now valid
+        "./folder/file.json", // Relative path starting with `./`, now valid,
+        "Sound/Voice/My Mod.esp/MaleEvenToned/MY_Topic_0000284F_1.wav" // Path with a space or dot in its segments
     ]
 
     const invalidPaths = [
