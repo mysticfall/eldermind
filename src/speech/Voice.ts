@@ -7,8 +7,16 @@ import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as SCH from "effect/Schedule"
 import {Schedule} from "effect/Schedule"
+import * as STR from "effect/String"
 import {getStockVoiceType} from "skyrim-effect/game/VoiceType"
-import {ActorHexId, getActorHexId, getSex, Sex} from "skyrim-effect/game/Actor"
+import {
+    ActorHexId,
+    ActorId,
+    getActor,
+    getActorHexId,
+    getSex,
+    Sex
+} from "skyrim-effect/game/Actor"
 import {flow, pipe} from "effect"
 import * as ORD from "effect/Order"
 import {Order} from "effect/Order"
@@ -24,9 +32,10 @@ import {
     EmotionType
 } from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
-import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
-import * as path from "node:path"
 import {DataPath} from "../common/Data"
+import {defaultScheduler, Scheduler} from "effect/Scheduler"
+import {FormError} from "skyrim-effect/game/Form"
+import {ActorBase} from "@skyrim-platform/skyrim-platform"
 
 export const VoiceRootPath = pipe(
     SC.NonEmptyString,
@@ -88,35 +97,44 @@ export type VoiceFilePool = SynchronizedRef<Set<VoiceFile>>
 
 export type VoicePathResolver = (
     extension: ".lip" | ".wav" | ".fuz"
-) => DataPath
+) => Effect<DataPath, FormError>
 
 export function createVoicePathResolver(
     root: VoicePath,
-    config: VoiceFolderConfig
-): (speaker: Actor, file: VoiceFile) => VoicePathResolver {
+    config: VoiceFolderConfig,
+    scheduler: Scheduler = defaultScheduler
+): (speaker: ActorId, file: VoiceFile) => VoicePathResolver {
     const {overrides, fallback} = config
 
     return (speaker, file) => extension =>
         pipe(
-            getStockVoiceType(speaker),
-            O.getOrElse<string>(() =>
+            FX.Do,
+            FX.bind("actor", () => getActor(speaker)),
+            FX.bind("voice", ({actor}) =>
                 pipe(
                     overrides,
                     O.fromNullable,
-                    O.flatMap(flow(R.get(getActorHexId(speaker)))),
+                    O.flatMap(flow(R.get(getActorHexId(actor)))),
+                    O.orElse(() => getStockVoiceType(actor)),
                     O.getOrElse(
                         () =>
                             fallback[
                                 //FIXME Handle the case when `null` is returned (e.g. throwing a FormError).
-                                getSex(speaker.getActorOwner() as ActorBase)
+                                getSex(actor.getLeveledActorBase() as ActorBase)
                             ]
-                    )
+                    ),
+                    FX.succeed
                 )
             ),
-            A.make,
-            A.prepend(root),
-            s => path.join(...s, `${file}${extension}`),
-            DataPath.make
+            FX.map(({voice}) =>
+                pipe(
+                    [root, voice, `${file}${extension}`],
+                    A.flatMap(STR.split("/")),
+                    A.join("/"),
+                    DataPath.make
+                )
+            ),
+            FX.withScheduler(scheduler)
         )
 }
 

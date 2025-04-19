@@ -42,8 +42,10 @@ describe("createLipSyncGenerator", () => {
         FX.succeed(`/home/user/Skyrim/Data/${path}`)
 
     const voicePathResolver: VoicePathResolver = extension =>
-        DataPath.make(
-            `Sound/Voice/Eldermind.esp/Dialogue_00001827_1${extension}`
+        pipe(
+            `Sound/Voice/Eldermind.esp/Dialogue_00001827_1${extension}`,
+            DataPath.make,
+            FX.succeed
         )
 
     const createCommand: LipSyncCommandCreator = (audioFile, lipFile, text) =>

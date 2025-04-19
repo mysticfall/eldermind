@@ -73,10 +73,11 @@ export function createLipSyncGenerator<E = never>(
         FX.gen(function* () {
             const fs = yield* FileSystem
 
-            const resolvePath = flow(getPath, p =>
-                pipe(
-                    resolver(p),
-                    FX.catchAll(handleError(`Failed to resolve the path ${p}`))
+            const resolvePath = flow(
+                getPath,
+                flow(
+                    FX.flatMap(resolver),
+                    FX.catchAll(handleError(`Failed to resolve the voice path`))
                 )
             )
 
