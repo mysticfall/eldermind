@@ -1,4 +1,5 @@
-import {afterEach, beforeEach, describe, expect, vi} from "vitest"
+import {installActorMocks, mockActors} from "../mock"
+import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import * as CH from "effect/Chunk"
@@ -23,32 +24,12 @@ import * as os from "node:os"
 import * as path from "node:path"
 import {NodeContext} from "@effect/platform-node"
 import {Actor} from "@skyrim-platform/skyrim-platform"
-import {ActorHexId, ActorId, getActorId} from "skyrim-effect/game/Actor"
+import {ActorHexId, getActorId} from "skyrim-effect/game/Actor"
 import {BinaryData} from "../../src/common/Data"
 import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 import {defaultScheduler} from "effect/Scheduler"
 
-const Lydia: Actor = {
-    getFormID: () => 0x000a2c94,
-    getDisplayName: () => "Lydia",
-    getLeveledActorBase: () => ({
-        getSex: () => 1
-    }),
-    getVoiceType: () => ({
-        getName: () => "FemaleEvenToned"
-    })
-} as unknown as Actor
-
-const Ulfric: Actor = {
-    getFormID: () => 0x000a2c95,
-    getDisplayName: () => "Ulfric",
-    getLeveledActorBase: () => ({
-        getSex: () => 0
-    }),
-    getVoiceType: () => ({
-        getName: () => "MaleNord"
-    })
-} as unknown as Actor
+installActorMocks()
 
 describe("createGenericVoiceMapping", () => {
     it("should return a unique mapping if the actor's unique ID has a match", () => {
@@ -71,8 +52,8 @@ describe("createGenericVoiceMapping", () => {
 
         const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(Lydia)).toBe("unique-voice-female")
-        expect(voiceMapping(Ulfric)).toBe("unique-voice-male")
+        expect(voiceMapping(mockActors.Lydia)).toBe("unique-voice-female")
+        expect(voiceMapping(mockActors.Ulfric)).toBe("unique-voice-male")
     })
 
     it("should return a unique mapping over emotional ranges when specified", () => {
@@ -120,13 +101,15 @@ describe("createGenericVoiceMapping", () => {
             intensity: EmotionIntensity.make(30)
         })
 
-        expect(voiceMapping(Lydia, veryHappy)).toBe("unique-voice-female-happy")
+        expect(voiceMapping(mockActors.Lydia, veryHappy)).toBe(
+            "unique-voice-female-happy"
+        )
 
-        expect(voiceMapping(Ulfric, veryHappy)).toBe(
+        expect(voiceMapping(mockActors.Ulfric, veryHappy)).toBe(
             "unique-voice-male-very-happy"
         )
 
-        expect(voiceMapping(Ulfric, fear)).toBe("unique-voice-male")
+        expect(voiceMapping(mockActors.Ulfric, fear)).toBe("unique-voice-male")
     })
 
     it("should return a voice type mapping if the type has a match and unique does not match", () => {
@@ -144,8 +127,8 @@ describe("createGenericVoiceMapping", () => {
 
         const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(Lydia)).toBe("type-voice-female")
-        expect(voiceMapping(Ulfric)).toBe("type-voice-male")
+        expect(voiceMapping(mockActors.Lydia)).toBe("type-voice-female")
+        expect(voiceMapping(mockActors.Ulfric)).toBe("type-voice-male")
     })
 
     it("should return a fallback mapping if neither unique nor type has a match", () => {
@@ -159,8 +142,8 @@ describe("createGenericVoiceMapping", () => {
 
         const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(Lydia)).toBe("fallback-female")
-        expect(voiceMapping(Ulfric)).toBe("fallback-male")
+        expect(voiceMapping(mockActors.Lydia)).toBe("fallback-female")
+        expect(voiceMapping(mockActors.Ulfric)).toBe("fallback-male")
     })
 
     it("should prioritize unique mapping over type and fallback", () => {
@@ -183,8 +166,8 @@ describe("createGenericVoiceMapping", () => {
 
         const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(Lydia)).toBe("unique-voice-female")
-        expect(voiceMapping(Ulfric)).toBe("type-voice-male") // Falls back to type
+        expect(voiceMapping(mockActors.Lydia)).toBe("unique-voice-female")
+        expect(voiceMapping(mockActors.Ulfric)).toBe("type-voice-male") // Falls back to type
     })
 
     it("should prioritize type mapping over fallback if unique mapping does not exist", () => {
@@ -203,8 +186,8 @@ describe("createGenericVoiceMapping", () => {
 
         const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(Lydia)).toBe("type-voice-female")
-        expect(voiceMapping(Ulfric)).toBe("type-voice-male")
+        expect(voiceMapping(mockActors.Lydia)).toBe("type-voice-female")
+        expect(voiceMapping(mockActors.Ulfric)).toBe("type-voice-male")
     })
 
     it("should handle fallback mappings for actors with undefined sex", () => {
@@ -232,22 +215,7 @@ describe("createGenericVoiceMapping", () => {
     })
 })
 
-function installMocks() {
-    vi.mock(import("skyrim-effect/game/Actor"), async importOriginal => {
-        const mod = await importOriginal()
-
-        return {
-            ...mod,
-            getActor: (id: ActorId) =>
-                pipe(id == Lydia.getFormID() ? Lydia : Ulfric, FX.succeed)
-        }
-    })
-}
-
 describe("createAllTalkSpeechGenerator", () => {
-    beforeEach(installMocks)
-    afterEach(() => vi.restoreAllMocks())
-
     const readStream = <E>(stream: Stream<BinaryData, E>) =>
         pipe(
             ST.run(stream, SI.collectAll()),
@@ -336,7 +304,7 @@ describe("createAllTalkSpeechGenerator", () => {
 
                     const stream = yield* generate(
                         DialogueText.make("You never should've come here!"),
-                        getActorId(Lydia)
+                        getActorId(mockActors.Lydia)
                     )
 
                     expect(mockFetch).toHaveBeenCalledOnce()
@@ -458,7 +426,7 @@ describe("createAllTalkSpeechGenerator", () => {
 
                     const stream = yield* generate(
                         DialogueText.make("You never should've come here!"),
-                        getActorId(Lydia)
+                        getActorId(mockActors.Lydia)
                     )
 
                     expect(mockFetch).toHaveBeenCalledTimes(2)
@@ -533,7 +501,7 @@ describe("createAllTalkSpeechGenerator", () => {
                     const message = yield* pipe(
                         generator(
                             DialogueText.make("You never should've come here!"),
-                            getActorId(Lydia)
+                            getActorId(mockActors.Lydia)
                         ),
                         FX.catchAll(e => FX.succeed(e.message))
                     )
@@ -595,7 +563,7 @@ describe("createAllTalkSpeechGenerator", () => {
                     const message = yield* pipe(
                         generator(
                             DialogueText.make("You never should've come here!"),
-                            getActorId(Lydia)
+                            getActorId(mockActors.Lydia)
                         ),
                         FX.catchAll(e => FX.succeed(e.message))
                     )
