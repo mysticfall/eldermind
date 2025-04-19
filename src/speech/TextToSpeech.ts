@@ -2,7 +2,6 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {BaseError} from "../common/Error"
 import {HttpClient} from "@effect/platform/HttpClient"
-import {text as asText} from "@effect/platform/HttpBody"
 import {DialogueText} from "../game/Dialogue"
 import {pipe} from "effect"
 import * as A from "effect/Array"
@@ -17,10 +16,19 @@ import {Scope} from "effect/Scope"
 import {HttpClientResponse} from "@effect/platform/HttpClientResponse"
 import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
 import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
-import {ActorHexId, getActorId, getSex, Sex} from "skyrim-effect/game/Actor"
-import {toHexId} from "skyrim-effect/game/Form"
+import {
+    ActorHexId,
+    ActorId,
+    getActor,
+    getActorId,
+    getSex,
+    Sex
+} from "skyrim-effect/game/Actor"
+import {FormError, toHexId} from "skyrim-effect/game/Form"
 import {BinaryData} from "../common/Data"
 import {Emotion, EmotionRangeMap, EmotionRangeValues} from "../actor/Emotion"
+import {formData} from "@effect/platform/HttpBody"
+import {Scheduler} from "effect/Scheduler"
 
 export class TtsServiceError extends BaseError<TtsServiceError>(
     "TtsServiceError",
@@ -31,9 +39,13 @@ export class TtsServiceError extends BaseError<TtsServiceError>(
 
 export type SpeechGenerator = (
     text: DialogueText,
-    speaker: Actor,
+    speaker: ActorId,
     emotion?: Emotion
-) => Effect<Stream<BinaryData, TtsServiceError>, TtsServiceError, Scope>
+) => Effect<
+    Stream<BinaryData, TtsServiceError | FormError>,
+    TtsServiceError | FormError,
+    Scope
+>
 
 export const TtsVoice = pipe(
     SC.NonEmptyString,
@@ -177,7 +189,7 @@ export type AllTalkTemperature = typeof AllTalkTemperature.Type
 
 export const AllTalkConfig = SC.Struct({
     endpoint: SC.optionalWith(AllTalkEndpoint, {
-        default: () => AllTalkEndpoint.make("http://localhost:8000")
+        default: () => AllTalkEndpoint.make("http://localhost:7851")
     }),
     speed: pipe(
         SC.optionalWith(AllTalkSpeed, {
@@ -193,7 +205,8 @@ export const AllTalkConfig = SC.Struct({
 export type AllTalkConfig = typeof AllTalkConfig.Type
 
 export function createAllTalkSpeechGenerator(
-    config: AllTalkConfig
+    config: AllTalkConfig,
+    gameScheduler: Scheduler
 ): Effect<SpeechGenerator, never, HttpClient | FileSystem> {
     const Response = SC.Union(
         SC.Struct({
@@ -255,40 +268,41 @@ export function createAllTalkSpeechGenerator(
 
         return (text, speaker, emotion) =>
             FX.gen(function* () {
-                const voice = voiceMappings(speaker, emotion)
-
                 yield* FX.logDebug(`Generating speech for text: "${text}".`)
 
-                yield* FX.logDebug(
-                    `Using voice "${voice}" for actor ${speaker.getDisplayName()}.`
+                const voice = yield* pipe(
+                    FX.Do,
+                    FX.bind("actor", () => getActor(speaker)),
+                    FX.bind("voice", ({actor}) =>
+                        FX.sync(() => voiceMappings(actor, emotion))
+                    ),
+                    FX.tap(({voice, actor}) =>
+                        FX.logDebug(
+                            `Using voice "${voice}" for actor ${actor.getDisplayName()}.`
+                        )
+                    ),
+                    FX.map(({voice}) => voice),
+                    FX.withScheduler(gameScheduler)
                 )
 
-                const data = {
-                    text_input: text,
-                    text_filtering: "standard",
-                    language: "en",
-                    character_voice_gen: `${voice}.wav`,
-                    narrator_enabled: false,
-                    autoplay: false,
-                    temperature: temperature,
-                    speed: speed
-                }
+                yield* FX.logTrace(
+                    `temperature: ${temperature}, speed: ${speed}`
+                )
 
-                yield* FX.logTrace(data)
+                const form = new FormData()
+
+                form.append("text_input", text)
+                form.append("text_filtering", "standard")
+                form.append("language", "en")
+                form.append("character_voice_gen", `${voice}.wav`)
+                form.append("narrator_enabled", "false")
+                form.append("autoplay", "false")
+                form.append("temperature", temperature.toString())
+                form.append("speed", speed.toString())
 
                 const response = yield* pipe(
                     client.post(`${endpoint}/api/tts-generate`, {
-                        body: pipe(
-                            data,
-                            R.toEntries,
-                            A.map(e => e.join("=")),
-                            A.join("&"),
-                            text =>
-                                asText(
-                                    text,
-                                    "application/x-www-form-urlencoded"
-                                )
-                        )
+                        body: formData(form as globalThis.FormData)
                     }),
                     FX.catchTag("RequestError", invalidRequest),
                     FX.catchTag("ResponseError", invalidResponse),
