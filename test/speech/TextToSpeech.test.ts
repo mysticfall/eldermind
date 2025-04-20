@@ -28,6 +28,7 @@ import {ActorHexId, getActorId} from "skyrim-effect/game/Actor"
 import {BinaryData} from "../../src/common/Data"
 import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 import {defaultScheduler} from "effect/Scheduler"
+import {VoiceName} from "skyrim-effect/game/VoiceType"
 
 installActorMocks()
 
@@ -115,8 +116,12 @@ describe("createGenericVoiceMapping", () => {
     it("should return a voice type mapping if the type has a match and unique does not match", () => {
         const config: GenericVoiceMappingConfig = {
             type: {
-                FemaleEvenToned: {Neutral: TtsVoice.make("type-voice-female")},
-                MaleNord: {Neutral: TtsVoice.make("type-voice-male")}
+                [VoiceName.make("FemaleEvenToned")]: {
+                    Neutral: TtsVoice.make("type-voice-female")
+                },
+                [VoiceName.make("MaleNord")]: {
+                    Neutral: TtsVoice.make("type-voice-male")
+                }
             },
             fallback: {
                 female: {Neutral: TtsVoice.make("fallback-female")},
@@ -154,8 +159,12 @@ describe("createGenericVoiceMapping", () => {
                 }
             },
             type: {
-                FemaleEvenToned: {Neutral: TtsVoice.make("type-voice-female")},
-                MaleNord: {Neutral: TtsVoice.make("type-voice-male")}
+                [VoiceName.make("FemaleEvenToned")]: {
+                    Neutral: TtsVoice.make("type-voice-female")
+                },
+                [VoiceName.make("MaleNord")]: {
+                    Neutral: TtsVoice.make("type-voice-male")
+                }
             },
             fallback: {
                 female: {Neutral: TtsVoice.make("fallback-female")},
@@ -174,8 +183,12 @@ describe("createGenericVoiceMapping", () => {
         const config: GenericVoiceMappingConfig = {
             unique: {},
             type: {
-                FemaleEvenToned: {Neutral: TtsVoice.make("type-voice-female")},
-                MaleNord: {Neutral: TtsVoice.make("type-voice-male")}
+                [VoiceName.make("FemaleEvenToned")]: {
+                    Neutral: TtsVoice.make("type-voice-female")
+                },
+                [VoiceName.make("MaleNord")]: {
+                    Neutral: TtsVoice.make("type-voice-male")
+                }
             },
             fallback: {
                 female: {Neutral: TtsVoice.make("fallback-female")},

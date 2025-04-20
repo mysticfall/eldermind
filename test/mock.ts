@@ -14,6 +14,7 @@ const Lydia: Actor = {
         getSex: () => 1
     }),
     getVoiceType: () => ({
+        getFormID: () => 0x00013add,
         getName: () => "FemaleEvenToned"
     })
 } as unknown as Actor
@@ -25,6 +26,7 @@ const Ulfric: Actor = {
         getSex: () => 0
     }),
     getVoiceType: () => ({
+        getFormID: () => 0x00013ae6,
         getName: () => "MaleNord"
     })
 } as unknown as Actor

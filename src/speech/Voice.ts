@@ -8,7 +8,7 @@ import * as SC from "effect/Schema"
 import * as SCH from "effect/Schedule"
 import {Schedule} from "effect/Schedule"
 import * as STR from "effect/String"
-import {getStockVoiceType} from "skyrim-effect/game/VoiceType"
+import {getKnownVoiceName, VoiceName} from "skyrim-effect/game/VoiceType"
 import {
     ActorHexId,
     ActorId,
@@ -49,28 +49,17 @@ export const VoiceRootPath = pipe(
 
 export type VoicePath = typeof VoiceRootPath.Type
 
-export const VoiceFolder = pipe(
-    SC.NonEmptyString,
-    SC.brand("VoiceFolder"),
-    SC.annotations({
-        title: "Voice Folder",
-        description: "Name of a voice file without the extension"
-    })
-)
-
-export type VoiceFolder = typeof VoiceFolder.Type
-
 export const VoiceFolderConfig = pipe(
     SC.Struct({
         overrides: pipe(
-            SC.Record({key: ActorHexId, value: VoiceFolder}),
+            SC.Record({key: ActorHexId, value: VoiceName}),
             SC.optional
         ),
-        fallback: SC.optionalWith(SC.Record({key: Sex, value: VoiceFolder}), {
+        fallback: SC.optionalWith(SC.Record({key: Sex, value: VoiceName}), {
             default: () => ({
-                male: VoiceFolder.make("MaleEvenToned"),
-                female: VoiceFolder.make("FemaleEvenToned"),
-                none: VoiceFolder.make("MaleEvenToned")
+                male: VoiceName.make("MaleEvenToned"),
+                female: VoiceName.make("FemaleEvenToned"),
+                none: VoiceName.make("MaleEvenToned")
             })
         })
     }),
@@ -115,7 +104,7 @@ export function createVoicePathResolver(
                     overrides,
                     O.fromNullable,
                     O.flatMap(flow(R.get(getActorHexId(actor)))),
-                    O.orElse(() => getStockVoiceType(actor)),
+                    O.orElse(() => getKnownVoiceName(actor)),
                     O.getOrElse(
                         () =>
                             fallback[

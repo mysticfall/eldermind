@@ -15,7 +15,7 @@ import {parseJson} from "../common/Json"
 import {Scope} from "effect/Scope"
 import {HttpClientResponse} from "@effect/platform/HttpClientResponse"
 import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
-import {getStockVoiceType, StockVoiceType} from "skyrim-effect/game/VoiceType"
+import {getKnownVoiceName, VoiceName} from "skyrim-effect/game/VoiceType"
 import {
     ActorHexId,
     ActorId,
@@ -63,7 +63,7 @@ export type TtsVoiceMapping = (speaker: Actor, emotion?: Emotion) => TtsVoice
 export const GenericVoiceMappingConfig = pipe(
     SC.Struct({
         type: pipe(
-            SC.Record({key: StockVoiceType, value: EmotionRangeMap(TtsVoice)}),
+            SC.Record({key: VoiceName, value: EmotionRangeMap(TtsVoice)}),
             SC.partial,
             SC.optional
         ),
@@ -127,7 +127,7 @@ export function createGenericVoiceMapping(
         pipe(
             O.Do,
             O.bind("mappings", () => O.fromNullable(type)),
-            O.bind("key", () => getStockVoiceType(speaker)),
+            O.bind("key", () => getKnownVoiceName(speaker)),
             O.flatMap(({mappings, key}) => pipe(mappings[key], O.fromNullable)),
             O.map(getEmotionMapping)
         )

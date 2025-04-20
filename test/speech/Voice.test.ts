@@ -12,12 +12,12 @@ import {
     NoAvailableVoiceFileError,
     VoiceFile,
     VoiceFilesEmotionRangeMap,
-    VoiceFolder,
     VoiceFolderConfig,
     VoiceRootPath
 } from "../../src/speech/Voice"
 import {pipe} from "effect/Function"
 import {getActorHexId, getActorId} from "skyrim-effect/game/Actor"
+import {VoiceName} from "skyrim-effect/game/VoiceType"
 import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 
 installActorMocks()
@@ -32,9 +32,9 @@ describe("createVoicePathResolver", () => {
             FX.gen(function* () {
                 const config: VoiceFolderConfig = {
                     fallback: {
-                        male: VoiceFolder.make("MaleEvenToned"),
-                        female: VoiceFolder.make("FemaleEvenToned"),
-                        none: VoiceFolder.make("FemaleCommoner")
+                        male: VoiceName.make("MaleEvenToned"),
+                        female: VoiceName.make("FemaleEvenToned"),
+                        none: VoiceName.make("FemaleCommoner")
                     }
                 }
 
@@ -58,14 +58,14 @@ describe("createVoicePathResolver", () => {
         FX.gen(function* () {
             const config: VoiceFolderConfig = {
                 overrides: {
-                    [getActorHexId(mockActors.Lydia)]: VoiceFolder.make(
+                    [getActorHexId(mockActors.Lydia)]: VoiceName.make(
                         "SomeModdedLydiaVoice"
                     )
                 },
                 fallback: {
-                    male: VoiceFolder.make("MaleEvenToned"),
-                    female: VoiceFolder.make("FemaleEvenToned"),
-                    none: VoiceFolder.make("FemaleCommoner")
+                    male: VoiceName.make("MaleEvenToned"),
+                    female: VoiceName.make("FemaleEvenToned"),
+                    none: VoiceName.make("FemaleCommoner")
                 }
             }
 
@@ -91,9 +91,9 @@ describe("createVoicePathResolver", () => {
             FX.gen(function* () {
                 const config: VoiceFolderConfig = {
                     fallback: {
-                        male: VoiceFolder.make("MaleEvenToned"),
-                        female: VoiceFolder.make("FemaleEvenToned"),
-                        none: VoiceFolder.make("FemaleCommoner")
+                        male: VoiceName.make("MaleEvenToned"),
+                        female: VoiceName.make("FemaleEvenToned"),
+                        none: VoiceName.make("FemaleCommoner")
                     }
                 }
 
