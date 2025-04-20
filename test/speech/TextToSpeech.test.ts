@@ -23,8 +23,7 @@ import {DialogueText} from "../../src/game/Dialogue"
 import * as os from "node:os"
 import * as path from "node:path"
 import {NodeContext} from "@effect/platform-node"
-import {Actor} from "@skyrim-platform/skyrim-platform"
-import {ActorHexId, getActorId} from "skyrim-effect/game/Actor"
+import {getActorId} from "skyrim-effect/game/Actor"
 import {BinaryData} from "../../src/common/Data"
 import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 import {defaultScheduler} from "effect/Scheduler"
@@ -33,17 +32,22 @@ import {VoiceName} from "skyrim-effect/game/VoiceType"
 installActorMocks()
 
 describe("createGenericVoiceMapping", () => {
-    it("should return a unique mapping if the actor's unique ID has a match", () => {
+    it("should return a mapping that can match the actor's voice type for a TTS model", () => {
         const config: GenericVoiceMappingConfig = {
-            unique: {
-                [ActorHexId.make("000A2C94")]: {
-                    Neutral: TtsVoice.make("unique-voice-female")
+            voices: {
+                [VoiceName.make("FemaleYoungEager")]: {
+                    Neutral: TtsVoice.make("female_01")
                 },
-                [ActorHexId.make("000A2C95")]: {
-                    Neutral: TtsVoice.make("unique-voice-male")
+                [VoiceName.make("FemaleEvenToned")]: {
+                    Neutral: TtsVoice.make("female_02")
+                },
+                [VoiceName.make("MaleNord")]: {
+                    Neutral: TtsVoice.make("male_01")
+                },
+                [VoiceName.make("MaleOldGrumpy")]: {
+                    Neutral: TtsVoice.make("male_02")
                 }
             },
-            type: {},
             fallback: {
                 female: {Neutral: TtsVoice.make("fallback-female")},
                 male: {Neutral: TtsVoice.make("fallback-male")},
@@ -53,36 +57,43 @@ describe("createGenericVoiceMapping", () => {
 
         const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(mockActors.Lydia)).toBe("unique-voice-female")
-        expect(voiceMapping(mockActors.Ulfric)).toBe("unique-voice-male")
+        expect(voiceMapping(mockActors.Lydia)).toBe("female_02")
+        expect(voiceMapping(mockActors.Ulfric)).toBe("male_01")
     })
 
-    it("should return a unique mapping over emotional ranges when specified", () => {
+    it("should return a mapping over emotional ranges when specified", () => {
         const config: GenericVoiceMappingConfig = {
-            unique: {
-                [ActorHexId.make("000A2C94")]: {
-                    Neutral: TtsVoice.make("unique-voice-female"),
-                    Happy: TtsVoice.make("unique-voice-female-happy"),
-                    Sad: TtsVoice.make("unique-voice-female-sad")
+            voices: {
+                [VoiceName.make("FemaleYoungEager")]: {
+                    Neutral: TtsVoice.make("female_01"),
+                    Happy: TtsVoice.make("female_01_happy"),
+                    Sad: TtsVoice.make("female_01_sad")
                 },
-                [ActorHexId.make("000A2C95")]: {
-                    Neutral: TtsVoice.make("unique-voice-male"),
+                [VoiceName.make("FemaleEvenToned")]: {
+                    Neutral: TtsVoice.make("female_02"),
+                    Happy: TtsVoice.make("female_02_happy"),
+                    Sad: TtsVoice.make("female_02_sad")
+                },
+                [VoiceName.make("MaleNord")]: {
+                    Neutral: TtsVoice.make("male_01"),
                     Happy: [
                         {
                             min: EmotionIntensity.make(0),
                             max: EmotionIntensity.make(50),
-                            value: TtsVoice.make("unique-voice-male-happy")
+                            value: TtsVoice.make("male_01_happy")
                         },
                         {
                             min: EmotionIntensity.make(51),
                             max: EmotionIntensity.make(100),
-                            value: TtsVoice.make("unique-voice-male-very-happy")
+                            value: TtsVoice.make("male_01_very_happy")
                         }
                     ],
                     Sad: TtsVoice.make("unique-voice-female-sad")
+                },
+                [VoiceName.make("MaleOldGrumpy")]: {
+                    Neutral: TtsVoice.make("male_02")
                 }
             },
-            type: {},
             fallback: {
                 female: {Neutral: TtsVoice.make("fallback-female")},
                 male: {Neutral: TtsVoice.make("fallback-male")},
@@ -103,41 +114,26 @@ describe("createGenericVoiceMapping", () => {
         })
 
         expect(voiceMapping(mockActors.Lydia, veryHappy)).toBe(
-            "unique-voice-female-happy"
+            "female_02_happy"
         )
 
         expect(voiceMapping(mockActors.Ulfric, veryHappy)).toBe(
-            "unique-voice-male-very-happy"
+            "male_01_very_happy"
         )
 
-        expect(voiceMapping(mockActors.Ulfric, fear)).toBe("unique-voice-male")
+        expect(voiceMapping(mockActors.Ulfric, fear)).toBe("male_01")
     })
 
-    it("should return a voice type mapping if the type has a match and unique does not match", () => {
+    it("should return a mapping with a fallback for actors with a non-matching voice type", () => {
         const config: GenericVoiceMappingConfig = {
-            type: {
-                [VoiceName.make("FemaleEvenToned")]: {
-                    Neutral: TtsVoice.make("type-voice-female")
+            voices: {
+                [VoiceName.make("FemaleYoungEager")]: {
+                    Neutral: TtsVoice.make("female_01")
                 },
-                [VoiceName.make("MaleNord")]: {
-                    Neutral: TtsVoice.make("type-voice-male")
+                [VoiceName.make("MaleCommoner")]: {
+                    Neutral: TtsVoice.make("male_01")
                 }
             },
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
-
-        const voiceMapping = createGenericVoiceMapping(config)
-
-        expect(voiceMapping(mockActors.Lydia)).toBe("type-voice-female")
-        expect(voiceMapping(mockActors.Ulfric)).toBe("type-voice-male")
-    })
-
-    it("should return a fallback mapping if neither unique nor type has a match", () => {
-        const config: GenericVoiceMappingConfig = {
             fallback: {
                 female: {Neutral: TtsVoice.make("fallback-female")},
                 male: {Neutral: TtsVoice.make("fallback-male")},
@@ -149,82 +145,6 @@ describe("createGenericVoiceMapping", () => {
 
         expect(voiceMapping(mockActors.Lydia)).toBe("fallback-female")
         expect(voiceMapping(mockActors.Ulfric)).toBe("fallback-male")
-    })
-
-    it("should prioritize unique mapping over type and fallback", () => {
-        const config: GenericVoiceMappingConfig = {
-            unique: {
-                [ActorHexId.make("000A2C94")]: {
-                    Neutral: TtsVoice.make("unique-voice-female")
-                }
-            },
-            type: {
-                [VoiceName.make("FemaleEvenToned")]: {
-                    Neutral: TtsVoice.make("type-voice-female")
-                },
-                [VoiceName.make("MaleNord")]: {
-                    Neutral: TtsVoice.make("type-voice-male")
-                }
-            },
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
-
-        const voiceMapping = createGenericVoiceMapping(config)
-
-        expect(voiceMapping(mockActors.Lydia)).toBe("unique-voice-female")
-        expect(voiceMapping(mockActors.Ulfric)).toBe("type-voice-male") // Falls back to type
-    })
-
-    it("should prioritize type mapping over fallback if unique mapping does not exist", () => {
-        const config: GenericVoiceMappingConfig = {
-            unique: {},
-            type: {
-                [VoiceName.make("FemaleEvenToned")]: {
-                    Neutral: TtsVoice.make("type-voice-female")
-                },
-                [VoiceName.make("MaleNord")]: {
-                    Neutral: TtsVoice.make("type-voice-male")
-                }
-            },
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
-
-        const voiceMapping = createGenericVoiceMapping(config)
-
-        expect(voiceMapping(mockActors.Lydia)).toBe("type-voice-female")
-        expect(voiceMapping(mockActors.Ulfric)).toBe("type-voice-male")
-    })
-
-    it("should handle fallback mappings for actors with undefined sex", () => {
-        const mockActorUndefinedSex = {
-            getFormID: () => 0x000a2c96,
-            getDisplayName: () => "Unknown",
-            getLeveledActorBase: () => ({
-                getSex: () => undefined // No sex defined
-            }),
-            getVoiceType: () => undefined
-        } as unknown as Actor
-
-        const config: GenericVoiceMappingConfig = {
-            type: {},
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
-
-        const voiceMapping = createGenericVoiceMapping(config)
-
-        expect(voiceMapping(mockActorUndefinedSex)).toBe("fallback-none")
     })
 })
 

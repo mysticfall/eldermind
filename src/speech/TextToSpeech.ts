@@ -6,7 +6,6 @@ import {DialogueText} from "../game/Dialogue"
 import {pipe} from "effect"
 import * as A from "effect/Array"
 import * as O from "effect/Option"
-import * as R from "effect/Record"
 import * as SC from "effect/Schema"
 import * as ST from "effect/Stream"
 import {Stream} from "effect/Stream"
@@ -16,15 +15,8 @@ import {Scope} from "effect/Scope"
 import {HttpClientResponse} from "@effect/platform/HttpClientResponse"
 import {Actor, ActorBase} from "@skyrim-platform/skyrim-platform"
 import {getKnownVoiceName, VoiceName} from "skyrim-effect/game/VoiceType"
-import {
-    ActorHexId,
-    ActorId,
-    getActor,
-    getActorId,
-    getSex,
-    Sex
-} from "skyrim-effect/game/Actor"
-import {FormError, toHexId} from "skyrim-effect/game/Form"
+import {ActorId, getActor, getSex, Sex} from "skyrim-effect/game/Actor"
+import {FormError} from "skyrim-effect/game/Form"
 import {BinaryData} from "../common/Data"
 import {Emotion, EmotionRangeMap, EmotionRangeValues} from "../actor/Emotion"
 import {formData} from "@effect/platform/HttpBody"
@@ -62,13 +54,9 @@ export type TtsVoiceMapping = (speaker: Actor, emotion?: Emotion) => TtsVoice
 
 export const GenericVoiceMappingConfig = pipe(
     SC.Struct({
-        type: pipe(
+        voices: pipe(
             SC.Record({key: VoiceName, value: EmotionRangeMap(TtsVoice)}),
             SC.partial,
-            SC.optional
-        ),
-        unique: pipe(
-            SC.Record({key: ActorHexId, value: EmotionRangeMap(TtsVoice)}),
             SC.optional
         ),
         fallback: SC.Record({key: Sex, value: EmotionRangeMap(TtsVoice)})
@@ -84,7 +72,7 @@ export type GenericVoiceMappingConfig = typeof GenericVoiceMappingConfig.Type
 export function createGenericVoiceMapping(
     config: GenericVoiceMappingConfig
 ): TtsVoiceMapping {
-    const {type, unique, fallback} = config
+    const {voices, fallback} = config
 
     const getEmotionMapping =
         (mapping: EmotionRangeMap<TtsVoice>) => (emotion?: Emotion) =>
@@ -112,21 +100,10 @@ export function createGenericVoiceMapping(
                 O.getOrElse(() => mapping.Neutral)
             )
 
-    const voiceForActor = (speaker: Actor) =>
-        pipe(
-            O.Do,
-            O.bind("mappings", () => O.fromNullable(unique)),
-            O.bind("key", () =>
-                pipe(speaker, getActorId, toHexId(ActorHexId), O.some)
-            ),
-            O.flatMap(({mappings, key}) => pipe(mappings, R.get(key))),
-            O.map(getEmotionMapping)
-        )
-
     const voiceForType = (speaker: Actor) =>
         pipe(
             O.Do,
-            O.bind("mappings", () => O.fromNullable(type)),
+            O.bind("mappings", () => O.fromNullable(voices)),
             O.bind("key", () => getKnownVoiceName(speaker)),
             O.flatMap(({mappings, key}) => pipe(mappings[key], O.fromNullable)),
             O.map(getEmotionMapping)
@@ -142,8 +119,7 @@ export function createGenericVoiceMapping(
 
     return (speaker, emotion) => {
         const voiceForEmotion = pipe(
-            voiceForActor(speaker),
-            O.orElse(() => voiceForType(speaker)),
+            voiceForType(speaker),
             O.getOrElse(() => voiceForSex(speaker))
         )
 
