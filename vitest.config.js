@@ -9,7 +9,15 @@ export default defineConfig({
         coverage: {
             provider: "v8",
             reporter: ["json-summary", "html"],
-            exclude: ["docs"]
+            exclude: [
+                "dist",
+                "coverage",
+                "docs",
+                "node_modules",
+                "test",
+                "**/*/index.ts",
+                "*.config.*js"
+            ]
         }
     }
 })
