@@ -1,7 +1,11 @@
 import {afterEach, beforeEach, describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
+import * as A from "effect/Array"
+import * as O from "effect/Option"
 import * as FX from "effect/Effect"
+import * as SC from "effect/Schema"
 import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
+import {DialogueEvent, History} from "../../src/game/History"
 import {
     createSessionContextBuilder,
     Session,
@@ -26,7 +30,7 @@ import {ActorId} from "skyrim-effect/game/Actor"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
-import {DialogueLine, DialogueText} from "../../src/game/Dialogue"
+import {DialogueText} from "../../src/game/Dialogue"
 import {actorContextBuilder} from "../../src/actor/Actor"
 import {GameTime} from "skyrim-effect/game/Time"
 
@@ -67,7 +71,10 @@ const scene = Scene.make({
     ]
 })
 
-const session = Session.make({
+const DialogueHistory = History(DialogueEvent)
+const DialogueSession = Session(DialogueEvent)
+
+const session = DialogueSession.make({
     id: SessionId.make("test_session"),
     scene,
     roles: [
@@ -81,11 +88,13 @@ const session = Session.make({
         })
     ],
     history: [
-        DialogueLine.make({
-            speaker: RoleId.make("housecarl"),
-            text: DialogueText.make("I'm sworn to carry your burdens."),
+        {
+            type: "dialogue",
+            speaker: ActorId.make(0x000a2c94),
+            target: ActorId.make(0x00000014),
+            dialogue: DialogueText.make("I'm sworn to carry your burdens."),
             time: GameTime.make(0)
-        })
+        }
     ]
 })
 
@@ -181,11 +190,21 @@ describe("createSessionContextBuilder", () => {
                 expect(history).toSatisfy(Array.isArray)
                 expect(history).toHaveLength(1)
 
-                const line1 = (history as DialogueLine[])[0]
+                const event1 = pipe(
+                    history,
+                    A.liftPredicate(SC.is(DialogueHistory)),
+                    A.flatten,
+                    A.findFirst(SC.is(DialogueEvent)),
+                    O.getOrUndefined
+                )
 
-                expect(line1).toBeDefined()
-                expect(line1.speaker).toBe("housecarl")
-                expect(line1.text).toBe("I'm sworn to carry your burdens.")
+                expect(event1).toBeDefined()
+                expect(event1?.speaker).toBe(0x000a2c94)
+                expect(event1?.target).toBe(0x00000014)
+                expect(event1?.dialogue).toBe(
+                    "I'm sworn to carry your burdens."
+                )
+                expect(event1?.time).toEqual(GameTime.make(0))
             })
     )
 

@@ -3,13 +3,13 @@ import {ContextBuilder, DataIdentifier, InvalidDataError} from "../common/Data"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
+import {Schema} from "effect/Schema"
 import * as A from "effect/Array"
 import * as O from "effect/Option"
 import {RoleMapping, RoleMappingsContainer, RoleMappingsContext} from "./Role"
 import {Scene, SceneDescription} from "./Scene"
 import {TemplateCompiler} from "../llm/Template"
 import {traverseArray} from "../common/Type"
-import {DialogueLine} from "../game/Dialogue"
 import {ActorContext} from "../actor/Actor"
 import {
     ObjectiveChecklist,
@@ -19,6 +19,7 @@ import {
     ObjectiveListContainer,
     ObjectiveState
 } from "./Objective"
+import {GameEvent, History} from "../game/History"
 
 export const SessionId = pipe(
     DataIdentifier,
@@ -31,41 +32,58 @@ export const SessionId = pipe(
 
 export type SessionId = typeof SessionId.Type
 
-export const Session = pipe(
-    SC.Struct({
-        id: SessionId,
-        scene: Scene,
-        roles: SC.Array(RoleMapping),
-        objectives: SC.optionalWith(SC.Array(ObjectiveState), {
-            default: () => A.empty()
-        }),
-        history: SC.optionalWith(SC.Array(DialogueLine), {
-            default: () => A.empty()
-        })
-    }),
-    SC.annotations({
-        title: "Session",
-        description: "Active instance of a scene"
-    })
-)
-
-export type Session = typeof Session.Type
-
-export interface SessionContext<TActor extends ActorContext>
-    extends RoleMappingsContainer<TActor>,
-        ObjectiveListContainer {
-    readonly description: SceneDescription
-    readonly history: readonly DialogueLine[]
+export interface Session<TEvent extends GameEvent> {
+    readonly id: SessionId
+    readonly scene: Scene
+    readonly roles: readonly RoleMapping[]
+    readonly objectives: readonly ObjectiveState[]
+    readonly history: History<TEvent>
 }
 
-export function createSessionContextBuilder<TActor extends ActorContext>(
+export const Session = <A extends GameEvent, I = A, R = never>(
+    schema: Schema<A, I, R>
+) =>
+    pipe(
+        SC.Struct({
+            id: SessionId,
+            scene: Scene,
+            roles: SC.Array(RoleMapping),
+            objectives: SC.optionalWith(SC.Array(ObjectiveState), {
+                default: () => A.empty()
+            }),
+            history: SC.optionalWith(History(schema), {
+                default: () => A.empty()
+            })
+        }),
+        SC.annotations({
+            title: "Session",
+            description: "Active instance of a scene"
+        })
+    )
+
+export interface SessionContext<
+    TActor extends ActorContext,
+    TEvent extends GameEvent
+> extends RoleMappingsContainer<TActor>,
+        ObjectiveListContainer {
+    readonly description: SceneDescription
+    readonly history: History<TEvent>
+}
+
+export function createSessionContextBuilder<
+    TActor extends ActorContext,
+    TEvent extends GameEvent
+>(
     scene: Scene,
     roleMappingsContextBuilder: ContextBuilder<
         readonly RoleMapping[],
         RoleMappingsContext<TActor>
     >,
     compiler: TemplateCompiler
-): Effect<ContextBuilder<Session, SessionContext<TActor>>, InvalidDataError> {
+): Effect<
+    ContextBuilder<Session<TEvent>, SessionContext<TActor, TEvent>>,
+    InvalidDataError
+> {
     return FX.gen(function* () {
         const {roles, description, objectives} = scene
 
@@ -97,7 +115,7 @@ export function createSessionContextBuilder<TActor extends ActorContext>(
             description: yield* compiler(description)
         }
 
-        return (session: Session) =>
+        return (session: Session<TEvent>) =>
             pipe(
                 FX.Do,
                 FX.tap(() =>

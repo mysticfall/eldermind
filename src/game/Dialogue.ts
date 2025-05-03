@@ -1,7 +1,5 @@
 import {pipe} from "effect"
 import * as SC from "effect/Schema"
-import {RoleId} from "../scene/Role"
-import {GameTime} from "skyrim-effect/game/Time"
 
 export const DialogueText = pipe(
     SC.String,
@@ -15,18 +13,3 @@ export const DialogueText = pipe(
 )
 
 export type DialogueText = typeof DialogueText.Type
-
-export const DialogueLine = pipe(
-    SC.Struct({
-        speaker: RoleId,
-        text: DialogueText,
-        time: GameTime
-    }),
-    SC.annotations({
-        title: "Dialogue Line",
-        description:
-            "Dialogue line containing the text and speaker information."
-    })
-)
-
-export type DialogueLine = typeof DialogueLine.Type

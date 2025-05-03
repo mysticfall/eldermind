@@ -116,6 +116,11 @@
       "import": "./dist/esm/game/Game.js",
       "require": "./dist/cjs/game/Game.js"
     },
+    "./game/History": {
+      "types": "./dist/dts/game/History.d.ts",
+      "import": "./dist/esm/game/History.js",
+      "require": "./dist/cjs/game/History.js"
+    },
     "./llm/Handlebars": {
       "types": "./dist/dts/llm/Handlebars.d.ts",
       "import": "./dist/esm/llm/Handlebars.js",
