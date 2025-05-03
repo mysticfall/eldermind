@@ -106,20 +106,15 @@
       "import": "./dist/esm/common/Type.js",
       "require": "./dist/cjs/common/Type.js"
     },
-    "./game/Dialogue": {
-      "types": "./dist/dts/game/Dialogue.d.ts",
-      "import": "./dist/esm/game/Dialogue.js",
-      "require": "./dist/cjs/game/Dialogue.js"
+    "./game/Event": {
+      "types": "./dist/dts/game/Event.d.ts",
+      "import": "./dist/esm/game/Event.js",
+      "require": "./dist/cjs/game/Event.js"
     },
     "./game/Game": {
       "types": "./dist/dts/game/Game.d.ts",
       "import": "./dist/esm/game/Game.js",
       "require": "./dist/cjs/game/Game.js"
-    },
-    "./game/History": {
-      "types": "./dist/dts/game/History.d.ts",
-      "import": "./dist/esm/game/History.js",
-      "require": "./dist/cjs/game/History.js"
     },
     "./llm/Handlebars": {
       "types": "./dist/dts/llm/Handlebars.d.ts",
@@ -175,6 +170,11 @@
       "types": "./dist/dts/scene/Scene.d.ts",
       "import": "./dist/esm/scene/Scene.js",
       "require": "./dist/cjs/scene/Scene.js"
+    },
+    "./speech/Dialogue": {
+      "types": "./dist/dts/speech/Dialogue.d.ts",
+      "import": "./dist/esm/speech/Dialogue.js",
+      "require": "./dist/cjs/speech/Dialogue.js"
     },
     "./speech/LipSync": {
       "types": "./dist/dts/speech/LipSync.d.ts",

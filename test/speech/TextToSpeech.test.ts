@@ -19,7 +19,7 @@ import {
     GenericVoiceMappingConfig,
     TtsVoice
 } from "../../src/speech/TextToSpeech"
-import {DialogueText} from "../../src/game/Dialogue"
+import {DialogueText} from "../../src/speech/Dialogue"
 import * as os from "node:os"
 import * as path from "node:path"
 import {NodeContext} from "@effect/platform-node"

@@ -9,7 +9,7 @@ import {FormData} from "formdata-node"
 import {formData} from "@effect/platform/HttpBody"
 import {Scope} from "effect/Scope"
 import {parseJson} from "../common/Json"
-import {DialogueText} from "../game/Dialogue"
+import {DialogueText} from "./Dialogue"
 import {BinaryData} from "../common/Data"
 
 export class SttServiceError extends BaseError<SttServiceError>(

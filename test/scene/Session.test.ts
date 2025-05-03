@@ -5,7 +5,7 @@ import * as O from "effect/Option"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
 import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
-import {DialogueEvent, History} from "../../src/game/History"
+import {History} from "../../src/game/Event"
 import {
     createSessionContextBuilder,
     Session,
@@ -30,7 +30,7 @@ import {ActorId} from "skyrim-effect/game/Actor"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
-import {DialogueText} from "../../src/game/Dialogue"
+import {DialogueEvent, DialogueText} from "../../src/speech/Dialogue"
 import {actorContextBuilder} from "../../src/actor/Actor"
 import {GameTime} from "skyrim-effect/game/Time"
 

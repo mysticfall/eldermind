@@ -1,3 +1,2 @@
-export * as Dialogue from "./Dialogue"
+export * as History from "./Event"
 export * as Game from "./Game"
-export * as History from "./History"
