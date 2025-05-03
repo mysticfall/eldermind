@@ -88,7 +88,7 @@ export function createSessionContextBuilder<
         const {roles, description, objectives} = scene
 
         yield* FX.logDebug(
-            `Creating a session context builder for scene: [${scene.id}] ${scene.description}`
+            `Creating a session context builder for the scene: [${scene.id}] ${scene.description}`
         )
 
         yield* FX.logTrace(`- Roles: \n${JSON.stringify(roles, undefined, 2)}`)
@@ -120,7 +120,7 @@ export function createSessionContextBuilder<
                 FX.Do,
                 FX.tap(() =>
                     FX.logDebug(
-                        `Building template context for scene: ${scene.id} (session: ${session.id})`
+                        `Building template context for the scene: ${scene.id} (session: ${session.id})`
                     )
                 ),
                 FX.bind("roles", () =>
