@@ -11,7 +11,7 @@ import {
 import {FakeChatModel} from "@langchain/core/utils/testing"
 import {createPrompt, MessageTemplate} from "../../src/llm/Prompt"
 import {Duration, pipe} from "effect"
-import {ContextBuilder, InvalidDataError} from "../../src/common/Data"
+import {InvalidDataError} from "../../src/common/Data"
 
 const schema = SC.Struct({
     name: SC.String.annotations({
@@ -45,12 +45,10 @@ describe("createPrompt", () => {
                 ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
             ]
 
-            const builders: ContextBuilder<User>[] = [ctx => FX.succeed(ctx)]
-
             const model = new FakeChatModel({})
 
             const runner = createLlmRunner(model)
-            const prompt = createPrompt(templates, builders, schema, runner)
+            const prompt = createPrompt(templates, schema, runner)
 
             const spy = vi.spyOn(model, "invoke")
 
@@ -112,14 +110,10 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<User>[] = [
-                    ctx => FX.succeed(ctx)
-                ]
-
                 const model = new FakeChatModel({})
 
                 const runner = createLlmRunner(model)
-                const prompt = createPrompt(templates, builders, schema, runner)
+                const prompt = createPrompt(templates, schema, runner)
 
                 const spy = vi.spyOn(model, "invoke")
 
@@ -145,14 +139,10 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<User>[] = [
-                    ctx => FX.succeed(ctx)
-                ]
-
                 const model = new FakeChatModel({})
 
                 const runner = createLlmRunner(model)
-                const prompt = createPrompt(templates, builders, schema, runner)
+                const prompt = createPrompt(templates, schema, runner)
 
                 const spy = vi.spyOn(model, "invoke")
 
@@ -189,20 +179,12 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<User>[] = [
-                    ctx => FX.succeed(ctx)
-                ]
-
                 const model = new FakeChatModel({})
 
                 const runner = createLlmRunner(model)
-                const prompt = createPrompt(
-                    templates,
-                    builders,
-                    schema,
-                    runner,
-                    {retryTimes: 2}
-                )
+                const prompt = createPrompt(templates, schema, runner, {
+                    retryTimes: 2
+                })
 
                 const spy = vi.spyOn(model, "invoke")
 
@@ -246,20 +228,12 @@ describe("createPrompt", () => {
                     ctx => FX.succeed(new HumanMessage(`Who is ${ctx.name}?`))
                 ]
 
-                const builders: ContextBuilder<User>[] = [
-                    ctx => FX.succeed(ctx)
-                ]
-
                 const model = new FakeChatModel({})
 
                 const runner = createLlmRunner(model)
-                const prompt = createPrompt(
-                    templates,
-                    builders,
-                    schema,
-                    runner,
-                    {retryTimes: 1}
-                )
+                const prompt = createPrompt(templates, schema, runner, {
+                    retryTimes: 1
+                })
 
                 const spy = vi.spyOn(model, "invoke")
 

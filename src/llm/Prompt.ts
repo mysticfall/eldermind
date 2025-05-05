@@ -9,6 +9,7 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as E from "effect/Either"
 import {Either} from "effect/Either"
+import * as F from "effect/Function"
 import * as A from "effect/Array"
 import * as SC from "effect/Schema"
 import * as SCH from "effect/Scheduler"
@@ -18,7 +19,7 @@ import {traverseArray} from "../common/Type"
 import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../common/Json"
-import {ContextBuilder, InvalidDataError} from "../common/Data"
+import {InvalidDataError} from "../common/Data"
 import {Template} from "./Template"
 import {ReadonlyRecord} from "effect/Record"
 import {extractCodeContent} from "../markdown/Parser"
@@ -78,7 +79,6 @@ export const DefaultRetryTimes = 3
 
 export function createPrompt<TContext, TOutput, TSource = TOutput>(
     templates: readonly MessageTemplate[],
-    builders: readonly ContextBuilder<TContext>[],
     schema: SC.Schema<TOutput, TSource>,
     runner: LlmRunner,
     options?: {
@@ -89,28 +89,20 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
 ): Prompt<TContext, TOutput> {
     const scheduler = options?.contextScheduler ?? SCH.defaultScheduler
 
-    return context =>
+    return data =>
         FX.gen(function* () {
-            const ctx = yield* pipe(
-                builders,
-                traverseArray(b => b(context)),
-                FX.map(
-                    A.reduceRight(
-                        {
-                            schema: JSON.stringify(JSONSchema.make(schema))
-                        },
-                        (a, b) => ({...a, ...b})
-                    )
-                )
-            )
+            const context = {
+                ...data,
+                schema: JSON.stringify(JSONSchema.make(schema))
+            }
 
             yield* FX.logDebug(
-                `Context was built from ${builders.length} builders.`
+                `Rendering template using context: ${(JSON.stringify(context), null, 2)}`
             )
 
             const messages = yield* pipe(
                 templates,
-                traverseArray(b => b(ctx)),
+                traverseArray(F.apply(context)),
                 FX.withScheduler(scheduler)
             )
 
@@ -134,7 +126,7 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
                     FX.map(extractCodeContent)
                 )
 
-                FX.logTrace(`Sanitised LLM output: ${content}`)
+                FX.logTrace(`LLM output: ${content}`)
 
                 const output = yield* pipe(
                     content,
