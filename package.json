@@ -116,11 +116,6 @@
       "import": "./dist/esm/game/Game.js",
       "require": "./dist/cjs/game/Game.js"
     },
-    "./llm/Handlebars": {
-      "types": "./dist/dts/llm/Handlebars.d.ts",
-      "import": "./dist/esm/llm/Handlebars.js",
-      "require": "./dist/cjs/llm/Handlebars.js"
-    },
     "./llm/Model": {
       "types": "./dist/dts/llm/Model.d.ts",
       "import": "./dist/esm/llm/Model.js",
@@ -130,11 +125,6 @@
       "types": "./dist/dts/llm/Prompt.d.ts",
       "import": "./dist/esm/llm/Prompt.js",
       "require": "./dist/cjs/llm/Prompt.js"
-    },
-    "./llm/Template": {
-      "types": "./dist/dts/llm/Template.d.ts",
-      "import": "./dist/esm/llm/Template.js",
-      "require": "./dist/cjs/llm/Template.js"
     },
     "./markdown/Data": {
       "types": "./dist/dts/markdown/Data.d.ts",
@@ -200,6 +190,16 @@
       "types": "./dist/dts/speech/Voice.d.ts",
       "import": "./dist/esm/speech/Voice.js",
       "require": "./dist/cjs/speech/Voice.js"
+    },
+    "./template/Handlebars": {
+      "types": "./dist/dts/template/Handlebars.d.ts",
+      "import": "./dist/esm/template/Handlebars.js",
+      "require": "./dist/cjs/template/Handlebars.js"
+    },
+    "./template/Template": {
+      "types": "./dist/dts/template/Template.d.ts",
+      "import": "./dist/esm/template/Template.js",
+      "require": "./dist/cjs/template/Template.js"
     },
     "./*": {
       "types": "./dist/dts/*.d.ts",

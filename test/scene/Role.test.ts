@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
-import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
+import {createHandlebarsTemplateCompiler} from "../../src/template/Handlebars"
 import {
     createRoleMappingsContextBuilder,
     Role,

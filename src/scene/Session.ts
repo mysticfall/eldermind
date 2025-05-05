@@ -8,7 +8,7 @@ import * as A from "effect/Array"
 import * as O from "effect/Option"
 import {RoleMapping, RoleMappingsContainer, RoleMappingsContext} from "./Role"
 import {Scene, SceneDescription} from "./Scene"
-import {TemplateCompiler} from "../llm/Template"
+import {TemplateCompiler} from "../template/Template"
 import {traverseArray} from "../common/Type"
 import {ActorContext} from "../actor/Actor"
 import {

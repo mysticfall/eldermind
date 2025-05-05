@@ -7,7 +7,7 @@ import {
     multilineIndent,
     registerPartial,
     sinceTime
-} from "../../src/llm/Handlebars"
+} from "../../src/template/Handlebars"
 import {DataPath, InvalidDataError, TextDataLoader} from "../../src/common/Data"
 import {pipe} from "effect"
 import Handlebars from "handlebars"

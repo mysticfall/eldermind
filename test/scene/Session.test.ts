@@ -4,7 +4,7 @@ import * as A from "effect/Array"
 import * as O from "effect/Option"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
-import {createHandlebarsTemplateCompiler} from "../../src/llm/Handlebars"
+import {createHandlebarsTemplateCompiler} from "../../src/template/Handlebars"
 import {History} from "../../src/game/Event"
 import {
     createSessionContextBuilder,

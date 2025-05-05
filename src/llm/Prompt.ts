@@ -20,7 +20,7 @@ import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../common/Json"
 import {InvalidDataError} from "../common/Data"
-import {Template} from "./Template"
+import {Template} from "../template/Template"
 import {ReadonlyRecord} from "effect/Record"
 import {extractCodeContent} from "../markdown/Parser"
 

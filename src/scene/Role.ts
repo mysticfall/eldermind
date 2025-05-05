@@ -1,7 +1,7 @@
 import * as SC from "effect/Schema"
 import {flow, pipe} from "effect"
 import {ActorId, getActor} from "skyrim-effect/game/Actor"
-import {TemplateCompiler} from "../llm/Template"
+import {TemplateCompiler} from "../template/Template"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {
