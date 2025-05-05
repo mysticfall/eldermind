@@ -1,21 +1,12 @@
-import {pipe} from "effect"
-import * as DU from "effect/Duration"
-import {Duration} from "effect/Duration"
+import {pipe, Redacted} from "effect"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
-import {ChatOpenAI, ChatOpenAIFields} from "@langchain/openai"
-import {
-    BaseChatModel,
-    BaseChatModelCallOptions
-} from "@langchain/core/language_models/chat_models"
-import {
-    BaseMessage,
-    MessageContent,
-    UsageMetadata
-} from "@langchain/core/messages"
-import {BaseError} from "../common/Error"
-import {ReadonlyRecord} from "effect/Record"
+import {OpenAiClient, OpenAiCompletions} from "@effect/ai-openai"
+import {Completions} from "@effect/ai/Completions"
+import {HttpClient} from "@effect/platform/HttpClient"
+import {ConfigError} from "effect/ConfigError"
+import {Tokenizer} from "@effect/ai/Tokenizer"
 
 export const LlmModelId = pipe(
     SC.String,
@@ -120,7 +111,7 @@ export const LlmParameters = pipe(
     }),
     SC.annotations({
         title: "LLM Parameters",
-        description: "Parameters for the LLM model"
+        description: "Parameters for the LLM model."
     })
 )
 
@@ -130,9 +121,6 @@ export const LlmConfig = SC.Struct({
     model: LlmModelId,
     endpoint: SC.optional(LlmEndpoint),
     apiKey: SC.optional(LlmApiKey),
-    timeout: SC.optionalWith(SC.Duration, {
-        default: () => DU.seconds(60)
-    }),
     parameters: SC.optionalWith(LlmParameters, {
         default: () => LlmParameters.make({})
     })
@@ -140,100 +128,45 @@ export const LlmConfig = SC.Struct({
 
 export type LlmConfig = typeof LlmConfig.Type
 
-export type LlmModelFactory<
-    in TConfig extends LlmConfig = LlmConfig,
-    out TModel extends BaseChatModel = BaseChatModel
-> = (config: TConfig) => TModel
-
-export const createOpenAICompatibleModel: LlmModelFactory<
-    LlmConfig,
-    ChatOpenAI
-> = (config: LlmConfig) => {
-    const {model, endpoint, apiKey, timeout, parameters} = config
+export function withOpenAI<A, E, R extends Completions>(
+    config: LlmConfig
+): (
+    task: Effect<A, E, R>
+) => Effect<
+    A,
+    E | ConfigError,
+    Exclude<R, Completions | Tokenizer> | HttpClient
+> {
+    const {model, endpoint, apiKey, parameters} = config
     const {
         temperature,
         maxTokens,
         topP,
-        minP,
+        //FIXME: minP - Not currently supported by @effect/ai-openai,
         presencePenalty,
         frequencyPenalty,
-        repetitionPenalty,
+        //FIXME: repetitionPenalty - Not currently supported by @effect/ai-openai,
         seed
     } = parameters
 
-    const fields: ChatOpenAIFields = {
-        model,
-        apiKey,
-        timeout: DU.toSeconds(timeout),
+    const client = OpenAiClient.layer({
+        apiKey: apiKey ? Redacted.make(apiKey) : undefined,
+        apiUrl: endpoint
+    })
+
+    const service = OpenAiCompletions.model(model, {
         temperature,
-        maxTokens,
-        topP,
-        presencePenalty,
-        frequencyPenalty,
-        modelKwargs: {
-            min_p: minP,
-            repetition_penalty: repetitionPenalty,
-            seed
-        },
-        configuration: {
-            baseURL: endpoint
-        },
-        cache: true
-    }
+        max_tokens: maxTokens,
+        top_p: topP,
+        presence_penalty: presencePenalty,
+        frequency_penalty: frequencyPenalty,
+        seed
+    })
 
-    return new ChatOpenAI(fields)
-}
-
-export class LlmExecutionError extends BaseError<LlmExecutionError>(
-    "LlmExecutionError",
-    {
-        message: "Data validation failed."
-    }
-) {}
-
-export interface LlmResponse<T> {
-    readonly output: T
-    readonly duration: Duration
-    readonly metadata: ReadonlyRecord<string, unknown>
-    readonly usage?: UsageMetadata
-}
-
-export type LlmRunner = (
-    prompt: readonly BaseMessage[]
-) => Effect<LlmResponse<MessageContent>, LlmExecutionError>
-
-export function createLlmRunner(
-    model: BaseChatModel,
-    options?: BaseChatModelCallOptions
-): LlmRunner {
-    return messages =>
+    return task =>
         pipe(
-            FX.tryPromise({
-                try: () => model.invoke([...messages], options),
-                catch: e => {
-                    return new LlmExecutionError({
-                        message: e instanceof Error ? e.message : e?.toString(),
-                        cause: e
-                    })
-                }
-            }),
-            FX.timed,
-            FX.tap(([duration, response]) =>
-                FX.gen(function* () {
-                    yield* FX.logDebug(
-                        `LLM request took ${DU.format(duration)} to complete.`
-                    )
-
-                    yield* FX.logDebug(
-                        `Received a response from the model:\n${JSON.stringify(response, undefined, 2)}`
-                    )
-                })
-            ),
-            FX.map(([duration, response]) => ({
-                output: response.content,
-                duration,
-                metadata: response.response_metadata,
-                usage: response.usage_metadata
-            }))
+            service,
+            FX.flatMap(s => s.provide(task)),
+            FX.provide(client)
         )
 }

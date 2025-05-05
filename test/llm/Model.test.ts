@@ -1,145 +1,149 @@
-import {describe, expect, vi} from "vitest"
+import {afterEach, describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
-import {Duration, pipe} from "effect"
+import {Layer, pipe} from "effect"
 import * as FX from "effect/Effect"
-import {
-    createLlmRunner,
-    createOpenAICompatibleModel,
-    LlmApiKey,
-    LlmEndpoint,
-    LlmExecutionError,
-    LlmFrequencyPenalty,
-    LlmMaxTokens,
-    LlmMinP,
-    LlmModelId,
-    LlmParameters,
-    LlmPresencePenalty,
-    LlmTemperature,
-    LlmTopP
-} from "../../src/llm/Model"
-import {ClientOptions} from "@langchain/openai"
-import {AIMessageChunk, HumanMessage} from "@langchain/core/messages"
-import {FakeChatModel} from "@langchain/core/utils/testing"
+import {LlmConfig, LlmEndpoint, withOpenAI} from "../../src/llm/Model"
+import {FetchHttpClient} from "@effect/platform"
+import {Completions} from "@effect/ai/Completions"
 
-describe("createOpenAICompatibleModel", () => {
-    it("should create a ChatOpenAI instance with the given configuration", () => {
-        const config = {
-            model: LlmModelId.make("llama-3"),
-            endpoint: LlmEndpoint.make("https://example.com"),
-            apiKey: LlmApiKey.make("test-api-key"),
-            timeout: Duration.seconds(30),
-            parameters: LlmParameters.make({
-                maxTokens: LlmMaxTokens.make(2048),
-                temperature: LlmTemperature.make(0.7),
-                topP: LlmTopP.make(0.9),
-                minP: LlmMinP.make(0.1),
-                presencePenalty: LlmPresencePenalty.make(0.5),
-                frequencyPenalty: LlmFrequencyPenalty.make(-0.3)
-            })
-        }
+const mockFetch = vi.fn<typeof fetch>()
 
-        const model = createOpenAICompatibleModel(config)
+describe("withOpenAI", () => {
+    afterEach(() => mockFetch.mockRestore())
 
-        expect(model).toBeDefined()
+    it.effect.prop(
+        "should configure OpenAI request parameters based on provided configuration",
+        [LlmConfig],
+        fixtures =>
+            FX.gen(function* () {
+                const normalised = JSON.parse(JSON.stringify(fixtures[0]))
 
-        const {clientConfig} = model as unknown as {clientConfig: ClientOptions}
+                const config = {
+                    ...normalised,
+                    endpoint: LlmEndpoint.make("http://localhost:8000/api/v1")
+                }
 
-        expect(clientConfig).toBeDefined()
+                const FetchTest = Layer.succeed(
+                    FetchHttpClient.Fetch,
+                    mockFetch
+                )
 
-        expect(model.apiKey).toBe("test-api-key")
-        expect(model.model).toBe("llama-3")
-        expect(model.timeout).toBe(30)
-        expect(model.temperature).toBe(0.7)
-        expect(model.maxTokens).toBe(2048)
-        expect(model.topP).toBe(0.9)
-        expect(model.presencePenalty).toBe(0.5)
-        expect(model.frequencyPenalty).toBe(-0.3)
+                const TestLayer = pipe(
+                    FetchHttpClient.layer,
+                    Layer.provide(FetchTest)
+                )
 
-        expect(clientConfig.baseURL).toBe("https://example.com")
-
-        expect(model.modelKwargs?.["min_p"]).toBe(0.1)
-    })
-})
-
-describe("createLlmRunner", () => {
-    it.live("should return a successful response from the model", () =>
-        FX.gen(function* () {
-            const model = new FakeChatModel({})
-
-            const spy = vi.spyOn(model, "invoke")
-
-            spy.mockReturnValue(
-                pipe(
-                    FX.succeed(
-                        new AIMessageChunk({
-                            content:
-                                "I used to be an adventurer like you. Then I took an arrow in the knee.",
-                            response_metadata: {
-                                model: "fake_model"
+                mockFetch.mockRestore()
+                mockFetch.mockResolvedValue(
+                    new Response(
+                        JSON.stringify({
+                            id: "chatcmpl-4634FGYH345435grf$",
+                            object: "chat.completion",
+                            created: 1741569952,
+                            model: "llama-4",
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content:
+                                            "Hello! How can I assist you today?",
+                                        refusal: null,
+                                        annotations: []
+                                    },
+                                    logprobs: null,
+                                    finish_reason: "stop"
+                                }
+                            ],
+                            usage: {
+                                prompt_tokens: 19,
+                                completion_tokens: 10,
+                                total_tokens: 29,
+                                prompt_tokens_details: {
+                                    cached_tokens: 0,
+                                    audio_tokens: 0
+                                },
+                                completion_tokens_details: {
+                                    reasoning_tokens: 0,
+                                    audio_tokens: 0,
+                                    accepted_prediction_tokens: 0,
+                                    rejected_prediction_tokens: 0
+                                }
                             },
-                            usage_metadata: {
-                                input_tokens: 20,
-                                output_tokens: 30,
-                                total_tokens: 50
-                            }
+                            service_tier: "default"
                         })
-                    ),
-                    FX.delay("100 millis"),
-                    FX.runPromise
-                )
-            )
-
-            const {output, duration, metadata, usage} = yield* pipe(
-                [new HumanMessage("Hello?")],
-                createLlmRunner(model)
-            )
-
-            expect(spy).toHaveBeenCalledWith(
-                [new HumanMessage("Hello?")],
-                undefined
-            )
-
-            expect(output).toBe(
-                "I used to be an adventurer like you. Then I took an arrow in the knee."
-            )
-
-            expect(duration).toSatisfy(
-                Duration.between({minimum: "80 millis", maximum: "120 millis"})
-            )
-
-            expect(metadata).toHaveProperty("model", "fake_model")
-
-            expect(usage).toBeDefined()
-            expect(usage).toHaveProperty("input_tokens", 20)
-            expect(usage).toHaveProperty("output_tokens", 30)
-            expect(usage).toHaveProperty("total_tokens", 50)
-        })
-    )
-
-    it.effect(
-        "should return an LlmModelExecutionError on model failure",
-        () => {
-            return FX.gen(function* () {
-                const model = new FakeChatModel({})
-
-                const spy = vi.spyOn(model, "invoke")
-
-                spy.mockRejectedValue(
-                    "The guard is expected to be shot in his knee but it was on his head."
-                )
-
-                const error = yield* pipe(
-                    [new HumanMessage("Hello?")],
-                    createLlmRunner(model),
-                    FX.catchTag("LlmExecutionError", (e: LlmExecutionError) =>
-                        FX.succeed(e.message)
                     )
                 )
 
-                expect(error).toBe(
-                    "The guard is expected to be shot in his knee but it was on his head."
+                const task = FX.gen(function* () {
+                    const completions = yield* Completions
+                    const response = yield* completions.create("Hello?")
+
+                    return response.text
+                })
+
+                const text = yield* pipe(
+                    task,
+                    withOpenAI(config),
+                    FX.provide(TestLayer)
                 )
+
+                expect(text).toBe("Hello! How can I assist you today?")
+
+                expect(mockFetch).toHaveBeenCalledOnce()
+
+                const [url, body] = mockFetch.mock.calls[0] as [
+                    URL,
+                    RequestInit
+                ]
+
+                expect(url?.toString()).toBe(
+                    "http://localhost:8000/api/v1/chat/completions"
+                )
+
+                expect(body.method).toBe("POST")
+
+                const data = pipe(
+                    new TextDecoder().decode(body.body as ArrayBuffer),
+                    JSON.parse
+                )
+
+                expect(data["model"]).toBe(config.model)
+                expect(data["temperature"]).toBe(config.parameters.temperature)
+                expect(data["max_tokens"]).toBe(config.parameters.maxTokens)
+                expect(data["top_p"]).toBe(config.parameters.topP)
+
+                //FIXME: Not currently supported by @effect/ai-openai,
+                // expect(data["min_p"]).toBe(config.parameters.minP)
+
+                expect(data["presence_penalty"]).toBe(
+                    config.parameters.presencePenalty
+                )
+                expect(data["frequency_penalty"]).toBe(
+                    config.parameters.frequencyPenalty
+                )
+
+                //FIXME: Not currently supported by @effect/ai-openai,
+                // expect(data["repetition_penalty"]).toBe(
+                //     config.parameters.repetitionPenalty
+                // )
+
+                const messages = data["messages"]
+
+                expect(messages).toBeDefined()
+                expect(messages).toHaveLength(1)
+
+                const message = messages[0]
+
+                expect(message["role"]).toBe("user")
+
+                const content = message["content"]
+
+                expect(content).toBeDefined()
+                expect(content).toHaveLength(1)
+
+                expect(content[0]["type"]).toBe("text")
+                expect(content[0]["text"]).toBe("Hello?")
             })
-        }
     )
 })

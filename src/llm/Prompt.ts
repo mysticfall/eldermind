@@ -1,86 +1,34 @@
-import {
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    MessageContent,
-    SystemMessage
-} from "@langchain/core/messages"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
-import * as E from "effect/Either"
-import {Either} from "effect/Either"
-import * as F from "effect/Function"
 import * as A from "effect/Array"
-import * as SC from "effect/Schema"
+import * as F from "effect/Function"
+import {Schema} from "effect/Schema"
 import * as SCH from "effect/Scheduler"
 import {Scheduler} from "effect/Scheduler"
 import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
-import {LlmExecutionError, LlmResponse, LlmRunner} from "./Model"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../common/Json"
 import {InvalidDataError} from "../common/Data"
 import {Template} from "../template/Template"
-import {ReadonlyRecord} from "effect/Record"
 import {extractCodeContent} from "../markdown/Parser"
-
-export type MessageTemplate = (
-    context: ReadonlyRecord<string, unknown>
-) => Effect<BaseMessage, InvalidDataError>
-
-export function createMessageTemplate(
-    messageType?: "system" | "human" | "ai"
-): (template: Template) => MessageTemplate {
-    return template => (context: ReadonlyRecord<string, unknown>) =>
-        FX.gen(function* () {
-            const text = yield* template(context)
-
-            switch (messageType) {
-                case "human":
-                    return new HumanMessage(text)
-                case "ai":
-                    return new AIMessage(text)
-                case "system":
-                default:
-                    return new SystemMessage(text)
-            }
-        })
-}
+import {Completions} from "@effect/ai/Completions"
+import {AiError} from "@effect/ai/AiError"
+import {Message, SystemInstruction} from "@effect/ai/AiInput"
+import {AiRole} from "@effect/ai"
 
 export type Prompt<TContext, TOutput> = (
     context: TContext
-) => Effect<LlmResponse<TOutput>, LlmExecutionError | InvalidDataError>
-
-const parseContent = (
-    content: MessageContent
-): Either<string, InvalidDataError> => {
-    if (typeof content == "string") {
-        return E.right(content)
-    } else if (content.length != 1) {
-        return E.left(
-            new InvalidDataError({
-                message: A.isEmptyArray(content)
-                    ? "Received an empty response from the LLM."
-                    : `Expected a single response from the LLM, but got multiple ${content.length}.`
-            })
-        )
-    } else if (content[0].type == "text") {
-        return E.right(content[0].text)
-    } else {
-        return E.left(
-            new InvalidDataError({
-                message: `Expected a text response from the LLM, but got ${content[0].type}.`
-            })
-        )
-    }
-}
+) => Effect<TOutput, AiError | InvalidDataError, Completions>
 
 export const DefaultRetryTimes = 3
 
 export function createPrompt<TContext, TOutput, TSource = TOutput>(
-    templates: readonly MessageTemplate[],
-    schema: SC.Schema<TOutput, TSource>,
-    runner: LlmRunner,
+    templates: {
+        readonly system: Template
+        readonly user: readonly Template[]
+    },
+    schema: Schema<TOutput, TSource>,
     options?: {
         readonly retryTimes?: number
         readonly parseOptions?: ParseOptions
@@ -97,47 +45,51 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
             }
 
             yield* FX.logDebug(
-                `Rendering template using context: ${(JSON.stringify(context), null, 2)}`
+                `Rendering template using context: ${JSON.stringify(context, null, 2)}`
             )
 
-            const messages = yield* pipe(
-                templates,
-                traverseArray(F.apply(context)),
+            const {system, user} = yield* pipe(
+                FX.Do,
+                FX.bind("system", () => templates.system(context)),
+                FX.bind("user", () =>
+                    pipe(
+                        templates.user,
+                        traverseArray(F.apply(context)),
+                        FX.map(A.map(s => Message.fromInput(s, AiRole.user)))
+                    )
+                ),
                 FX.withScheduler(scheduler)
             )
 
+            yield* FX.logDebug(`Using a system instruction: ${system}`)
+
             yield* pipe(
-                messages,
+                user,
                 traverseArray(m =>
                     FX.logDebug(
-                        `Rendered a base message (${m.getType()}):\n${m.content}`
+                        `Rendered a base message (${m.role}):\n${m.parts}`
                     )
                 )
             )
 
+            const completions = yield* Completions
+
             const request = FX.gen(function* () {
-                const response = yield* runner(messages)
+                const response = yield* completions.create(user)
 
-                const {duration, metadata, usage} = response
-
-                const content = yield* pipe(
-                    response.output,
-                    parseContent,
-                    FX.map(extractCodeContent)
-                )
+                const content = pipe(response.text, extractCodeContent)
 
                 FX.logTrace(`LLM output: ${content}`)
 
-                const output = yield* pipe(
+                return yield* pipe(
                     content,
                     parseJson(schema, options?.parseOptions)
                 )
-
-                return {output, duration, metadata, usage}
             })
 
             return yield* pipe(
                 request,
+                FX.provideService(SystemInstruction, system),
                 FX.retryOrElse(
                     Schedule.recurs(
                         (options?.retryTimes ?? DefaultRetryTimes) - 1

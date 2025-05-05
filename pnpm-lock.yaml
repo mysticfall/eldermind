@@ -11,6 +11,12 @@ importers:
 
   .:
     dependencies:
+      '@effect/ai':
+        specifier: ^0.13.18
+        version: 0.13.18(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)
+      '@effect/ai-openai':
+        specifier: ^0.16.19
+        version: 0.16.19(@effect/ai@0.13.18(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)
       '@effect/platform':
         specifier: ^0.80.18
         version: 0.80.18(effect@3.14.18)
@@ -20,12 +26,6 @@ importers:
       '@effect/typeclass':
         specifier: ^0.33.18
         version: 0.33.18(effect@3.14.18)
-      '@langchain/core':
-        specifier: ^0.3.51
-        version: 0.3.51(openai@4.96.0(ws@8.18.0)(zod@3.24.4))
-      '@langchain/openai':
-        specifier: ^0.5.10
-        version: 0.5.10(@langchain/core@0.3.51(openai@4.96.0(ws@8.18.0)(zod@3.24.4)))(ws@8.18.0)
       '@skyrim-platform/skyrim-platform':
         specifier: ./node_modules/skyrim-effect/mock/skyrim-platform
         version: link:node_modules/skyrim-effect/mock/skyrim-platform
@@ -150,6 +150,21 @@ packages:
 
   '@cfworker/json-schema@4.0.3':
     resolution: {integrity: sha512-ZykIcDTVv5UNmKWSTLAs3VukO6NDJkkSKxrgUTDPBkAlORVT3H9n5DbRjRl8xIotklscHdbLIa0b9+y3mQq73g==}
+
+  '@effect/ai-openai@0.16.19':
+    resolution: {integrity: sha512-E1Z33nFmipj92rSXa0ssnO5lcKHmOsjWunS34iLmc86VX0R8AW5j6uHLJ/e/aNqV97IrV7zf3Oe0E7bjrLGMCw==}
+    peerDependencies:
+      '@effect/ai': ^0.13.18
+      '@effect/experimental': ^0.44.18
+      '@effect/platform': ^0.80.18
+      effect: ^3.14.18
+
+  '@effect/ai@0.13.18':
+    resolution: {integrity: sha512-MwqlDNIz1soqDHv4tV5rE3C7cuvvMi4dnAf9ENIWim60+ACGA8KkA12h1SmGJ/WVBowbSTVX7fWjGPkwI7Q81g==}
+    peerDependencies:
+      '@effect/experimental': ^0.44.18
+      '@effect/platform': ^0.80.18
+      effect: ^3.14.18
 
   '@effect/cluster@0.29.2':
     resolution: {integrity: sha512-CSs7PsHlKTzMukTGdYNTcterbi/qNaUxhYYEkbHXnDwTtVs41mIM4zrA2zFwNAlfehoI8+DhOnyykb05lSLt9A==}
@@ -632,21 +647,11 @@ packages:
     resolution: {integrity: sha512-pT/jC5lqWK3YGDq8dQwgKoa6anqAhMtG1x5JbnrOj9NdaLeBbCKBDQ+/Ykzk3nZ8o+0UMsaXNZo7IVL83VVjHg==}
     engines: {node: '>=18'}
 
-  '@langchain/core@0.3.51':
-    resolution: {integrity: sha512-2nE30uuomSQrIQKB3BLgQtECZLWj5gwPEzQ+I6Ot6s9DKd133nXp3eZeggkAJ/uuc4WVROYVNJnmxepeAWo02Q==}
-    engines: {node: '>=18'}
-
   '@langchain/openai@0.4.7':
     resolution: {integrity: sha512-w0dA42Pz3rFrrboBgwik+rEzPTaDNPFo9+Vr3NvjZW8zd1fws30G5UmlzFdgfeeZe/FGrODAG74GBRla1mJRGQ==}
     engines: {node: '>=18'}
     peerDependencies:
       '@langchain/core': '>=0.3.39 <0.4.0'
-
-  '@langchain/openai@0.5.10':
-    resolution: {integrity: sha512-hBQIWjcVxGS7tgVvgBBmrZ5jSaJ8nu9g6V64/Tx6KGjkW7VdGmUvqCO+koiQCOZVL7PBJkHWAvDsbghPYXiZEA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@langchain/core': '>=0.3.48 <0.4.0'
 
   '@modelcontextprotocol/sdk@1.11.0':
     resolution: {integrity: sha512-k/1pb70eD638anoi0e8wUGAlbMJXyvdV4p62Ko+EZ7eBe1xMx8Uhak1R5DgfoofsK5IBBnRwsYGTaLZl+6/+RQ==}
@@ -1205,9 +1210,6 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  console-table-printer@2.12.1:
-    resolution: {integrity: sha512-wKGOQRRvdnd89pCeH96e2Fn4wkbenSP6LMHfjfyNLMbGuHEFbMqQNuxXqd0oXG9caIOQ1FTvc5Uijp9/4jujnQ==}
-
   content-disposition@1.0.0:
     resolution: {integrity: sha512-Au9nRL8VNUut/XSzbQA38+M78dzP4D+eqg3gfJHMIHHYa3bg067xj1KxMUWj+VULbiZMowKngFFbKczUrNJ1mg==}
     engines: {node: '>= 0.6'}
@@ -1583,6 +1585,9 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
+  gpt-tokenizer@2.9.0:
+    resolution: {integrity: sha512-YSpexBL/k4bfliAzMrRqn3M6+it02LutVyhVpDeMKrC/O9+pCe/5s8U2hYKa2vFLD5/vHhsKc8sOn/qGqII8Kg==}
+
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
 
@@ -1737,14 +1742,6 @@ packages:
 
   langsmith@0.2.13:
     resolution: {integrity: sha512-16EOM5nhU6GlMCKGm5sgBIAKOKzS2d30qcDZmF21kSLZJiUhUNTROwvYdqgZLrGfIIzmSMJHCKA7RFd5qf50uw==}
-    peerDependencies:
-      openai: '*'
-    peerDependenciesMeta:
-      openai:
-        optional: true
-
-  langsmith@0.3.21:
-    resolution: {integrity: sha512-klsPStt91LqcO5+FAHOuD2FJMrpKFSqa5H4ANv+YYs/fCdL2Ey9hg/YAFYKsDsCLabzcD1tCt/SN9A9JsIZ9ag==}
     peerDependencies:
       openai: '*'
     peerDependenciesMeta:
@@ -1937,18 +1934,6 @@ packages:
 
   openai@4.89.0:
     resolution: {integrity: sha512-XNI0q2l8/Os6jmojxaID5EhyQjxZgzR2gWcpEjYWK5hGKwE7AcifxEY7UNwFDDHJQXqeiosQ0CJwQN+rvnwdjA==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
-  openai@4.96.0:
-    resolution: {integrity: sha512-dKoW56i02Prv2XQolJ9Rl9Svqubqkzg3QpwEOBuSVZLk05Shelu7s+ErRTwFc1Bs3JZ2qBqBfVpXQiJhwOGG8A==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -2189,9 +2174,6 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
-
-  simple-wcswidth@1.0.1:
-    resolution: {integrity: sha512-xMO/8eNREtaROt7tJvWJqHBDTMFN4eiQ5I4JRMuilwfnFcV5W9u7RUkueNkdw0jPqGMX36iCywelS5yilTuOxg==}
 
   skyrim-effect@file:../skyrim-effect:
     resolution: {directory: ../skyrim-effect, type: directory}
@@ -2555,6 +2537,20 @@ snapshots:
   '@bcoe/v8-coverage@1.0.2': {}
 
   '@cfworker/json-schema@4.0.3': {}
+
+  '@effect/ai-openai@0.16.19(@effect/ai@0.13.18(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)':
+    dependencies:
+      '@effect/ai': 0.13.18(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)
+      '@effect/experimental': 0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)
+      '@effect/platform': 0.80.18(effect@3.14.18)
+      effect: 3.14.18
+      gpt-tokenizer: 2.9.0
+
+  '@effect/ai@0.13.18(@effect/experimental@0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18))(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)':
+    dependencies:
+      '@effect/experimental': 0.44.1(@effect/platform@0.80.18(effect@3.14.18))(effect@3.14.18)
+      '@effect/platform': 0.80.18(effect@3.14.18)
+      effect: 3.14.18
 
   '@effect/cluster@0.29.2(@effect/platform@0.80.1(effect@3.14.1))(@effect/rpc@0.55.1(@effect/platform@0.80.1(effect@3.14.1))(effect@3.14.1))(@effect/sql@0.33.1(@effect/experimental@0.44.1(@effect/platform@0.80.1(effect@3.14.1))(effect@3.14.1))(@effect/platform@0.80.1(effect@3.14.1))(effect@3.14.1))(effect@3.14.1)':
     dependencies:
@@ -2950,39 +2946,11 @@ snapshots:
     transitivePeerDependencies:
       - openai
 
-  '@langchain/core@0.3.51(openai@4.96.0(ws@8.18.0)(zod@3.24.4))':
-    dependencies:
-      '@cfworker/json-schema': 4.0.3
-      ansi-styles: 5.2.0
-      camelcase: 6.3.0
-      decamelize: 1.2.0
-      js-tiktoken: 1.0.16
-      langsmith: 0.3.21(openai@4.96.0(ws@8.18.0)(zod@3.24.4))
-      mustache: 4.2.0
-      p-queue: 6.6.2
-      p-retry: 4.6.2
-      uuid: 10.0.0
-      zod: 3.24.1
-      zod-to-json-schema: 3.24.1(zod@3.24.1)
-    transitivePeerDependencies:
-      - openai
-
   '@langchain/openai@0.4.7(@langchain/core@0.3.42(openai@4.89.0(ws@8.18.0)(zod@3.24.1)))(ws@8.18.0)':
     dependencies:
       '@langchain/core': 0.3.42(openai@4.89.0(ws@8.18.0)(zod@3.24.1))
       js-tiktoken: 1.0.16
       openai: 4.89.0(ws@8.18.0)(zod@3.24.1)
-      zod: 3.24.1
-      zod-to-json-schema: 3.24.1(zod@3.24.1)
-    transitivePeerDependencies:
-      - encoding
-      - ws
-
-  '@langchain/openai@0.5.10(@langchain/core@0.3.51(openai@4.96.0(ws@8.18.0)(zod@3.24.4)))(ws@8.18.0)':
-    dependencies:
-      '@langchain/core': 0.3.51(openai@4.96.0(ws@8.18.0)(zod@3.24.4))
-      js-tiktoken: 1.0.16
-      openai: 4.96.0(ws@8.18.0)(zod@3.24.1)
       zod: 3.24.1
       zod-to-json-schema: 3.24.1(zod@3.24.1)
     transitivePeerDependencies:
@@ -3542,10 +3510,6 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  console-table-printer@2.12.1:
-    dependencies:
-      simple-wcswidth: 1.0.1
-
   content-disposition@1.0.0:
     dependencies:
       safe-buffer: 5.2.1
@@ -4003,6 +3967,8 @@ snapshots:
 
   gopd@1.2.0: {}
 
+  gpt-tokenizer@2.9.0: {}
+
   graphemer@1.4.0: {}
 
   gray-matter@4.0.3:
@@ -4156,18 +4122,6 @@ snapshots:
       uuid: 10.0.0
     optionalDependencies:
       openai: 4.89.0(ws@8.18.0)(zod@3.24.1)
-
-  langsmith@0.3.21(openai@4.96.0(ws@8.18.0)(zod@3.24.4)):
-    dependencies:
-      '@types/uuid': 10.0.0
-      chalk: 4.1.2
-      console-table-printer: 2.12.1
-      p-queue: 6.6.2
-      p-retry: 4.6.2
-      semver: 7.6.3
-      uuid: 10.0.0
-    optionalDependencies:
-      openai: 4.96.0(ws@8.18.0)(zod@3.24.4)
 
   levn@0.4.1:
     dependencies:
@@ -4335,37 +4289,6 @@ snapshots:
       zod: 3.24.1
     transitivePeerDependencies:
       - encoding
-
-  openai@4.96.0(ws@8.18.0)(zod@3.24.1):
-    dependencies:
-      '@types/node': 18.19.68
-      '@types/node-fetch': 2.6.12
-      abort-controller: 3.0.0
-      agentkeepalive: 4.5.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    optionalDependencies:
-      ws: 8.18.0
-      zod: 3.24.1
-    transitivePeerDependencies:
-      - encoding
-
-  openai@4.96.0(ws@8.18.0)(zod@3.24.4):
-    dependencies:
-      '@types/node': 18.19.68
-      '@types/node-fetch': 2.6.12
-      abort-controller: 3.0.0
-      agentkeepalive: 4.5.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    optionalDependencies:
-      ws: 8.18.0
-      zod: 3.24.4
-    transitivePeerDependencies:
-      - encoding
-    optional: true
 
   optionator@0.9.4:
     dependencies:
@@ -4620,8 +4543,6 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@4.1.0: {}
-
-  simple-wcswidth@1.0.1: {}
 
   skyrim-effect@file:../skyrim-effect(@skyrim-platform/skyrim-platform@node_modules+skyrim-effect+mock+skyrim-platform)(effect@3.14.1):
     dependencies:
