@@ -9,7 +9,7 @@ export const GameEvent = SC.Struct({
 
 export type GameEvent = typeof GameEvent.Type
 
-export type Event<T extends GameEvent> = readonly T[]
+export type History<T extends GameEvent> = readonly T[]
 
 export const History = <A extends GameEvent, I = A, R = never>(
     schema: Schema<A, I, R>

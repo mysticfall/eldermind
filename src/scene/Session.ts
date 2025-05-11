@@ -19,7 +19,7 @@ import {
     ObjectiveListContainer,
     ObjectiveState
 } from "./Objective"
-import {GameEvent, History, Event} from "../game/Event"
+import {GameEvent, History} from "../game/Event"
 
 export const SessionId = pipe(
     DataIdentifier,
@@ -37,7 +37,7 @@ export interface Session<TEvent extends GameEvent> {
     readonly scene: Scene
     readonly roles: readonly RoleMapping[]
     readonly objectives: readonly ObjectiveState[]
-    readonly history: Event<TEvent>
+    readonly history: History<TEvent>
 }
 
 export const Session = <A extends GameEvent, I = A, R = never>(
@@ -67,7 +67,7 @@ export interface SessionContext<
 > extends RoleMappingsContainer<TActor>,
         ObjectiveListContainer {
     readonly description: SceneDescription
-    readonly history: Event<TEvent>
+    readonly history: History<TEvent>
 }
 
 export function createSessionContextBuilder<
