@@ -3,7 +3,6 @@ import {Effect} from "effect/Effect"
 import * as A from "effect/Array"
 import * as F from "effect/Function"
 import {Schema} from "effect/Schema"
-import * as SCH from "effect/Scheduler"
 import {Scheduler} from "effect/Scheduler"
 import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
@@ -35,8 +34,6 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
         readonly contextScheduler?: Scheduler
     }
 ): Prompt<TContext, TOutput> {
-    const scheduler = options?.contextScheduler ?? SCH.defaultScheduler
-
     return data =>
         FX.gen(function* () {
             const context = {
@@ -57,8 +54,7 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
                         traverseArray(F.apply(context)),
                         FX.map(A.map(s => Message.fromInput(s, AiRole.user)))
                     )
-                ),
-                FX.withScheduler(scheduler)
+                )
             )
 
             yield* FX.logDebug(`Using a system instruction: ${system}`)
