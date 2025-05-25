@@ -3,7 +3,6 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as F from "effect/Function"
 import {Schema} from "effect/Schema"
-import {Scheduler} from "effect/Scheduler"
 import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
 import {ParseOptions} from "effect/SchemaAST"
@@ -22,17 +21,18 @@ export type Prompt<TContext, TOutput> = (
 
 export const DefaultRetryTimes = 3
 
+export interface PromptOptions {
+    readonly retryTimes?: number
+    readonly parseOptions?: ParseOptions
+}
+
 export function createPrompt<TContext, TOutput, TSource = TOutput>(
     templates: {
         readonly system: Template
         readonly user: readonly Template[]
     },
     schema: Schema<TOutput, TSource>,
-    options?: {
-        readonly retryTimes?: number
-        readonly parseOptions?: ParseOptions
-        readonly contextScheduler?: Scheduler
-    }
+    options?: PromptOptions
 ): Prompt<TContext, TOutput> {
     return data =>
         FX.gen(function* () {
