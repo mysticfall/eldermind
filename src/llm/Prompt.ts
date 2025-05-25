@@ -1,6 +1,6 @@
+import * as A from "effect/Array"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
-import * as A from "effect/Array"
 import * as F from "effect/Function"
 import {Schema} from "effect/Schema"
 import {Scheduler} from "effect/Scheduler"
@@ -11,14 +11,14 @@ import {parseJson} from "../common/Json"
 import {InvalidDataError} from "../common/Data"
 import {Template} from "../template/Template"
 import {extractCodeContent} from "../markdown/Parser"
-import {Completions} from "@effect/ai/Completions"
+import * as LLM from "@effect/ai/AiLanguageModel"
+import {AiLanguageModel} from "@effect/ai/AiLanguageModel"
 import {AiError} from "@effect/ai/AiError"
-import {Message, SystemInstruction} from "@effect/ai/AiInput"
-import {AiRole} from "@effect/ai"
+import {TextPart, UserMessage} from "@effect/ai/AiInput"
 
 export type Prompt<TContext, TOutput> = (
     context: TContext
-) => Effect<TOutput, AiError | InvalidDataError, Completions>
+) => Effect<TOutput, AiError | InvalidDataError, AiLanguageModel>
 
 export const DefaultRetryTimes = 3
 
@@ -52,7 +52,14 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
                     pipe(
                         templates.user,
                         traverseArray(F.apply(context)),
-                        FX.map(A.map(s => Message.fromInput(s, AiRole.user)))
+                        FX.map(
+                            A.map(
+                                text =>
+                                    new UserMessage({
+                                        parts: [new TextPart({text})]
+                                    })
+                            )
+                        )
                     )
                 )
             )
@@ -62,16 +69,15 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
             yield* pipe(
                 user,
                 traverseArray(m =>
-                    FX.logDebug(
-                        `Rendered a base message (${m.role}):\n${m.parts}`
-                    )
+                    FX.logDebug(`Rendered a base message:\n${m.parts}`)
                 )
             )
 
-            const completions = yield* Completions
-
             const request = FX.gen(function* () {
-                const response = yield* completions.create(user)
+                const response = yield* LLM.generateText({
+                    system,
+                    prompt: user
+                })
 
                 const content = pipe(response.text, extractCodeContent)
 
@@ -85,7 +91,6 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
 
             return yield* pipe(
                 request,
-                FX.provideService(SystemInstruction, system),
                 FX.retryOrElse(
                     Schedule.recurs(
                         (options?.retryTimes ?? DefaultRetryTimes) - 1

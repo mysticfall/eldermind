@@ -2,8 +2,8 @@ import {pipe, Redacted} from "effect"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
-import {OpenAiClient, OpenAiCompletions} from "@effect/ai-openai"
-import {Completions} from "@effect/ai/Completions"
+import {OpenAiClient, OpenAiLanguageModel} from "@effect/ai-openai"
+import {AiLanguageModel} from "@effect/ai/AiLanguageModel"
 import {HttpClient} from "@effect/platform/HttpClient"
 import {ConfigError} from "effect/ConfigError"
 import {Tokenizer} from "@effect/ai/Tokenizer"
@@ -128,14 +128,14 @@ export const LlmConfig = SC.Struct({
 
 export type LlmConfig = typeof LlmConfig.Type
 
-export function withOpenAI<A, E, R extends Completions>(
+export function withOpenAI<A, E, R extends AiLanguageModel>(
     config: LlmConfig
 ): (
     task: Effect<A, E, R>
 ) => Effect<
     A,
     E | ConfigError,
-    Exclude<R, Completions | Tokenizer> | HttpClient
+    Exclude<R, AiLanguageModel | Tokenizer> | HttpClient
 > {
     const {model, endpoint, apiKey, parameters} = config
     const {
@@ -154,19 +154,20 @@ export function withOpenAI<A, E, R extends Completions>(
         apiUrl: endpoint
     })
 
-    const service = OpenAiCompletions.model(model, {
-        temperature,
-        max_tokens: maxTokens,
-        top_p: topP,
-        presence_penalty: presencePenalty,
-        frequency_penalty: frequencyPenalty,
-        seed
-    })
-
     return task =>
         pipe(
-            service,
-            FX.flatMap(s => s.provide(task)),
+            FX.gen(function* () {
+                const provider = yield* OpenAiLanguageModel.model(model, {
+                    temperature,
+                    max_tokens: maxTokens,
+                    top_p: topP,
+                    presence_penalty: presencePenalty,
+                    frequency_penalty: frequencyPenalty,
+                    seed
+                })
+
+                return yield* provider.use(task)
+            }),
             FX.provide(client)
         )
 }

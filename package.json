@@ -26,26 +26,26 @@
     "formdata-node": "^6.0.3",
     "gray-matter": "^4.0.3",
     "handlebars": "^4.7.8",
-    "marked": "^15.0.11"
+    "marked": "^15.0.12"
   },
   "peerDependencies": {
-    "effect": "3.14.18",
-    "@effect/platform": "^0.80.18",
-    "@effect/platform-node": "^0.77.6",
-    "@effect/ai": "^0.13.18",
-    "@effect/ai-openai": "^0.16.19",
-    "@effect/typeclass": "^0.33.18",
+    "effect": "3.15.4",
+    "@effect/platform": "^0.82.7",
+    "@effect/platform-node": "^0.81.4",
+    "@effect/ai": "^0.16.8",
+    "@effect/ai-openai": "^0.19.8",
+    "@effect/typeclass": "^0.34.4",
     "@skyrim-platform/skyrim-platform": "2.9.0"
   },
   "devDependencies": {
-    "@effect/vitest": "^0.21.1",
-    "@eslint/js": "^9.26.0",
-    "@stylistic/eslint-plugin": "^4.2.0",
-    "@types/node": "^22.15.3",
-    "@vitest/coverage-v8": "^3.1.2",
-    "eslint": "^9.26.0",
-    "eslint-config-prettier": "^10.1.2",
-    "eslint-plugin-prettier": "^5.3.1",
+    "@effect/vitest": "^0.22.4",
+    "@eslint/js": "^9.27.0",
+    "@stylistic/eslint-plugin": "^4.4.0",
+    "@types/node": "^22.15.21",
+    "@vitest/coverage-v8": "^3.1.4",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
     "glob": "^11.0.2",
     "husky": "^9.1.7",
     "istanbul-badges-readme": "^1.9.0",
@@ -55,10 +55,10 @@
     "rollup-plugin-node-externals": "^8.0.0",
     "typedoc": "^0.28.4",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.31.1",
-    "vite": "^6.3.4",
+    "typescript-eslint": "^8.32.1",
+    "vite": "^6.3.5",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.2"
+    "vitest": "^3.1.4"
   },
   "exports": {
     ".": {
@@ -106,10 +106,10 @@
       "import": "./dist/esm/common/Type.js",
       "require": "./dist/cjs/common/Type.js"
     },
-    "./game/Event": {
-      "types": "./dist/dts/game/Event.d.ts",
-      "import": "./dist/esm/game/Event.js",
-      "require": "./dist/cjs/game/Event.js"
+    "./event/Event": {
+      "types": "./dist/dts/event/Event.d.ts",
+      "import": "./dist/esm/event/Event.js",
+      "require": "./dist/cjs/event/Event.js"
     },
     "./game/Game": {
       "types": "./dist/dts/game/Game.d.ts",
@@ -140,21 +140,6 @@
       "types": "./dist/dts/markdown/Renderer.d.ts",
       "import": "./dist/esm/markdown/Renderer.js",
       "require": "./dist/cjs/markdown/Renderer.js"
-    },
-    "./scene/Markdown": {
-      "types": "./dist/dts/scene/Markdown.d.ts",
-      "import": "./dist/esm/scene/Markdown.js",
-      "require": "./dist/cjs/scene/Markdown.js"
-    },
-    "./scene/Objective": {
-      "types": "./dist/dts/scene/Objective.d.ts",
-      "import": "./dist/esm/scene/Objective.js",
-      "require": "./dist/cjs/scene/Objective.js"
-    },
-    "./scene/Role": {
-      "types": "./dist/dts/scene/Role.d.ts",
-      "import": "./dist/esm/scene/Role.js",
-      "require": "./dist/cjs/scene/Role.js"
     },
     "./scene/Scene": {
       "types": "./dist/dts/scene/Scene.d.ts",

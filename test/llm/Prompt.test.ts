@@ -5,7 +5,7 @@ import * as SC from "effect/Schema"
 import {createPrompt} from "../../src/llm/Prompt"
 import {Layer, pipe} from "effect"
 import {InvalidDataError} from "../../src/common/Data"
-import {OpenAiClient, OpenAiCompletions} from "@effect/ai-openai"
+import {OpenAiClient, OpenAiLanguageModel} from "@effect/ai-openai"
 import {FetchHttpClient} from "@effect/platform"
 import {AiError} from "@effect/ai/AiError"
 
@@ -72,12 +72,13 @@ describe("createPrompt", () => {
                 )
             )
 
-            const {name, age} = yield* pipe(
-                prompt(anna),
-                FX.provide(OpenAiCompletions.layer({model: "llama-4"})),
+            const model = yield* pipe(
+                OpenAiLanguageModel.model("llama-4"),
                 FX.provide(OpenAiClient.layer({})),
                 FX.provide(TestLayer)
             )
+
+            const {name, age} = yield* pipe(prompt(anna), model.use)
 
             expect(name).toBe("Anna")
             expect(age).toBe(41)
@@ -113,9 +114,7 @@ describe("createPrompt", () => {
             const user = messages[1]
 
             expect(user["role"]).toBe("user")
-            expect(user["content"]).toHaveLength(1)
-            expect(user["content"][0]["type"]).toBe("text")
-            expect(user["content"][0]["text"]).toBe("Who is Anna?")
+            expect(user["content"]).toBe("Who is Anna?")
         })
     )
 
@@ -148,18 +147,22 @@ describe("createPrompt", () => {
                     )
                 )
 
+                const model = yield* pipe(
+                    OpenAiLanguageModel.model("llama-4"),
+                    FX.provide(OpenAiClient.layer({})),
+                    FX.provide(TestLayer)
+                )
+
                 const error = yield* pipe(
                     prompt(anna),
-                    FX.provide(OpenAiCompletions.layer({model: "llama-4"})),
-                    FX.provide(OpenAiClient.layer({})),
-                    FX.provide(TestLayer),
+                    model.use,
                     FX.catchTag("AiError", (e: AiError) =>
                         FX.succeed(e.message)
                     )
                 )
 
                 expect(error).toBe(
-                    "OpenAiCompletions.create: An error occurred"
+                    "OpenAiLanguageModel.generateText: An error occurred"
                 )
             })
     )
@@ -254,12 +257,13 @@ describe("createPrompt", () => {
                         )
                     )
 
-                const {name, age} = yield* pipe(
-                    prompt(anna),
-                    FX.provide(OpenAiCompletions.layer({model: "llama-4"})),
+                const model = yield* pipe(
+                    OpenAiLanguageModel.model("llama-4"),
                     FX.provide(OpenAiClient.layer({})),
                     FX.provide(TestLayer)
                 )
+
+                const {name, age} = yield* pipe(prompt(anna), model.use)
 
                 expect(name).toBe("Anna")
                 expect(age).toBe(41)
@@ -356,11 +360,15 @@ describe("createPrompt", () => {
                         )
                     )
 
+                const model = yield* pipe(
+                    OpenAiLanguageModel.model("llama-4"),
+                    FX.provide(OpenAiClient.layer({})),
+                    FX.provide(TestLayer)
+                )
+
                 const error = yield* pipe(
                     prompt(anna),
-                    FX.provide(OpenAiCompletions.layer({model: "llama-4"})),
-                    FX.provide(OpenAiClient.layer({})),
-                    FX.provide(TestLayer),
+                    model.use,
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
                     )

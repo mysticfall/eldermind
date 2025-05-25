@@ -4,7 +4,7 @@ import {Layer, pipe} from "effect"
 import * as FX from "effect/Effect"
 import {LlmConfig, LlmEndpoint, withOpenAI} from "../../src/llm/Model"
 import {FetchHttpClient} from "@effect/platform"
-import {Completions} from "@effect/ai/Completions"
+import * as LLM from "@effect/ai/AiLanguageModel"
 
 const mockFetch = vi.fn<typeof fetch>()
 
@@ -75,15 +75,9 @@ describe("withOpenAI", () => {
                     )
                 )
 
-                const task = FX.gen(function* () {
-                    const completions = yield* Completions
-                    const response = yield* completions.create("Hello?")
-
-                    return response.text
-                })
-
                 const text = yield* pipe(
-                    task,
+                    LLM.generateText({prompt: "Hello?"}),
+                    FX.map(r => r.text),
                     withOpenAI(config),
                     FX.provide(TestLayer)
                 )
@@ -136,14 +130,7 @@ describe("withOpenAI", () => {
                 const message = messages[0]
 
                 expect(message["role"]).toBe("user")
-
-                const content = message["content"]
-
-                expect(content).toBeDefined()
-                expect(content).toHaveLength(1)
-
-                expect(content[0]["type"]).toBe("text")
-                expect(content[0]["text"]).toBe("Hello?")
+                expect(message["content"]).toBe("Hello?")
             })
     )
 })
