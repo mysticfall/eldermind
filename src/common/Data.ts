@@ -83,13 +83,13 @@ export type TypedDataLoader<T> = (
     path: DataPath
 ) => Effect<T, InvalidDataError | PlatformError>
 
-export class MissingContextDataError extends BaseError<MissingContextDataError>(
-    "MissingContextDataError",
+export class ContextDataError extends BaseError<ContextDataError>(
+    "ContextDataError",
     {
-        message: "Missing context data."
+        message: "Failed to retrieve context data."
     }
 ) {}
 
 export type ContextBuilder<TData, TContext extends object = object> = (
     context: TData
-) => Effect<TContext, MissingContextDataError>
+) => Effect<TContext, ContextDataError>

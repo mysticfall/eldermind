@@ -29,7 +29,7 @@ import {
 import {ActorId} from "skyrim-effect/game/Actor"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 import {pipe} from "effect"
-import {InvalidDataError} from "../../src/common/Data"
+import {ContextDataError, InvalidDataError} from "../../src/common/Data"
 import {DialogueEvent, DialogueText} from "../../src/speech/Dialogue"
 import {actorContextBuilder} from "../../src/actor/Actor"
 import {GameTime} from "skyrim-effect/game/Time"
@@ -252,7 +252,7 @@ describe("createSessionContextBuilder", () => {
     )
 
     it.effect(
-        "should return a MissingContextDataError when the role mapping references a non-existent role",
+        "should return a ContextDataError when the role mapping references a non-existent role",
         () =>
             FX.gen(function* () {
                 const compiler = createHandlebarsTemplateCompiler()
@@ -282,9 +282,8 @@ describe("createSessionContextBuilder", () => {
 
                 const error = yield* pipe(
                     buildSessionContext(invalidSession),
-                    FX.catchTag(
-                        "MissingContextDataError",
-                        (e: InvalidDataError) => FX.succeed(e.message)
+                    FX.catchTag("ContextDataError", (e: ContextDataError) =>
+                        FX.succeed(e.message)
                     )
                 )
 

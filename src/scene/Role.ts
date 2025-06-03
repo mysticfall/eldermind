@@ -6,8 +6,8 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {
     ContextBuilder,
-    InvalidDataError,
-    MissingContextDataError
+    ContextDataError,
+    InvalidDataError
 } from "../common/Data"
 import * as A from "effect/Array"
 import * as R from "effect/Record"
@@ -109,7 +109,7 @@ export function createRoleMappingsContextBuilder<TActor extends ActorContext>(
                             FX.catchTag(
                                 "FormError",
                                 e =>
-                                    new MissingContextDataError({
+                                    new ContextDataError({
                                         message: `Cannot find actor "${m.actor.toString(16)}" for role "${m.role}".`,
                                         cause: e
                                     })
@@ -140,7 +140,7 @@ export function createRoleMappingsContextBuilder<TActor extends ActorContext>(
                             FX.catchTag(
                                 "NoSuchElementException",
                                 () =>
-                                    new MissingContextDataError({
+                                    new ContextDataError({
                                         message: `Cannot find the mapped role "${role}" for actor "${actor.id.toString(16)}".`
                                     })
                             ),
@@ -188,7 +188,7 @@ export function withSpeaker(
                     FX.catchTag(
                         "NoSuchElementException",
                         () =>
-                            new MissingContextDataError({
+                            new ContextDataError({
                                 message: `No such role found in the context: "${speaker}".`
                             })
                     ),

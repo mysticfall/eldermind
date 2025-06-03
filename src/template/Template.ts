@@ -1,8 +1,8 @@
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import {
+    ContextDataError,
     InvalidDataError,
-    MissingContextDataError,
     TextDataLoader,
     TypedDataLoader
 } from "../common/Data"
@@ -11,7 +11,7 @@ import {ReadonlyRecord} from "effect/Record"
 
 export type Template = (
     context: ReadonlyRecord<string, unknown>
-) => Effect<string, MissingContextDataError>
+) => Effect<string, ContextDataError>
 
 export type TemplateCompiler = (
     source: string
