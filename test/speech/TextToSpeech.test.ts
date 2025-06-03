@@ -1,4 +1,4 @@
-import {installActorMocks, mockActors} from "../mock"
+import {installActorMocks, mockActors} from "../actor/mock"
 import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
