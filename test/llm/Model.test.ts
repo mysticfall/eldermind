@@ -2,17 +2,21 @@ import {afterEach, describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import {Layer, pipe} from "effect"
 import * as FX from "effect/Effect"
-import {LlmConfig, LlmEndpoint, withOpenAI} from "../../src/llm/Model"
+import {
+    createOpenAICompatibleProvider,
+    LlmConfig,
+    LlmEndpoint
+} from "../../src/llm/Model"
 import {FetchHttpClient} from "@effect/platform"
 import * as LLM from "@effect/ai/AiLanguageModel"
 
 const mockFetch = vi.fn<typeof fetch>()
 
-describe("withOpenAI", () => {
+describe("createOpenAICompatibleProvider", () => {
     afterEach(() => mockFetch.mockRestore())
 
     it.effect.prop(
-        "should configure OpenAI request parameters based on provided configuration",
+        "should create an OpenAI compatible LLM provider with the given configuration",
         [LlmConfig],
         fixtures =>
             FX.gen(function* () {
@@ -31,6 +35,12 @@ describe("withOpenAI", () => {
                 const TestLayer = pipe(
                     FetchHttpClient.layer,
                     Layer.provide(FetchTest)
+                )
+
+                const provider = yield* pipe(
+                    config,
+                    createOpenAICompatibleProvider,
+                    FX.provide(TestLayer)
                 )
 
                 mockFetch.mockRestore()
@@ -78,8 +88,7 @@ describe("withOpenAI", () => {
                 const text = yield* pipe(
                     LLM.generateText({prompt: "Hello?"}),
                     FX.map(r => r.text),
-                    withOpenAI(config),
-                    FX.provide(TestLayer)
+                    provider.use
                 )
 
                 expect(text).toBe("Hello! How can I assist you today?")

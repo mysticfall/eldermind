@@ -5,8 +5,8 @@ import * as SC from "effect/Schema"
 import {OpenAiClient, OpenAiLanguageModel} from "@effect/ai-openai"
 import {AiLanguageModel} from "@effect/ai/AiLanguageModel"
 import {HttpClient} from "@effect/platform/HttpClient"
-import {ConfigError} from "effect/ConfigError"
 import {Tokenizer} from "@effect/ai/Tokenizer"
+import {Provider} from "@effect/ai/AiPlan"
 
 export const LlmModelId = pipe(
     SC.String,
@@ -128,15 +128,9 @@ export const LlmConfig = SC.Struct({
 
 export type LlmConfig = typeof LlmConfig.Type
 
-export function withOpenAI<A, E, R extends AiLanguageModel>(
+export function createOpenAICompatibleProvider(
     config: LlmConfig
-): (
-    task: Effect<A, E, R>
-) => Effect<
-    A,
-    E | ConfigError,
-    Exclude<R, AiLanguageModel | Tokenizer> | HttpClient
-> {
+): Effect<Provider<AiLanguageModel | Tokenizer>, never, HttpClient> {
     const {model, endpoint, apiKey, parameters} = config
     const {
         temperature,
@@ -154,20 +148,15 @@ export function withOpenAI<A, E, R extends AiLanguageModel>(
         apiUrl: endpoint
     })
 
-    return task =>
-        pipe(
-            FX.gen(function* () {
-                const provider = yield* OpenAiLanguageModel.model(model, {
-                    temperature,
-                    max_tokens: maxTokens,
-                    top_p: topP,
-                    presence_penalty: presencePenalty,
-                    frequency_penalty: frequencyPenalty,
-                    seed
-                })
-
-                return yield* provider.use(task)
-            }),
-            FX.provide(client)
-        )
+    return pipe(
+        OpenAiLanguageModel.model(model, {
+            temperature,
+            max_tokens: maxTokens,
+            top_p: topP,
+            presence_penalty: presencePenalty,
+            frequency_penalty: frequencyPenalty,
+            seed
+        }),
+        FX.provide(client)
+    )
 }
