@@ -5,7 +5,6 @@ import * as O from "effect/Option"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
 import {createHandlebarsTemplateCompiler} from "../../src/template/Handlebars"
-import {History} from "../../src/game/Event"
 import {
     createSessionContextBuilder,
     Session,
@@ -71,7 +70,7 @@ const scene = Scene.make({
     ]
 })
 
-const DialogueHistory = History(DialogueEvent)
+const DialogueHistory = SC.Array(DialogueEvent)
 const DialogueSession = Session(DialogueEvent)
 
 const session = DialogueSession.make({

@@ -19,7 +19,7 @@ import {
     ObjectiveListContainer,
     ObjectiveState
 } from "./Objective"
-import {GameEvent, History} from "../game/Event"
+import {GameEvent} from "../event/Event"
 
 export const SessionId = pipe(
     DataIdentifier,
@@ -37,7 +37,7 @@ export interface Session<TEvent extends GameEvent> {
     readonly scene: Scene
     readonly roles: readonly RoleMapping[]
     readonly objectives: readonly ObjectiveState[]
-    readonly history: History<TEvent>
+    readonly history: readonly TEvent[]
 }
 
 export const Session = <A extends GameEvent, I = A, R = never>(
@@ -51,7 +51,7 @@ export const Session = <A extends GameEvent, I = A, R = never>(
             objectives: SC.optionalWith(SC.Array(ObjectiveState), {
                 default: () => A.empty()
             }),
-            history: SC.optionalWith(History(schema), {
+            history: SC.optionalWith(SC.Array(schema), {
                 default: () => A.empty()
             })
         }),
@@ -67,7 +67,7 @@ export interface SessionContext<
 > extends RoleMappingsContainer<TActor>,
         ObjectiveListContainer {
     readonly description: SceneDescription
-    readonly history: History<TEvent>
+    readonly history: readonly TEvent[]
 }
 
 export function createSessionContextBuilder<

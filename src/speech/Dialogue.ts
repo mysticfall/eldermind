@@ -1,6 +1,6 @@
 import {pipe} from "effect"
 import * as SC from "effect/Schema"
-import {GameEvent} from "../game/Event"
+import {GameEvent} from "../event/Event"
 import {ActorId} from "skyrim-effect/game/Actor"
 
 export const DialogueText = pipe(
@@ -33,4 +33,4 @@ export const DialogueEvent = pipe(
     })
 )
 
-type DialogueEvent = typeof DialogueEvent.Type
+export type DialogueEvent = typeof DialogueEvent.Type
