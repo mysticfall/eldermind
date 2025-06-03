@@ -18,6 +18,11 @@ export const ActorContext = pipe(
 
 export type ActorContext = typeof ActorContext.Type
 
+export type ActorContextBuilder<T extends ActorContext> = ContextBuilder<
+    Actor,
+    T
+>
+
 export const actorContextBuilder: ContextBuilder<Actor, ActorContext> = (
     context: Actor
 ) =>
