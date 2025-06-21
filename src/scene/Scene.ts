@@ -171,7 +171,7 @@ export abstract class AbstractScene<
             )
         }
 
-        const {beforeStart, doRun, afterEnd} = this
+        const {id, beforeStart, doRun, afterEnd} = this
 
         const getContext = (previous?: TContext) =>
             pipe(
@@ -198,6 +198,10 @@ export abstract class AbstractScene<
                     )
                 )
 
+                yield* FX.logDebug(
+                    `Invoking the turn #${turn} on scene "${id}".`
+                )
+
                 const result = yield* doRun(args, context, turn)
 
                 yield* pipe(
@@ -212,6 +216,8 @@ export abstract class AbstractScene<
             })
 
         return FX.gen(function* () {
+            FX.logInfo(`Starting scene: ${id}`)
+
             const ref = yield* pipe(
                 getContext(),
                 FX.map(context => ({context, turn: 0})),

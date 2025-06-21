@@ -42,7 +42,13 @@ export function createInMemoryEventStore<T extends GameEvent>(): Effect<
         const pubsub = yield* PS.unbounded<T>()
         const queue = yield* PS.subscribe(pubsub)
 
-        yield* SP.addFinalizer(scope, PS.shutdown(pubsub))
+        yield* SP.addFinalizer(
+            scope,
+            pipe(
+                FX.logInfo("Shutting down the event store."),
+                FX.flatMap(() => PS.shutdown(pubsub))
+            )
+        )
 
         pipe(
             queue,

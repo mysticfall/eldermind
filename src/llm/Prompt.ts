@@ -2,6 +2,7 @@ import * as A from "effect/Array"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as F from "effect/Function"
+import * as SC from "effect/Schema"
 import {Schema} from "effect/Schema"
 import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
@@ -68,9 +69,15 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
 
             yield* pipe(
                 user,
-                traverseArray(m =>
-                    FX.logDebug(`Rendered a base message:\n${m.parts}`)
-                )
+                traverseArray(m => {
+                    const text = pipe(
+                        m.parts,
+                        A.filter(SC.is(TextPart)),
+                        A.map(p => p.text)
+                    ).join("\n")
+
+                    return FX.logDebug(`Rendered a base message:\n${text}`)
+                })
             )
 
             const request = FX.gen(function* () {
@@ -81,7 +88,7 @@ export function createPrompt<TContext, TOutput, TSource = TOutput>(
 
                 const content = pipe(response.text, extractCodeContent)
 
-                FX.logTrace(`LLM output: ${content}`)
+                yield* FX.logDebug(`LLM output: ${content}`)
 
                 return yield* pipe(
                     content,
