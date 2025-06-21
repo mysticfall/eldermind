@@ -8,12 +8,11 @@ import * as PS from "effect/PubSub"
 import {PubSub} from "effect/PubSub"
 import * as RF from "effect/Ref"
 import * as Q from "effect/Queue"
-import {GameTime} from "skyrim-effect/game/Time"
 import {BaseError} from "../common/Error"
 import {pipe} from "effect"
 
 export const GameEvent = SC.Struct({
-    time: GameTime
+    time: SC.Duration
 })
 
 export type GameEvent = typeof GameEvent.Type

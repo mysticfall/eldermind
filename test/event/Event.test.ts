@@ -1,10 +1,10 @@
 import {describe, expect, it} from "@effect/vitest"
+import * as DU from "effect/Duration"
 import * as FX from "effect/Effect"
 import * as PS from "effect/PubSub"
 import * as SC from "effect/Schema"
 import * as Q from "effect/Queue"
 import {createInMemoryEventStore, GameEvent} from "../../src/event/Event"
-import {GameTime} from "skyrim-effect/game/Time"
 import {pipe, TestClock} from "effect"
 
 const ModEvent = SC.Union(
@@ -28,15 +28,15 @@ describe("EventStore", () => {
     const testEvents: readonly ModEvent[] = [
         {
             type: "speak",
-            time: GameTime.make(120)
+            time: DU.days(120)
         },
         {
             type: "wait",
-            time: GameTime.make(121)
+            time: DU.days(121)
         },
         {
             type: "speak",
-            time: GameTime.make(125)
+            time: DU.days(125)
         }
     ]
 

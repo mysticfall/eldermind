@@ -3,6 +3,7 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as A from "effect/Array"
 import * as DU from "effect/Duration"
+import {Duration} from "effect/Duration"
 import * as O from "effect/Option"
 import * as STR from "effect/String"
 import Handlebars, {HelperDelegate} from "handlebars"
@@ -10,7 +11,7 @@ import {DataPath, InvalidDataError, TextDataLoader} from "../common/Data"
 import {flow, pipe} from "effect"
 import {PlatformError} from "@effect/platform/Error"
 import {TemplateCompiler} from "./Template"
-import {asDuration, GameTime, getGameTime} from "skyrim-effect/game/Time"
+import {getGameTime} from "skyrim-effect/game/Time"
 
 // Allow referencing the actual instance from a different module:
 export const HandlebarsInstance = Handlebars
@@ -102,12 +103,11 @@ export const multilineIndent: HelperDelegate = (
         A.map(line => " ".repeat(indent) + line.trim())
     ).join("\n")
 
-export function sinceTime(clock: () => GameTime = getGameTime): HelperDelegate {
-    return (time: GameTime): string =>
+export function sinceTime(clock: () => Duration = getGameTime): HelperDelegate {
+    return (time: Duration): string =>
         pipe(
             clock(),
-            asDuration,
-            DU.subtract(pipe(time, asDuration)),
+            DU.subtract(time),
             DU.format,
             STR.split(" "),
             A.filter(s => !s.endsWith("ms") && !s.endsWith("ns")),

@@ -11,7 +11,7 @@ import {
 import {DataPath, InvalidDataError, TextDataLoader} from "../../src/common/Data"
 import {pipe} from "effect"
 import Handlebars from "handlebars"
-import {GameTime} from "skyrim-effect/game/Time"
+import * as DU from "effect/Duration"
 
 describe("compileHandlebarsTemplate", () => {
     it.effect("should compile the given text as a Handlebars template", () =>
@@ -184,15 +184,15 @@ describe("sinceTime", () => {
 
             return {
                 ...mod,
-                getGameTime: () => GameTime.make(1)
+                getGameTime: () => DU.days(1)
             }
         })
     })
 
     afterEach(() => vi.restoreAllMocks())
 
-    it("should return the elapsed time since the given GameTime in a human readable format", () => {
-        const elapsed = (v: number) => pipe(GameTime.make(1 - v), sinceTime())
+    it("should return the elapsed time since the start of the game in a human-readable format", () => {
+        const elapsed = (v: number) => pipe(DU.days(1 - v), sinceTime())
 
         expect(elapsed(2.2 / 24)).toBe("2h 12m ago")
         expect(elapsed(1.5 / 24 / 60)).toBe("1m 30s ago")
@@ -200,7 +200,7 @@ describe("sinceTime", () => {
     })
 
     it(`should return "now" if the elapsed time is less than a second`, () => {
-        const elapsed = pipe(GameTime.make(1 - 0.9 / 24 / 60 / 60), sinceTime())
+        const elapsed = pipe(DU.days(1 - 0.9 / 24 / 60 / 60), sinceTime())
 
         expect(elapsed).toBe("just now")
     })
