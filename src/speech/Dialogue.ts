@@ -34,3 +34,14 @@ export const DialogueEvent = pipe(
 )
 
 export type DialogueEvent = typeof DialogueEvent.Type
+
+export function isDialogueBetween(
+    actor1: ActorId,
+    actor2: ActorId
+): (event: DialogueEvent) => boolean {
+    return event =>
+        (event.type === "dialogue" &&
+            event.speaker === actor1 &&
+            event.target === actor2) ||
+        (event.speaker === actor2 && event.target === actor1)
+}
