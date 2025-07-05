@@ -2,11 +2,10 @@ import {pipe, Redacted} from "effect"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
+import {Layer} from "effect/Layer"
 import {OpenAiClient, OpenAiLanguageModel} from "@effect/ai-openai"
 import {AiLanguageModel} from "@effect/ai/AiLanguageModel"
 import {HttpClient} from "@effect/platform/HttpClient"
-import {Tokenizer} from "@effect/ai/Tokenizer"
-import {Provider} from "@effect/ai/AiPlan"
 
 export const LlmModelId = pipe(
     SC.String,
@@ -128,9 +127,9 @@ export const LlmConfig = SC.Struct({
 
 export type LlmConfig = typeof LlmConfig.Type
 
-export function createOpenAICompatibleProvider(
+export function createOpenAICompatibleLayer(
     config: LlmConfig
-): Effect<Provider<AiLanguageModel | Tokenizer>, never, HttpClient> {
+): Effect<Layer<AiLanguageModel, never>, never, HttpClient> {
     const {model, endpoint, apiKey, parameters} = config
     const {
         temperature,

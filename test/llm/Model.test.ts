@@ -3,7 +3,7 @@ import {it} from "@effect/vitest"
 import {Layer, pipe} from "effect"
 import * as FX from "effect/Effect"
 import {
-    createOpenAICompatibleProvider,
+    createOpenAICompatibleLayer,
     LlmConfig,
     LlmEndpoint
 } from "../../src/llm/Model"
@@ -12,7 +12,7 @@ import * as LLM from "@effect/ai/AiLanguageModel"
 
 const mockFetch = vi.fn<typeof fetch>()
 
-describe("createOpenAICompatibleProvider", () => {
+describe("createOpenAICompatibleLayer", () => {
     afterEach(() => mockFetch.mockRestore())
 
     it.effect.prop(
@@ -37,9 +37,9 @@ describe("createOpenAICompatibleProvider", () => {
                     Layer.provide(FetchTest)
                 )
 
-                const provider = yield* pipe(
+                const layer = yield* pipe(
                     config,
-                    createOpenAICompatibleProvider,
+                    createOpenAICompatibleLayer,
                     FX.provide(TestLayer)
                 )
 
@@ -88,7 +88,7 @@ describe("createOpenAICompatibleProvider", () => {
                 const text = yield* pipe(
                     LLM.generateText({prompt: "Hello?"}),
                     FX.map(r => r.text),
-                    provider.use
+                    FX.provide(layer)
                 )
 
                 expect(text).toBe("Hello! How can I assist you today?")

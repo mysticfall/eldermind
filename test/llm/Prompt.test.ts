@@ -65,6 +65,7 @@ describe("createPrompt", () => {
                                     }),
                                     refusal: null
                                 },
+                                logprobs: null,
                                 finish_reason: "stop"
                             }
                         ]
@@ -72,13 +73,13 @@ describe("createPrompt", () => {
                 )
             )
 
-            const model = yield* pipe(
+            const layer = yield* pipe(
                 OpenAiLanguageModel.model("llama-4"),
                 FX.provide(OpenAiClient.layer({})),
                 FX.provide(TestLayer)
             )
 
-            const {name, age} = yield* pipe(prompt(anna), model.use)
+            const {name, age} = yield* pipe(prompt(anna), FX.provide(layer))
 
             expect(name).toBe("Anna")
             expect(age).toBe(41)
@@ -147,7 +148,7 @@ describe("createPrompt", () => {
                     )
                 )
 
-                const model = yield* pipe(
+                const layer = yield* pipe(
                     OpenAiLanguageModel.model("llama-4"),
                     FX.provide(OpenAiClient.layer({})),
                     FX.provide(TestLayer)
@@ -155,7 +156,7 @@ describe("createPrompt", () => {
 
                 const error = yield* pipe(
                     prompt(anna),
-                    model.use,
+                    FX.provide(layer),
                     FX.catchTag("AiError", (e: AiError) =>
                         FX.succeed(e.message)
                     )
@@ -203,6 +204,7 @@ describe("createPrompt", () => {
                                             }),
                                             refusal: null
                                         },
+                                        logprobs: null,
                                         finish_reason: "stop"
                                     }
                                 ]
@@ -226,6 +228,7 @@ describe("createPrompt", () => {
                                             }),
                                             refusal: null
                                         },
+                                        logprobs: null,
                                         finish_reason: "stop"
                                     }
                                 ]
@@ -250,6 +253,7 @@ describe("createPrompt", () => {
                                             }),
                                             refusal: null
                                         },
+                                        logprobs: null,
                                         finish_reason: "stop"
                                     }
                                 ]
@@ -257,13 +261,13 @@ describe("createPrompt", () => {
                         )
                     )
 
-                const model = yield* pipe(
+                const layer = yield* pipe(
                     OpenAiLanguageModel.model("llama-4"),
                     FX.provide(OpenAiClient.layer({})),
                     FX.provide(TestLayer)
                 )
 
-                const {name, age} = yield* pipe(prompt(anna), model.use)
+                const {name, age} = yield* pipe(prompt(anna), FX.provide(layer))
 
                 expect(name).toBe("Anna")
                 expect(age).toBe(41)
@@ -306,6 +310,7 @@ describe("createPrompt", () => {
                                             }),
                                             refusal: null
                                         },
+                                        logprobs: null,
                                         finish_reason: "stop"
                                     }
                                 ]
@@ -329,6 +334,7 @@ describe("createPrompt", () => {
                                             }),
                                             refusal: null
                                         },
+                                        logprobs: null,
                                         finish_reason: "stop"
                                     }
                                 ]
@@ -353,6 +359,7 @@ describe("createPrompt", () => {
                                             }),
                                             refusal: null
                                         },
+                                        logprobs: null,
                                         finish_reason: "stop"
                                     }
                                 ]
@@ -360,7 +367,7 @@ describe("createPrompt", () => {
                         )
                     )
 
-                const model = yield* pipe(
+                const layer = yield* pipe(
                     OpenAiLanguageModel.model("llama-4"),
                     FX.provide(OpenAiClient.layer({})),
                     FX.provide(TestLayer)
@@ -368,7 +375,7 @@ describe("createPrompt", () => {
 
                 const error = yield* pipe(
                     prompt(anna),
-                    model.use,
+                    FX.provide(layer),
                     FX.catchTag("InvalidDataError", (e: InvalidDataError) =>
                         FX.succeed(e.message)
                     )
