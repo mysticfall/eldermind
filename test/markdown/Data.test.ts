@@ -2,7 +2,11 @@ import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import * as O from "effect/Option"
-import {createTextFileLoader, FilePathResolver} from "../../src/data/File"
+import {
+    createTextFileLoader,
+    FilePath,
+    FilePathResolver
+} from "../../src/data/File"
 import {pipe} from "effect"
 import {NodeContext} from "@effect/platform-node"
 import {createMarkdownLoader} from "../../src/markdown/Data"
@@ -10,7 +14,7 @@ import {DataPath} from "../../src/data/Data"
 
 describe("createMarkdownLoader", () => {
     const resolver: FilePathResolver = (path: DataPath) =>
-        FX.succeed(`test/markdown/fixtures/${path}`)
+        FX.succeed(FilePath.make(`test/markdown/fixtures/${path}`))
 
     it.scoped(
         "should create a MarkdownLoader using the given text file loader",

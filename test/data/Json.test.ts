@@ -5,7 +5,11 @@ import * as SC from "effect/Schema"
 import * as ST from "effect/String"
 import {pipe} from "effect"
 import {NodeContext} from "@effect/platform-node"
-import {createTextFileLoader, FilePathResolver} from "../../src/data/File"
+import {
+    createTextFileLoader,
+    FilePath,
+    FilePathResolver
+} from "../../src/data/File"
 import {createJsonDataLoader, parseJson} from "../../src/data/Json"
 import {DataPath, InvalidDataError} from "../../src/data/Data"
 
@@ -77,7 +81,7 @@ describe("parseJson", () => {
 
 describe("createJsonDataLoader", () => {
     const resolver: FilePathResolver = (path: DataPath) =>
-        FX.succeed(`test/data/fixtures/${path}`)
+        FX.succeed(FilePath.make(`test/data/fixtures/${path}`))
 
     it.scoped(
         "should create a DataLoader instance that loads JSON data conforming to the given schema",

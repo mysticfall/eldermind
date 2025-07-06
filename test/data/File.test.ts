@@ -4,6 +4,7 @@ import * as FX from "effect/Effect"
 import {
     createBinaryFileLoader,
     createTextFileLoader,
+    FilePath,
     FilePathResolver,
     readBinaryFile,
     readTextFile
@@ -18,8 +19,10 @@ describe("readTextFile", () => {
         () =>
             pipe(
                 FX.gen(function* () {
-                    const text = yield* readTextFile(
-                        "test/data/fixtures/utf-8.txt"
+                    const text = yield* pipe(
+                        "test/data/fixtures/utf-8.txt",
+                        FilePath.make,
+                        readTextFile
                     )
 
                     expect(text).toBe("Skyrim")
@@ -34,7 +37,7 @@ describe("readTextFile", () => {
             pipe(
                 FX.gen(function* () {
                     const text = yield* readTextFile(
-                        "test/data/fixtures/euc-kr.txt",
+                        FilePath.make("test/data/fixtures/euc-kr.txt"),
                         new TextDecoder("euc-kr")
                     )
 
@@ -50,7 +53,9 @@ describe("readTextFile", () => {
             pipe(
                 FX.gen(function* () {
                     const error = yield* pipe(
-                        readTextFile("test/fixtures/deleted.txt"),
+                        "test/fixtures/deleted.txt",
+                        FilePath.make,
+                        readTextFile,
                         FX.catchTag("SystemError", e => FX.succeed(e.reason))
                     )
 
@@ -67,8 +72,10 @@ describe("readBinaryFile", () => {
         () =>
             pipe(
                 FX.gen(function* () {
-                    const content = yield* readBinaryFile(
-                        "test/data/fixtures/utf-8.txt"
+                    const content = yield* pipe(
+                        "test/data/fixtures/utf-8.txt",
+                        FilePath.make,
+                        readBinaryFile
                     )
 
                     const text = new TextDecoder().decode(content)
@@ -85,7 +92,9 @@ describe("readBinaryFile", () => {
             pipe(
                 FX.gen(function* () {
                     const error = yield* pipe(
-                        readBinaryFile("test/fixtures/deleted.txt"),
+                        "test/fixtures/deleted.txt",
+                        FilePath.make,
+                        readBinaryFile,
                         FX.catchTag("SystemError", e => FX.succeed(e.reason))
                     )
 
@@ -97,7 +106,7 @@ describe("readBinaryFile", () => {
 })
 
 const fixturePathResolver: FilePathResolver = (path: DataPath) =>
-    FX.succeed(`test/data/fixtures/${path}`)
+    pipe(`test/data/fixtures/${path}`, FilePath.make, FX.succeed)
 
 describe("createTextFileLoader", () => {
     it.scoped(

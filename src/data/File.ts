@@ -2,6 +2,7 @@ import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as FS from "@effect/platform/FileSystem"
 import {FileSystem} from "@effect/platform/FileSystem"
+import * as SC from "effect/Schema"
 import {flow, pipe} from "effect"
 import {PlatformError} from "@effect/platform/Error"
 import {
@@ -14,8 +15,19 @@ import {
 
 const DefaultDecoder = new TextDecoder("UTF-8")
 
+export const FilePath = pipe(
+    SC.NonEmptyString,
+    SC.brand("FilePath"),
+    SC.annotations({
+        title: "File Path",
+        description: "Absolute path to a file or directory on the file system"
+    })
+)
+
+export type FilePath = typeof FilePath.Type
+
 export const readBinaryFile = (
-    path: string
+    path: FilePath
 ): Effect<BinaryData, PlatformError, FileSystem> =>
     pipe(
         FX.Do,
@@ -25,7 +37,7 @@ export const readBinaryFile = (
     )
 
 export const readTextFile = (
-    path: string,
+    path: FilePath,
     decoder: TextDecoder = DefaultDecoder
 ): Effect<string, PlatformError, FileSystem> =>
     pipe(
@@ -33,7 +45,9 @@ export const readTextFile = (
         FX.map(c => decoder.decode(c))
     )
 
-export type FilePathResolver = (path: DataPath) => Effect<string, PlatformError>
+export type FilePathResolver = (
+    path: DataPath
+) => Effect<FilePath, PlatformError>
 
 export function createBinaryFileLoader(
     resolver: FilePathResolver

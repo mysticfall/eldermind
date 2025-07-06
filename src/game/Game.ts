@@ -1,7 +1,7 @@
 import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
-import {FilePathResolver} from "../data/File"
+import {FilePath, FilePathResolver} from "../data/File"
 import * as path from "node:path"
 
 export const GameTitle = pipe(SC.NonEmptyString, SC.brand("GameTitle"))
@@ -37,11 +37,13 @@ export const SkyrimPath = pipe(
 export type SkyrimPath = typeof SkyrimPath.Type
 
 export function createGameDataPathResolver(root: GamePath): FilePathResolver {
-    return relative => pipe(path.join(root, relative), FX.succeed)
+    return relative =>
+        pipe(path.join(root, relative), FilePath.make, FX.succeed)
 }
 
 export function createSkyrimDataPathResolver(
     root: SkyrimPath
 ): FilePathResolver {
-    return relative => pipe(path.join(root, relative), FX.succeed)
+    return relative =>
+        pipe(path.join(root, relative), FilePath.make, FX.succeed)
 }
