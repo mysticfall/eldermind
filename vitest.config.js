@@ -15,6 +15,7 @@ export default defineConfig({
                 "docs",
                 "node_modules",
                 "test",
+                "script",
                 "**/*/index.ts",
                 "*.config.*js"
             ]

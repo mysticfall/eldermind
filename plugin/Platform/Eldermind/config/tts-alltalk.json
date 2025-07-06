@@ -1,0 +1,218 @@
+{
+  "endpoint": "http://127.0.0.1:7851",
+  "speed": 1.0,
+  "temperature": 0.8,
+  "voices": {
+    "voices": {
+      "FemaleArgonian": {
+        "Neutral": "FemaleArgonian"
+      },
+      "FemaleChild": {
+        "Neutral": "FemaleChild"
+      },
+      "FemaleCommander": {
+        "Neutral": "FemaleCommander"
+      },
+      "FemaleCommoner": {
+        "Neutral": "FemaleCommoner"
+      },
+      "FemaleCondescending": {
+        "Neutral": "FemaleCondescending"
+      },
+      "FemaleCoward": {
+        "Neutral": "FemaleCoward"
+      },
+      "FemaleDarkElf": {
+        "Neutral": "FemaleDarkElf"
+      },
+      "FemaleElfHaughty": {
+        "Neutral": "FemaleElfHaughty"
+      },
+      "FemaleEvenToned": {
+        "Neutral": "FemaleEvenToned"
+      },
+      "FemaleKhajiit": {
+        "Neutral": "FemaleKhajiit"
+      },
+      "FemaleNord": {
+        "Neutral": "FemaleNord"
+      },
+      "FemaleOldGrumpy": {
+        "Neutral": "FemaleOldGrumpy"
+      },
+      "FemaleOldKindly": {
+        "Neutral": "FemaleOldKindly"
+      },
+      "FemaleOrc": {
+        "Neutral": "FemaleOrc"
+      },
+      "FemaleShrill": {
+        "Neutral": "FemaleShrill"
+      },
+      "FemaleSultry": {
+        "Neutral": "FemaleSultry"
+      },
+      "FemaleUniqueAstrid": {
+        "Neutral": "FemaleUniqueAstrid"
+      },
+      "FemaleUniqueDelphine": {
+        "Neutral": "FemaleUniqueDelphine"
+      },
+      "FemaleUniqueElenwen": {
+        "Neutral": "FemaleUniqueElenwen"
+      },
+      "FemaleUniqueKarliah": {
+        "Neutral": "FemaleUniqueKarliah"
+      },
+      "FemaleUniqueMaven": {
+        "Neutral": "FemaleUniqueMaven"
+      },
+      "FemaleUniqueMirabelleErvine": {
+        "Neutral": "FemaleUniqueMirabelleErvine"
+      },
+      "FemaleUniqueVex": {
+        "Neutral": "FemaleUniqueVex"
+      },
+      "FemaleYoungEager": {
+        "Neutral": "FemaleYoungEager"
+      },
+      "MaleArgonian": {
+        "Neutral": "MaleArgonian"
+      },
+      "MaleBandit": {
+        "Neutral": "MaleBandit"
+      },
+      "MaleBrute": {
+        "Neutral": "MaleBrute"
+      },
+      "MaleChild": {
+        "Neutral": "MaleChild"
+      },
+      "MaleCommander": {
+        "Neutral": "MaleCommander"
+      },
+      "MaleCommoner": {
+        "Neutral": "MaleCommoner"
+      },
+      "MaleCommonerAccented": {
+        "Neutral": "MaleCommonerAccented"
+      },
+      "MaleCondescending": {
+        "Neutral": "MaleCondescending"
+      },
+      "MaleCoward": {
+        "Neutral": "MaleCoward"
+      },
+      "MaleDarkElf": {
+        "Neutral": "MaleDarkElf"
+      },
+      "MaleDrunk": {
+        "Neutral": "MaleDrunk"
+      },
+      "MaleElfHaughty": {
+        "Neutral": "MaleElfHaughty"
+      },
+      "MaleEvenToned": {
+        "Neutral": "MaleEvenToned"
+      },
+      "MaleEvenTonedAccented": {
+        "Neutral": "MaleEvenTonedAccented"
+      },
+      "MaleForsworn": {
+        "Neutral": "MaleForsworn"
+      },
+      "MaleGuard": {
+        "Neutral": "MaleGuard"
+      },
+      "MaleKhajiit": {
+        "Neutral": "MaleKhajiit"
+      },
+      "MaleNord": {
+        "Neutral": "MaleNord"
+      },
+      "MaleNordCommander": {
+        "Neutral": "MaleNordCommander"
+      },
+      "MaleOldGrumpy": {
+        "Neutral": "MaleOldGrumpy"
+      },
+      "MaleOldKindly": {
+        "Neutral": "MaleOldKindly"
+      },
+      "MaleOrc": {
+        "Neutral": "MaleOrc"
+      },
+      "MaleSlyCynical": {
+        "Neutral": "MaleSlyCynical"
+      },
+      "MaleSoldier": {
+        "Neutral": "MaleSoldier"
+      },
+      "MaleUniqueAncano": {
+        "Neutral": "MaleUniqueAncano"
+      },
+      "MaleUniqueArngeir": {
+        "Neutral": "MaleUniqueArngeir"
+      },
+      "MaleUniqueBrynjolf": {
+        "Neutral": "MaleUniqueBrynjolf"
+      },
+      "MaleUniqueCicero": {
+        "Neutral": "MaleUniqueCicero"
+      },
+      "MaleUniqueDelvinMallory": {
+        "Neutral": "MaleUniqueDelvinMallory"
+      },
+      "MaleUniqueEmperor": {
+        "Neutral": "MaleUniqueEmperor"
+      },
+      "MaleUniqueEsbern": {
+        "Neutral": "MaleUniqueEsbern"
+      },
+      "MaleUniqueGallus": {
+        "Neutral": "MaleUniqueGallus"
+      },
+      "MaleUniqueGalmar": {
+        "Neutral": "MaleUniqueGalmar"
+      },
+      "MaleUniqueHadvar": {
+        "Neutral": "MaleUniqueHadvar"
+      },
+      "MaleUniqueMercerFrey": {
+        "Neutral": "MaleUniqueMercerFrey"
+      },
+      "MaleUniqueMGAugur": {
+        "Neutral": "MaleUniqueMGAugur"
+      },
+      "MaleUniqueNazir": {
+        "Neutral": "MaleUniqueNazir"
+      },
+      "MaleUniqueSeptimus": {
+        "Neutral": "MaleUniqueSeptimus"
+      },
+      "MaleUniqueTullius": {
+        "Neutral": "MaleUniqueTullius"
+      },
+      "MaleUniqueUlfric": {
+        "Neutral": "MaleUniqueUlfric"
+      },
+      "MaleWarlock": {
+        "Neutral": "MaleWarlock"
+      },
+      "MaleYoungEager": {
+        "Neutral": "MaleYoungEager"
+      }
+    },
+    "fallback": {
+      "male": {
+        "Neutral": "MaleEvenToned"
+      },
+      "female": {
+        "Neutral": "FemaleEvenToned"
+      },
+      "none": {
+        "Neutral": "FemaleEvenToned"
+      }
+    }
+  }
+}
