@@ -4,7 +4,7 @@ import * as SC from "effect/Schema"
 import * as STR from "effect/String"
 import {flow, pipe} from "effect"
 import type {ParseOptions} from "effect/SchemaAST"
-import {BaseError} from "./Error"
+import {BaseError} from "../common/Error"
 import {PlatformError} from "@effect/platform/Error"
 
 export const DataIdentifier = pipe(
@@ -32,7 +32,7 @@ export const DataPath = SC.String.pipe(
     SC.brand("DataPath")
 ).annotations({
     title: "Data Path",
-    description: "Path to a specific game data"
+    description: "Path to specific game data"
 })
 
 export type DataPath = typeof DataPath.Type

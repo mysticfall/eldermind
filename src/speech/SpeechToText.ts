@@ -8,9 +8,9 @@ import {HttpClient} from "@effect/platform/HttpClient"
 import {FormData} from "formdata-node"
 import {formData} from "@effect/platform/HttpBody"
 import {Scope} from "effect/Scope"
-import {parseJson} from "../common/Json"
+import {parseJson} from "../data/Json"
 import {DialogueText} from "./Dialogue"
-import {BinaryData} from "../common/Data"
+import {BinaryData} from "../data/Data"
 
 export class SttServiceError extends BaseError<SttServiceError>(
     "SttServiceError",

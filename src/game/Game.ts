@@ -1,7 +1,7 @@
 import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
-import {FilePathResolver} from "../common/File"
+import {FilePathResolver} from "../data/File"
 import * as path from "node:path"
 
 export const GameTitle = pipe(SC.NonEmptyString, SC.brand("GameTitle"))

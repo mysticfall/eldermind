@@ -7,7 +7,7 @@ import {
     GamePath,
     SkyrimPath
 } from "../../src/game/Game"
-import {DataPath} from "../../src/common/Data"
+import {DataPath} from "../../src/data/Data"
 import {pipe} from "effect"
 
 describe("createGameDataPathResolver", () => {

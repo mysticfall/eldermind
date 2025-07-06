@@ -30,7 +30,7 @@ import {defaultScheduler} from "effect/Scheduler"
 import {ReadonlyRecord} from "effect/Record"
 import {ActorContext, actorContextBuilder} from "../../src/actor/Actor"
 import {Actor} from "@skyrim-platform/skyrim-platform"
-import {InvalidDataError} from "../../src/common/Data"
+import {InvalidDataError} from "../../src/data/Data"
 
 installActorMocks()
 

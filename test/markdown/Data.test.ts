@@ -2,11 +2,11 @@ import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import * as O from "effect/Option"
-import {createTextFileLoader, FilePathResolver} from "../../src/common/File"
+import {createTextFileLoader, FilePathResolver} from "../../src/data/File"
 import {pipe} from "effect"
 import {NodeContext} from "@effect/platform-node"
 import {createMarkdownLoader} from "../../src/markdown/Data"
-import {DataPath} from "../../src/common/Data"
+import {DataPath} from "../../src/data/Data"
 
 describe("createMarkdownLoader", () => {
     const resolver: FilePathResolver = (path: DataPath) =>

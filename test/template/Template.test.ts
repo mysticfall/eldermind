@@ -1,7 +1,7 @@
 import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
-import {DataPath, TextDataLoader} from "../../src/common/Data"
+import {DataPath, TextDataLoader} from "../../src/data/Data"
 import {
     createTemplateLoader,
     TemplateCompiler

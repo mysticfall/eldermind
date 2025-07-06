@@ -5,9 +5,9 @@ import * as SC from "effect/Schema"
 import * as ST from "effect/String"
 import {pipe} from "effect"
 import {NodeContext} from "@effect/platform-node"
-import {createTextFileLoader, FilePathResolver} from "../../src/common/File"
-import {createJsonDataLoader, parseJson} from "../../src/common/Json"
-import {DataPath, InvalidDataError} from "../../src/common/Data"
+import {createTextFileLoader, FilePathResolver} from "../../src/data/File"
+import {createJsonDataLoader, parseJson} from "../../src/data/Json"
+import {DataPath, InvalidDataError} from "../../src/data/Data"
 
 const SampleSchema = SC.Struct({
     name: SC.String,
@@ -77,7 +77,7 @@ describe("parseJson", () => {
 
 describe("createJsonDataLoader", () => {
     const resolver: FilePathResolver = (path: DataPath) =>
-        FX.succeed(`test/common/fixtures/${path}`)
+        FX.succeed(`test/data/fixtures/${path}`)
 
     it.scoped(
         "should create a DataLoader instance that loads JSON data conforming to the given schema",

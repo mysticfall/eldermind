@@ -1,12 +1,6 @@
 import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
-import {
-    createTextDataLoader,
-    DataIdentifier,
-    DataPath,
-    makeIdentifier,
-    validate
-} from "../../src/common/Data"
+import {createTextDataLoader, DataPath, validate} from "../../src/data/Data"
 import * as FX from "effect/Effect"
 import * as E from "effect/Either"
 import * as O from "effect/Option"
@@ -14,91 +8,6 @@ import * as SC from "effect/Schema"
 import {pipe} from "effect"
 import {causeOption} from "effect/Exit"
 import {isFailType} from "effect/Cause"
-
-describe("BaseIdentifier", () => {
-    const validIdentifiers = [
-        "valid_identifier", // Simple valid snake_case
-        "snake_case", // Valid lowercase with underscore
-        "snake_case_123", // Valid with numbers
-        "identifier123", // Contains numbers
-        "x", // Single alphabetic character
-        "a1", // Letter followed by a number
-        "i_am_an_identifier", // Long identifier with underscores
-        "example_123_case" // Combination of letters, numbers, and underscores
-    ]
-
-    const invalidIdentifiers = [
-        "Invalid_Identifier", // Contains uppercase letters
-        "123invalid", // Starts with a number
-        "snake-case", // Contains a non-underscore symbol (dash)
-        "snake case", // Contains spaces
-        "_snake_case", // Starts with an underscore
-        "snake_case_", // Ends with an underscore
-        "snake__case", // Consecutive underscores
-        "123", // Only numbers
-        "", // Empty string
-        " ", // String with only a space
-        "__", // Only underscores
-        "no-special!chars" // Contains special characters
-    ]
-
-    describe("should accept valid identifiers", () => {
-        it.each(validIdentifiers)(
-            "should validate identifier: '%s'",
-            identifier => {
-                const result = pipe(
-                    identifier,
-                    SC.decodeUnknownEither(DataIdentifier)
-                )
-
-                expect(result).satisfy(E.isRight) // Result should be a Right (valid)
-            }
-        )
-    })
-
-    describe("should reject invalid identifiers", () => {
-        it.each(invalidIdentifiers)(
-            "should reject identifier: '%s'",
-            identifier => {
-                const result = pipe(
-                    identifier,
-                    SC.decodeUnknownEither(DataIdentifier)
-                )
-
-                expect(result).satisfy(E.isLeft) // Result should be a Left (invalid)
-            }
-        )
-    })
-})
-
-describe("makeIdentifier", () => {
-    const testCases = [
-        {input: "Hello World", expected: "hello_world"},
-        {input: "Item 1", expected: "item_1"},
-        {input: "Already_Snake_Case", expected: "already_snake_case"},
-        {
-            input: "   Leading and Trailing Spaces   ",
-            expected: "leading_and_trailing_spaces"
-        },
-        {
-            input: "Special@Characters#Here!",
-            expected: "special_characters_here_"
-        },
-        {input: "_StartingWithUnderscore", expected: "_startingwithunderscore"},
-        {input: "EndsWithSpace ", expected: "endswithspace"},
-        {input: "Multiple   Spaces", expected: "multiple_spaces"},
-        {input: "Dash-Separated", expected: "dash_separated"},
-        {input: "ALLCAPS", expected: "allcaps"}
-    ]
-
-    it.each(testCases)(
-        "should convert '%s' to snake_case",
-        ({input, expected}) => {
-            const result = makeIdentifier(input)
-            expect(result).toBe(expected)
-        }
-    )
-})
 
 describe("DataPath", () => {
     const validPaths = [

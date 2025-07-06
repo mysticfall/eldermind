@@ -18,8 +18,8 @@ import {FileSystem} from "@effect/platform/FileSystem"
 import * as ST from "effect/Stream"
 import {DialogueText} from "../../src/speech/Dialogue"
 import {VoicePathResolver} from "../../src/speech/Voice"
-import {FilePathResolver} from "../../src/common/File"
-import {DataPath} from "../../src/common/Data"
+import {FilePathResolver} from "../../src/data/File"
+import {DataPath} from "../../src/data/Data"
 import {CommandExecutor, Process} from "@effect/platform/CommandExecutor"
 
 vi.mock("node:os", () => ({

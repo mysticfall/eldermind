@@ -2,7 +2,7 @@ import {ActorId, ActorName} from "skyrim-effect/game/Actor"
 import {pipe} from "effect"
 import * as FX from "effect/Effect"
 import * as SC from "effect/Schema"
-import {ContextBuilder} from "../common/Data"
+import {ContextBuilder} from "../data/Data"
 import {Actor} from "@skyrim-platform/skyrim-platform"
 
 export const ActorContext = pipe(

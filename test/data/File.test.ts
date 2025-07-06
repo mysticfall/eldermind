@@ -7,10 +7,10 @@ import {
     FilePathResolver,
     readBinaryFile,
     readTextFile
-} from "../../src/common/File"
+} from "../../src/data/File"
 import {pipe} from "effect"
 import {NodeContext} from "@effect/platform-node"
-import {DataPath} from "../../src/common/Data"
+import {DataPath} from "../../src/data/Data"
 
 describe("readTextFile", () => {
     it.scoped(
@@ -19,7 +19,7 @@ describe("readTextFile", () => {
             pipe(
                 FX.gen(function* () {
                     const text = yield* readTextFile(
-                        "test/common/fixtures/utf-8.txt"
+                        "test/data/fixtures/utf-8.txt"
                     )
 
                     expect(text).toBe("Skyrim")
@@ -34,7 +34,7 @@ describe("readTextFile", () => {
             pipe(
                 FX.gen(function* () {
                     const text = yield* readTextFile(
-                        "test/common/fixtures/euc-kr.txt",
+                        "test/data/fixtures/euc-kr.txt",
                         new TextDecoder("euc-kr")
                     )
 
@@ -68,7 +68,7 @@ describe("readBinaryFile", () => {
             pipe(
                 FX.gen(function* () {
                     const content = yield* readBinaryFile(
-                        "test/common/fixtures/utf-8.txt"
+                        "test/data/fixtures/utf-8.txt"
                     )
 
                     const text = new TextDecoder().decode(content)
@@ -97,7 +97,7 @@ describe("readBinaryFile", () => {
 })
 
 const fixturePathResolver: FilePathResolver = (path: DataPath) =>
-    FX.succeed(`test/common/fixtures/${path}`)
+    FX.succeed(`test/data/fixtures/${path}`)
 
 describe("createTextFileLoader", () => {
     it.scoped(

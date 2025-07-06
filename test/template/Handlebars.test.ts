@@ -8,7 +8,7 @@ import {
     registerPartial,
     sinceTime
 } from "../../src/template/Handlebars"
-import {DataPath, InvalidDataError, TextDataLoader} from "../../src/common/Data"
+import {DataPath, InvalidDataError, TextDataLoader} from "../../src/data/Data"
 import {pipe} from "effect"
 import Handlebars from "handlebars"
 import * as DU from "effect/Duration"

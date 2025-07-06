@@ -1,7 +1,7 @@
 import * as FX from "effect/Effect"
 import {flow} from "effect"
 import {MarkdownDocument, parseMarkdown} from "./Parser"
-import {DataLoader, TextDataLoader} from "../common/Data"
+import {DataLoader, TextDataLoader} from "../data/Data"
 
 export type MarkdownLoader = DataLoader<MarkdownDocument>
 

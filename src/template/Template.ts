@@ -5,7 +5,7 @@ import {
     InvalidDataError,
     TextDataLoader,
     TypedDataLoader
-} from "../common/Data"
+} from "../data/Data"
 import {flow} from "effect"
 import {ReadonlyRecord} from "effect/Record"
 

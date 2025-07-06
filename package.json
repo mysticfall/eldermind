@@ -76,35 +76,30 @@
       "import": "./dist/esm/actor/Emotion.js",
       "require": "./dist/cjs/actor/Emotion.js"
     },
-    "./common/Data": {
-      "types": "./dist/dts/common/Data.d.ts",
-      "import": "./dist/esm/common/Data.js",
-      "require": "./dist/cjs/common/Data.js"
-    },
     "./common/Error": {
       "types": "./dist/dts/common/Error.d.ts",
       "import": "./dist/esm/common/Error.js",
       "require": "./dist/cjs/common/Error.js"
     },
-    "./common/File": {
-      "types": "./dist/dts/common/File.d.ts",
-      "import": "./dist/esm/common/File.js",
-      "require": "./dist/cjs/common/File.js"
-    },
-    "./common/Id": {
-      "types": "./dist/dts/common/Id.d.ts",
-      "import": "./dist/esm/common/Id.js",
-      "require": "./dist/cjs/common/Id.js"
-    },
-    "./common/Json": {
-      "types": "./dist/dts/common/Json.d.ts",
-      "import": "./dist/esm/common/Json.js",
-      "require": "./dist/cjs/common/Json.js"
-    },
     "./common/Type": {
       "types": "./dist/dts/common/Type.d.ts",
       "import": "./dist/esm/common/Type.js",
       "require": "./dist/cjs/common/Type.js"
+    },
+    "./data/Data": {
+      "types": "./dist/dts/data/Data.d.ts",
+      "import": "./dist/esm/data/Data.js",
+      "require": "./dist/cjs/data/Data.js"
+    },
+    "./data/File": {
+      "types": "./dist/dts/data/File.d.ts",
+      "import": "./dist/esm/data/File.js",
+      "require": "./dist/cjs/data/File.js"
+    },
+    "./data/Json": {
+      "types": "./dist/dts/data/Json.d.ts",
+      "import": "./dist/esm/data/Json.js",
+      "require": "./dist/cjs/data/Json.js"
     },
     "./event/Event": {
       "types": "./dist/dts/event/Event.d.ts",

@@ -9,11 +9,7 @@ import {Effect} from "effect/Effect"
 import * as SR from "effect/SynchronizedRef"
 import {SynchronizedRef} from "effect/SynchronizedRef"
 import * as SC from "effect/Schema"
-import {
-    ContextDataError,
-    DataIdentifier,
-    InvalidDataError
-} from "../common/Data"
+import {ContextDataError, DataIdentifier, InvalidDataError} from "../data/Data"
 import {pipe} from "effect"
 import {ActorContext, ActorContextBuilder} from "../actor/Actor"
 import {ActorHexId, ActorId, getActor} from "skyrim-effect/game/Actor"

@@ -32,7 +32,7 @@ import {
     EmotionType
 } from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
-import {DataPath} from "../common/Data"
+import {DataPath} from "../data/Data"
 import {defaultScheduler, Scheduler} from "effect/Scheduler"
 import {FormError} from "skyrim-effect/game/Form"
 import {ActorBase} from "@skyrim-platform/skyrim-platform"
