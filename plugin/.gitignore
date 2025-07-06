@@ -1,0 +1,5 @@
+meta.ini
+*.ppj
+*.code-workspace
+.papyrus
+.vscode
