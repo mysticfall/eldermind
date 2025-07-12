@@ -58,10 +58,14 @@ describe("createMarkdownLoader", () => {
                         "deleted.md",
                         DataPath.make,
                         load,
-                        FX.catchTag("SystemError", e => FX.succeed(e.reason))
+                        FX.catchTag("DataAccessError", e =>
+                            FX.succeed(e.message)
+                        )
                     )
 
-                    expect(error).toBe("NotFound")
+                    expect(error).toBe(
+                        "Failed to access data from the path: deleted.md"
+                    )
                 }),
                 FX.provide(NodeContext.layer)
             )

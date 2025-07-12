@@ -3,15 +3,17 @@ import {Effect} from "effect/Effect"
 import * as FS from "@effect/platform/FileSystem"
 import {FileSystem} from "@effect/platform/FileSystem"
 import * as SC from "effect/Schema"
-import {flow, pipe} from "effect"
-import {PlatformError} from "@effect/platform/Error"
+import {pipe} from "effect"
 import {
     BinaryData,
     BinaryDataLoader,
     createTextDataLoader,
+    DataAccessError,
     DataPath,
     TextDataLoader
 } from "./Data"
+import {ErrorArgs, ErrorLike} from "../common/Error"
+import {TaggedError} from "effect/Data"
 
 const DefaultDecoder = new TextDecoder("UTF-8")
 
@@ -26,20 +28,35 @@ export const FilePath = pipe(
 
 export type FilePath = typeof FilePath.Type
 
+export class FileAccessError extends TaggedError("FileAccessError")<ErrorLike> {
+    constructor(args: ErrorArgs & {path: FilePath}) {
+        super({
+            ...args,
+            message:
+                args.message ??
+                `File does not exist or is not accessible: ${args.path}`
+        })
+    }
+}
+
 export const readBinaryFile = (
     path: FilePath
-): Effect<BinaryData, PlatformError, FileSystem> =>
+): Effect<BinaryData, FileAccessError, FileSystem> =>
     pipe(
         FX.Do,
         FX.tap(() => FX.logTrace(`Reading text file: ${path}`)),
         FX.bind("fs", () => FS.FileSystem),
-        FX.flatMap(({fs}) => fs.readFile(path))
+        FX.flatMap(({fs}) => fs.readFile(path)),
+        FX.catchTags({
+            BadArgument: cause => new FileAccessError({path, cause}),
+            SystemError: cause => new FileAccessError({path, cause})
+        })
     )
 
 export const readTextFile = (
     path: FilePath,
     decoder: TextDecoder = DefaultDecoder
-): Effect<string, PlatformError, FileSystem> =>
+): Effect<string, FileAccessError, FileSystem> =>
     pipe(
         readBinaryFile(path),
         FX.map(c => decoder.decode(c))
@@ -47,7 +64,7 @@ export const readTextFile = (
 
 export type FilePathResolver = (
     path: DataPath
-) => Effect<FilePath, PlatformError>
+) => Effect<FilePath, FileAccessError>
 
 export function createBinaryFileLoader(
     resolver: FilePathResolver
@@ -55,11 +72,17 @@ export function createBinaryFileLoader(
     return FX.gen(function* () {
         const fs = yield* FileSystem
 
-        return flow(
-            resolver,
-            FX.flatMap(readBinaryFile),
-            FX.provideService(FileSystem, fs)
-        )
+        return path =>
+            pipe(
+                path,
+                resolver,
+                FX.flatMap(readBinaryFile),
+                FX.provideService(FileSystem, fs),
+                FX.catchTag(
+                    "FileAccessError",
+                    cause => new DataAccessError({path, cause})
+                )
+            )
     })
 }
 

@@ -182,10 +182,14 @@ describe("createJsonDataLoader", () => {
                         "non_existent.json",
                         DataPath.make,
                         load,
-                        FX.catchTag("SystemError", e => FX.succeed(e.reason))
+                        FX.catchTag("DataAccessError", e =>
+                            FX.succeed(e.message)
+                        )
                     )
 
-                    expect(error).toBe("NotFound")
+                    expect(error).toBe(
+                        "Failed to access data from the path: non_existent.json"
+                    )
                 }),
                 FX.provide(NodeContext.layer)
             )

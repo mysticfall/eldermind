@@ -56,10 +56,14 @@ describe("readTextFile", () => {
                         "test/fixtures/deleted.txt",
                         FilePath.make,
                         readTextFile,
-                        FX.catchTag("SystemError", e => FX.succeed(e.reason))
+                        FX.catchTag("FileAccessError", e =>
+                            FX.succeed(e.message)
+                        )
                     )
 
-                    expect(error).toBe("NotFound")
+                    expect(error).toBe(
+                        "File does not exist or is not accessible: test/fixtures/deleted.txt"
+                    )
                 }),
                 FX.provide(NodeContext.layer)
             )
@@ -95,10 +99,14 @@ describe("readBinaryFile", () => {
                         "test/fixtures/deleted.txt",
                         FilePath.make,
                         readBinaryFile,
-                        FX.catchTag("SystemError", e => FX.succeed(e.reason))
+                        FX.catchTag("FileAccessError", e =>
+                            FX.succeed(e.message)
+                        )
                     )
 
-                    expect(error).toBe("NotFound")
+                    expect(error).toBe(
+                        "File does not exist or is not accessible: test/fixtures/deleted.txt"
+                    )
                 }),
                 FX.provide(NodeContext.layer)
             )
@@ -161,10 +169,14 @@ describe("createTextFileLoader", () => {
                         "test/fixtures/deleted.txt",
                         DataPath.make,
                         load,
-                        FX.catchTag("SystemError", e => FX.succeed(e.reason))
+                        FX.catchTag("DataAccessError", e =>
+                            FX.succeed(e.message)
+                        )
                     )
 
-                    expect(error).toBe("NotFound")
+                    expect(error).toBe(
+                        "Failed to access data from the path: test/fixtures/deleted.txt"
+                    )
                 }),
                 FX.provide(NodeContext.layer)
             )
@@ -226,10 +238,14 @@ describe("createBinaryFileLoader", () => {
                         "test/fixtures/deleted.txt",
                         DataPath.make,
                         load,
-                        FX.catchTag("SystemError", e => FX.succeed(e.reason))
+                        FX.catchTag("DataAccessError", e =>
+                            FX.succeed(e.message)
+                        )
                     )
 
-                    expect(error).toBe("NotFound")
+                    expect(error).toBe(
+                        "Failed to access data from the path: test/fixtures/deleted.txt"
+                    )
                 }),
                 FX.provide(NodeContext.layer)
             )

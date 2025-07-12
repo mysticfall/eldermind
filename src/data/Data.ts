@@ -5,7 +5,6 @@ import * as STR from "effect/String"
 import {flow, pipe} from "effect"
 import type {ParseOptions} from "effect/SchemaAST"
 import {ErrorArgs, ErrorLike} from "../common/Error"
-import {PlatformError} from "@effect/platform/Error"
 import {TaggedError} from "effect/Data"
 
 export const DataIdentifier = pipe(
@@ -38,7 +37,18 @@ export const DataPath = SC.String.pipe(
 
 export type DataPath = typeof DataPath.Type
 
-export type DataLoader<T> = (path: DataPath) => Effect<T, PlatformError>
+export class DataAccessError extends TaggedError("DataAccessError")<ErrorLike> {
+    constructor(args: ErrorArgs & {path: DataPath}) {
+        super({
+            ...args,
+            message:
+                args.message ??
+                `Failed to access data from the path: ${args.path}`
+        })
+    }
+}
+
+export type DataLoader<T> = (path: DataPath) => Effect<T, DataAccessError>
 
 export type BinaryData = Uint8Array<ArrayBufferLike>
 
@@ -86,7 +96,7 @@ export function validate<TData, TSource>(
 
 export type TypedDataLoader<T> = (
     path: DataPath
-) => Effect<T, InvalidDataError | PlatformError>
+) => Effect<T, InvalidDataError | DataAccessError>
 
 export class ContextDataError extends TaggedError(
     "ContextDataError"

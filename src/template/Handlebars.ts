@@ -7,9 +7,13 @@ import {Duration} from "effect/Duration"
 import * as O from "effect/Option"
 import * as STR from "effect/String"
 import Handlebars, {HelperDelegate} from "handlebars"
-import {DataPath, InvalidDataError, TextDataLoader} from "../data/Data"
+import {
+    DataAccessError,
+    DataPath,
+    InvalidDataError,
+    TextDataLoader
+} from "../data/Data"
 import {flow, pipe} from "effect"
-import {PlatformError} from "@effect/platform/Error"
 import {TemplateCompiler} from "./Template"
 import {getGameTime} from "skyrim-effect/game/Time"
 
@@ -66,7 +70,7 @@ export function registerPartial(
     path: DataPath,
     name?: string,
     options?: CompileOptions
-) => Effect<void, InvalidDataError | PlatformError> {
+) => Effect<void, InvalidDataError | DataAccessError> {
     return (path, name, options) =>
         FX.gen(function* () {
             const source = yield* pipe(path, loader)
