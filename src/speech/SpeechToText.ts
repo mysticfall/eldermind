@@ -2,7 +2,6 @@ import * as SC from "effect/Schema"
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
 import * as O from "effect/Option"
-import {BaseError} from "../common/Error"
 import {pipe} from "effect"
 import {HttpClient} from "@effect/platform/HttpClient"
 import {FormData} from "formdata-node"
@@ -11,13 +10,17 @@ import {Scope} from "effect/Scope"
 import {parseJson} from "../data/Json"
 import {DialogueText} from "./Dialogue"
 import {BinaryData} from "../data/Data"
+import {ErrorArgs, ErrorLike} from "../common/Error"
+import {TaggedError} from "effect/Data"
 
-export class SttServiceError extends BaseError<SttServiceError>(
-    "SttServiceError",
-    {
-        message: "Failed to transcribe the audio file."
+export class SttServiceError extends TaggedError("SttServiceError")<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "Speech-to-text service error occurred."
+        })
     }
-) {}
+}
 
 export const SttModelId = pipe(
     SC.String,

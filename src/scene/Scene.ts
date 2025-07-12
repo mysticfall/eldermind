@@ -14,10 +14,11 @@ import {pipe} from "effect"
 import {ActorContext, ActorContextBuilder} from "../actor/Actor"
 import {ActorHexId, ActorId, getActor} from "skyrim-effect/game/Actor"
 import {EventRetrievalError, EventStore, GameEvent} from "../event/Event"
-import {BaseError} from "../common/Error"
 import {traverseArray} from "../common/Type"
 import {toHexId} from "skyrim-effect/game/Form"
 import {Scheduler} from "effect/Scheduler"
+import {ErrorArgs, ErrorLike} from "../common/Error"
+import {TaggedError} from "effect/Data"
 
 export const SceneId = pipe(
     DataIdentifier,
@@ -42,26 +43,38 @@ export const Role = pipe(
 
 export type Role = typeof Role.Type
 
-export class SceneRequirementError extends BaseError<SceneRequirementError>(
-    "SceneRequirementError",
-    {
-        message: "Requirement of the scene is not met."
+export class SceneRequirementError extends TaggedError(
+    "SceneRequirementError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs) {
+        super({
+            ...args,
+            message: args.message ?? "Scene requirement validation failed"
+        })
     }
-) {}
+}
 
-export class SceneProcessError extends BaseError<SceneProcessError>(
-    "SceneProcessError",
-    {
-        message: "Failed to process the scene."
+export class SceneProcessError extends TaggedError(
+    "SceneProcessError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "Scene processing failed."
+        })
     }
-) {}
+}
 
-export class SceneCreationError extends BaseError<SceneCreationError>(
-    "SceneCreationError",
-    {
-        message: "Failed to create a scene."
+export class SceneCreationError extends TaggedError(
+    "SceneCreationError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "Scene creation failed."
+        })
     }
-) {}
+}
 
 export interface SceneContext<TActor extends ActorContext = ActorContext> {
     readonly actors: ReadonlyRecord<Role, TActor>
@@ -302,6 +315,9 @@ export abstract class AbstractScene<
 export function runScene<TArgs extends SceneArguments>(
     scene: Scene<TArgs>,
     args: SceneArguments
-): Effect<Option<SceneRequest>, SceneRequirementError | SceneProcessError> {
+): Effect<
+    Option<SceneRequest>,
+    InvalidDataError | SceneRequirementError | SceneProcessError
+> {
     return pipe(args, scene.parseArgs, FX.flatMap(scene.run))
 }

@@ -1,48 +1,11 @@
 import {describe, expect, it} from "vitest"
 import {
     asErrorLike,
-    BaseError,
     getErrorChain,
     getErrorMessage,
     isErrorLike,
     prettyPrintError
 } from "../../src/common/Error"
-
-describe("BaseError", () => {
-    it("should create a tagged error class with a default message", () => {
-        const TestError = BaseError<{readonly _tag: "TestError"}>("TestError")
-        const error = new TestError({})
-
-        expect(error._tag).toBe("TestError")
-        expect(error.message).toBe("Unknown error.")
-        expect(error.cause).toBeUndefined()
-    })
-
-    it("should create a tagged error class with a custom default message", () => {
-        const TestError = BaseError<{readonly _tag: "TestError"}>("TestError", {
-            message: "Custom default message"
-        })
-        const error = new TestError({})
-
-        expect(error._tag).toBe("TestError")
-        expect(error.message).toBe("Custom default message")
-    })
-
-    it("should create a tagged error with specified message", () => {
-        const TestError = BaseError<{readonly _tag: "TestError"}>("TestError")
-        const error = new TestError({message: "Specific error message"})
-
-        expect(error.message).toBe("Specific error message")
-    })
-
-    it("should create a tagged error with the cause", () => {
-        const TestError = BaseError<{readonly _tag: "TestError"}>("TestError")
-        const cause = new Error("Root cause")
-        const error = new TestError({cause})
-
-        expect(error.cause).toBe(cause)
-    })
-})
 
 describe("isErrorLike", () => {
     it("should return true for objects with _tag, message and optional cause", () => {

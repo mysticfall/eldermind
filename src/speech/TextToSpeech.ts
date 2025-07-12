@@ -1,6 +1,5 @@
 import * as FX from "effect/Effect"
 import {Effect} from "effect/Effect"
-import {BaseError} from "../common/Error"
 import {HttpClient} from "@effect/platform/HttpClient"
 import {DialogueText} from "./Dialogue"
 import {pipe} from "effect"
@@ -21,13 +20,19 @@ import {BinaryData} from "../data/Data"
 import {Emotion, EmotionRangeMap, EmotionRangeValues} from "../actor/Emotion"
 import {formData} from "@effect/platform/HttpBody"
 import {Scheduler} from "effect/Scheduler"
+import {TaggedError} from "effect/Data"
+import {ErrorArgs, ErrorLike} from "../common/Error"
 
-export class TtsServiceError extends BaseError<TtsServiceError>(
-    "TtsServiceError",
-    {
-        message: "Failed to generate an audio file from the given text."
+export class TtsServiceError extends TaggedError("TtsServiceError")<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message:
+                args.message ??
+                "Failed to generate an audio file from the given text."
+        })
     }
-) {}
+}
 
 export type SpeechGenerator = (
     text: DialogueText,
@@ -291,7 +296,6 @@ export function createAllTalkSpeechGenerator(
                         FX.logDebug(`Response from the server: ${text}`)
                     ),
                     FX.flatMap(parseJson(Response)),
-                    FX.catchTag("RequestError", invalidRequest),
                     FX.catchTag("ResponseError", invalidResponse),
                     FX.catchTag("InvalidDataError", invalidResponse),
                     FX.flatMap(r =>

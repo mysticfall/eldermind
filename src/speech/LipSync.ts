@@ -15,17 +15,23 @@ import * as SI from "effect/Sink"
 import * as path from "node:path"
 import {BinaryData} from "../data/Data"
 import {FileSystem} from "@effect/platform/FileSystem"
-import {BaseError} from "../common/Error"
 import {DialogueText} from "./Dialogue"
 import {VoicePathResolver} from "./Voice"
 import {FilePathResolver} from "../data/File"
 import {CommandExecutor} from "@effect/platform/CommandExecutor"
 import {Scope} from "effect/Scope"
 import * as os from "node:os"
+import {TaggedError} from "effect/Data"
+import {ErrorArgs, ErrorLike} from "../common/Error"
 
-export class LipSyncError extends BaseError<LipSyncError>("LipSyncError", {
-    message: "Failed to generate a lip sync animation."
-}) {}
+export class LipSyncError extends TaggedError("LipSyncError")<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "Failed to generate a lipsync file."
+        })
+    }
+}
 
 export type LipSyncGenerator<E = never> = (
     audio: Stream<BinaryData, E>,

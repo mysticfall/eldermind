@@ -8,8 +8,9 @@ import * as PS from "effect/PubSub"
 import {PubSub} from "effect/PubSub"
 import * as RF from "effect/Ref"
 import * as Q from "effect/Queue"
-import {BaseError} from "../common/Error"
+import {TaggedError} from "effect/Data"
 import {pipe} from "effect"
+import {ErrorArgs, ErrorLike} from "../common/Error"
 
 export const GameEvent = SC.Struct({
     time: SC.Duration
@@ -17,12 +18,18 @@ export const GameEvent = SC.Struct({
 
 export type GameEvent = typeof GameEvent.Type
 
-export class EventRetrievalError extends BaseError<EventRetrievalError>(
-    "EventRetrievalError",
-    {
-        message: "Failed to retrieve events from the event store."
+export class EventRetrievalError extends TaggedError(
+    "EventRetrievalError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message:
+                args.message ??
+                "Failed to retrieve events from the event store."
+        })
     }
-) {}
+}
 
 export interface EventStore<T extends GameEvent> {
     readonly pubsub: PubSub<T>

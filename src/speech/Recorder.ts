@@ -6,7 +6,6 @@ import {Duration} from "effect/Duration"
 import * as ST from "effect/Stream"
 import {Stream} from "effect/Stream"
 import * as SCH from "effect/Schedule"
-import {BaseError} from "../common/Error"
 import {BinaryData} from "../data/Data"
 import * as CMD from "@effect/platform/Command"
 import * as CH from "effect/Chunk"
@@ -14,13 +13,19 @@ import {Chunk} from "effect/Chunk"
 import * as SI from "effect/Sink"
 import {CommandExecutor} from "@effect/platform/CommandExecutor"
 import {PlatformError} from "@effect/platform/Error"
+import {ErrorArgs, ErrorLike} from "../common/Error"
+import {TaggedError} from "effect/Data"
 
-export class AudioSystemError extends BaseError<AudioSystemError>(
-    "AudioSystemError",
-    {
-        message: "Audio error has occurred."
+export class AudioSystemError extends TaggedError(
+    "AudioSystemError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "Audio error has occurred."
+        })
     }
-) {}
+}
 
 export interface Recording {
     readonly data: BinaryData

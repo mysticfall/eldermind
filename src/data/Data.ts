@@ -4,8 +4,9 @@ import * as SC from "effect/Schema"
 import * as STR from "effect/String"
 import {flow, pipe} from "effect"
 import type {ParseOptions} from "effect/SchemaAST"
-import {BaseError} from "../common/Error"
+import {ErrorArgs, ErrorLike} from "../common/Error"
 import {PlatformError} from "@effect/platform/Error"
+import {TaggedError} from "effect/Data"
 
 export const DataIdentifier = pipe(
     SC.String,
@@ -55,12 +56,16 @@ export function createTextDataLoader(
     )
 }
 
-export class InvalidDataError extends BaseError<InvalidDataError>(
-    "InvalidDataError",
-    {
-        message: "Data validation failed."
+export class InvalidDataError extends TaggedError(
+    "InvalidDataError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "Data validation failed."
+        })
     }
-) {}
+}
 
 export function validate<TData, TSource>(
     schema: SC.Schema<TData, TSource>,
@@ -83,12 +88,16 @@ export type TypedDataLoader<T> = (
     path: DataPath
 ) => Effect<T, InvalidDataError | PlatformError>
 
-export class ContextDataError extends BaseError<ContextDataError>(
-    "ContextDataError",
-    {
-        message: "Failed to retrieve context data."
+export class ContextDataError extends TaggedError(
+    "ContextDataError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs) {
+        super({
+            ...args,
+            message: args.message ?? "Failed to build context data"
+        })
     }
-) {}
+}
 
 export type ContextBuilder<TData, TContext extends object = object> = (
     context: TData

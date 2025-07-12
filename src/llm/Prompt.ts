@@ -8,7 +8,7 @@ import {JSONSchema, pipe, Schedule} from "effect"
 import {traverseArray} from "../common/Type"
 import {ParseOptions} from "effect/SchemaAST"
 import {parseJson} from "../data/Json"
-import {InvalidDataError} from "../data/Data"
+import {ContextDataError, InvalidDataError} from "../data/Data"
 import {Template} from "../template/Template"
 import {extractCodeContent} from "../markdown/Parser"
 import * as LLM from "@effect/ai/AiLanguageModel"
@@ -18,7 +18,11 @@ import {TextPart, UserMessage} from "@effect/ai/AiInput"
 
 export type Prompt<TContext, TOutput> = (
     context: TContext
-) => Effect<TOutput, AiError | InvalidDataError, AiLanguageModel>
+) => Effect<
+    TOutput,
+    AiError | InvalidDataError | ContextDataError,
+    AiLanguageModel
+>
 
 export const DefaultRetryTimes = 3
 

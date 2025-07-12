@@ -22,7 +22,7 @@ import * as ORD from "effect/Order"
 import {Order} from "effect/Order"
 import * as SR from "effect/SynchronizedRef"
 import {SynchronizedRef} from "effect/SynchronizedRef"
-import {BaseError} from "../common/Error"
+import {ErrorArgs, ErrorLike} from "../common/Error"
 import {
     Emotion,
     EmotionIntensity,
@@ -36,6 +36,7 @@ import {DataPath} from "../data/Data"
 import {defaultScheduler, Scheduler} from "effect/Scheduler"
 import {FormError} from "skyrim-effect/game/Form"
 import {ActorBase} from "@skyrim-platform/skyrim-platform"
+import {TaggedError} from "effect/Data"
 
 export const VoiceRootPath = pipe(
     SC.NonEmptyString,
@@ -127,12 +128,16 @@ export function createVoicePathResolver(
         )
 }
 
-export class NoAvailableVoiceFileError extends BaseError<NoAvailableVoiceFileError>(
-    "NoAvailableVoiceFileError",
-    {
-        message: "No available voice files."
+export class NoAvailableVoiceFileError extends TaggedError(
+    "NoAvailableVoiceFileError"
+)<ErrorLike> {
+    constructor(args: ErrorArgs = {}) {
+        super({
+            ...args,
+            message: args.message ?? "No available voice file."
+        })
     }
-) {}
+}
 
 export const VoiceFilesForEmotionRange = pipe(
     EmotionRangeValue(SC.Set(VoiceFile)),

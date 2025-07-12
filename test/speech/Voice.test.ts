@@ -363,7 +363,7 @@ describe("executeWithVoice", () => {
                     )
                 )
 
-                expect(message).toBe("No available voice files.")
+                expect(message).toBe("No available voice file.")
             })
     )
 })

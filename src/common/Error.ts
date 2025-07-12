@@ -12,33 +12,9 @@
  * The module is designed to work with Effect-TS error handling patterns and provides
  * consistent error management across the application.
  */
-import * as SC from "effect/Schema"
 import * as A from "effect/Array"
 import * as O from "effect/Option"
 import {pipe} from "effect"
-
-/**
- * Factory function to create a strongly-typed error class with a specific tag.
- *
- * The `BaseError` function generates a tagged error structure using the provided
- * `tag` and optional default values. It incorporates a message and an optional
- * cause, allowing for structured error management in an application.
- *
- * @param tag - The tag to uniquely identify the error type.
- * @param defaults - An optional object containing default values for the error
- *                   properties. If not provided:
- *                   - The default `message` will be set to "Unknown error."
- *                   - `cause` will remain undefined.
- *
- * @returns A tagged error class constructor specific to the error type.
- */
-export const BaseError = <TSelf>(tag: string, defaults?: {message?: string}) =>
-    SC.TaggedError<TSelf>()(tag, {
-        message: SC.optionalWith(SC.String, {
-            default: () => defaults?.message ?? "Unknown error."
-        }),
-        cause: SC.optional(SC.Unknown)
-    })
 
 /**
  * Represents an error-like object with standardised properties.
@@ -53,6 +29,25 @@ export interface ErrorLike {
     readonly message: string
     readonly cause?: unknown
 }
+
+/**
+ * A utility type for customising or modifying error objects by omitting the
+ * `message` property and allowing partial overriding of the same.
+ *
+ * This type accepts a generic parameter `T` that extends the base
+ * {@link ErrorLike} interface and adjusts its type by removing the `message`
+ * property from `T` while making the `message` property an optional field.
+ *
+ * @template T - A generic type that extends the `ErrorLike` interface.
+ *  Defaults to {@link ErrorLike}.
+ *
+ * @typedef {Omit<T, "message"> & Partial<Pick<T, "message">>} ErrorArgs
+ */
+export type ErrorArgs<T extends ErrorLike = ErrorLike> = Omit<
+    T,
+    "_tag" | "message"
+> &
+    Partial<Pick<T, "message">>
 
 /**
  * Type guard to check if an object is {@link ErrorLike}.
