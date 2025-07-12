@@ -29,6 +29,8 @@ export const FilePath = pipe(
 export type FilePath = typeof FilePath.Type
 
 export class FileAccessError extends TaggedError("FileAccessError")<ErrorLike> {
+    readonly path: FilePath
+
     constructor(args: ErrorArgs & {path: FilePath}) {
         super({
             ...args,
@@ -36,6 +38,8 @@ export class FileAccessError extends TaggedError("FileAccessError")<ErrorLike> {
                 args.message ??
                 `File does not exist or is not accessible: ${args.path}`
         })
+
+        this.path = args.path
     }
 }
 

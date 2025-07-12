@@ -38,6 +38,8 @@ export const DataPath = SC.String.pipe(
 export type DataPath = typeof DataPath.Type
 
 export class DataAccessError extends TaggedError("DataAccessError")<ErrorLike> {
+    readonly path: DataPath
+
     constructor(args: ErrorArgs & {path: DataPath}) {
         super({
             ...args,
@@ -45,6 +47,8 @@ export class DataAccessError extends TaggedError("DataAccessError")<ErrorLike> {
                 args.message ??
                 `Failed to access data from the path: ${args.path}`
         })
+
+        this.path = args.path
     }
 }
 

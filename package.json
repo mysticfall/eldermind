@@ -101,6 +101,11 @@
       "import": "./dist/esm/data/Json.js",
       "require": "./dist/cjs/data/Json.js"
     },
+    "./data/Service": {
+      "types": "./dist/dts/data/Service.d.ts",
+      "import": "./dist/esm/data/Service.js",
+      "require": "./dist/cjs/data/Service.js"
+    },
     "./event/Event": {
       "types": "./dist/dts/event/Event.d.ts",
       "import": "./dist/esm/event/Event.js",
