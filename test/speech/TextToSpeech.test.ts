@@ -3,6 +3,7 @@ import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import * as CH from "effect/Chunk"
+import * as SC from "effect/Schema"
 import * as SI from "effect/Sink"
 import * as ST from "effect/Stream"
 import {Stream} from "effect/Stream"
@@ -27,125 +28,145 @@ import {getActorId} from "skyrim-effect/game/Actor"
 import {BinaryData} from "../../src/data/Data"
 import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
 import {defaultScheduler} from "effect/Scheduler"
-import {VoiceName} from "skyrim-effect/game/VoiceType"
 
 installActorMocks()
 
 describe("createGenericVoiceMapping", () => {
-    it("should return a mapping that can match the actor's voice type for a TTS model", () => {
-        const config: GenericVoiceMappingConfig = {
-            voices: {
-                [VoiceName.make("FemaleYoungEager")]: {
-                    Neutral: TtsVoice.make("female_01")
-                },
-                [VoiceName.make("FemaleEvenToned")]: {
-                    Neutral: TtsVoice.make("female_02")
-                },
-                [VoiceName.make("MaleNord")]: {
-                    Neutral: TtsVoice.make("male_01")
-                },
-                [VoiceName.make("MaleOldGrumpy")]: {
-                    Neutral: TtsVoice.make("male_02")
-                }
-            },
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
-
-        const voiceMapping = createGenericVoiceMapping(config)
-
-        expect(voiceMapping(mockActors.Lydia)).toBe("female_02")
-        expect(voiceMapping(mockActors.Ulfric)).toBe("male_01")
-    })
-
-    it("should return a mapping over emotional ranges when specified", () => {
-        const config: GenericVoiceMappingConfig = {
-            voices: {
-                [VoiceName.make("FemaleYoungEager")]: {
-                    Neutral: TtsVoice.make("female_01"),
-                    Happy: TtsVoice.make("female_01_happy"),
-                    Sad: TtsVoice.make("female_01_sad")
-                },
-                [VoiceName.make("FemaleEvenToned")]: {
-                    Neutral: TtsVoice.make("female_02"),
-                    Happy: TtsVoice.make("female_02_happy"),
-                    Sad: TtsVoice.make("female_02_sad")
-                },
-                [VoiceName.make("MaleNord")]: {
-                    Neutral: TtsVoice.make("male_01"),
-                    Happy: [
-                        {
-                            min: EmotionIntensity.make(0),
-                            max: EmotionIntensity.make(50),
-                            value: TtsVoice.make("male_01_happy")
+    it.effect(
+        "should return a mapping that can match the actor's voice type for a TTS model",
+        () =>
+            FX.gen(function* () {
+                const config = yield* pipe(
+                    {
+                        voices: {
+                            FemaleYoungEager: {
+                                Neutral: "female_01"
+                            },
+                            FemaleEvenToned: {
+                                Neutral: "female_02"
+                            },
+                            MaleNord: {
+                                Neutral: "male_01"
+                            },
+                            MaleOldGrumpy: {
+                                Neutral: "male_02"
+                            }
                         },
-                        {
-                            min: EmotionIntensity.make(51),
-                            max: EmotionIntensity.make(100),
-                            value: TtsVoice.make("male_01_very_happy")
+                        fallback: {
+                            female: {Neutral: "fallback-female"},
+                            male: {Neutral: "fallback-male"},
+                            none: {Neutral: "fallback-none"}
                         }
-                    ],
-                    Sad: TtsVoice.make("unique-voice-female-sad")
-                },
-                [VoiceName.make("MaleOldGrumpy")]: {
-                    Neutral: TtsVoice.make("male_02")
-                }
-            },
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
+                    },
+                    SC.decodeUnknown(GenericVoiceMappingConfig)
+                )
 
-        const voiceMapping = createGenericVoiceMapping(config)
+                const voiceMapping = createGenericVoiceMapping(config)
 
-        const veryHappy = Emotion.make({
-            type: "Happy",
-            intensity: EmotionIntensity.make(60)
-        })
+                expect(voiceMapping(mockActors.Lydia)).toBe("female_02")
+                expect(voiceMapping(mockActors.Ulfric)).toBe("male_01")
+            })
+    )
 
-        const fear = Emotion.make({
-            type: "Fear",
-            intensity: EmotionIntensity.make(30)
-        })
+    it.effect(
+        "should return a mapping over emotional ranges when specified",
+        () =>
+            FX.gen(function* () {
+                const config = yield* pipe(
+                    {
+                        voices: {
+                            FemaleYoungEager: {
+                                Neutral: "female_01",
+                                Happy: "female_01_happy",
+                                Sad: "female_01_sad"
+                            },
+                            FemaleEvenToned: {
+                                Neutral: "female_02",
+                                Happy: "female_02_happy",
+                                Sad: "female_02_sad"
+                            },
+                            MaleNord: {
+                                Neutral: "male_01",
+                                Happy: [
+                                    {
+                                        min: 0,
+                                        max: 50,
+                                        value: "male_01_happy"
+                                    },
+                                    {
+                                        min: 51,
+                                        max: 100,
+                                        value: "male_01_very_happy"
+                                    }
+                                ],
+                                Sad: "unique-voice-female-sad"
+                            },
+                            MaleOldGrumpy: {
+                                Neutral: "male_02"
+                            }
+                        },
+                        fallback: {
+                            female: {Neutral: "fallback-female"},
+                            male: {Neutral: "fallback-male"},
+                            none: {Neutral: "fallback-none"}
+                        }
+                    },
+                    SC.decodeUnknown(GenericVoiceMappingConfig)
+                )
 
-        expect(voiceMapping(mockActors.Lydia, veryHappy)).toBe(
-            "female_02_happy"
-        )
+                const voiceMapping = createGenericVoiceMapping(config)
 
-        expect(voiceMapping(mockActors.Ulfric, veryHappy)).toBe(
-            "male_01_very_happy"
-        )
+                const veryHappy = Emotion.make({
+                    type: "Happy",
+                    intensity: EmotionIntensity.make(60)
+                })
 
-        expect(voiceMapping(mockActors.Ulfric, fear)).toBe("male_01")
-    })
+                const fear = Emotion.make({
+                    type: "Fear",
+                    intensity: EmotionIntensity.make(30)
+                })
 
-    it("should return a mapping with a fallback for actors with a non-matching voice type", () => {
-        const config: GenericVoiceMappingConfig = {
-            voices: {
-                [VoiceName.make("FemaleYoungEager")]: {
-                    Neutral: TtsVoice.make("female_01")
-                },
-                [VoiceName.make("MaleCommoner")]: {
-                    Neutral: TtsVoice.make("male_01")
-                }
-            },
-            fallback: {
-                female: {Neutral: TtsVoice.make("fallback-female")},
-                male: {Neutral: TtsVoice.make("fallback-male")},
-                none: {Neutral: TtsVoice.make("fallback-none")}
-            }
-        }
+                expect(voiceMapping(mockActors.Lydia, veryHappy)).toBe(
+                    "female_02_happy"
+                )
 
-        const voiceMapping = createGenericVoiceMapping(config)
+                expect(voiceMapping(mockActors.Ulfric, veryHappy)).toBe(
+                    "male_01_very_happy"
+                )
 
-        expect(voiceMapping(mockActors.Lydia)).toBe("fallback-female")
-        expect(voiceMapping(mockActors.Ulfric)).toBe("fallback-male")
-    })
+                expect(voiceMapping(mockActors.Ulfric, fear)).toBe("male_01")
+            })
+    )
+
+    it.effect(
+        "should return a mapping with a fallback for actors with a non-matching voice type",
+        () =>
+            FX.gen(function* () {
+                const config = yield* pipe(
+                    {
+                        voices: {
+                            FemaleYoungEager: {
+                                Neutral: "female_01"
+                            },
+                            MaleCommoner: {
+                                Neutral: "male_01"
+                            }
+                        },
+                        fallback: {
+                            female: {Neutral: "fallback-female"},
+                            male: {Neutral: "fallback-male"},
+                            none: {Neutral: "fallback-none"}
+                        }
+                    },
+                    SC.decodeUnknown(GenericVoiceMappingConfig)
+                )
+
+                const voiceMapping = createGenericVoiceMapping(config)
+
+                expect(voiceMapping(mockActors.Lydia)).toBe("fallback-female")
+                expect(voiceMapping(mockActors.Ulfric)).toBe("fallback-male")
+            })
+    )
 })
 
 describe("createAllTalkSpeechGenerator", () => {

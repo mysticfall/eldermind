@@ -1,12 +1,11 @@
 import {describe, expect, vi} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
+import * as SC from "effect/Schema"
 import {Layer, pipe} from "effect"
 import {
     createOpenAICompatibleTranscriber,
-    SttApiKey,
-    SttEndpoint,
-    SttModelId
+    TranscriberConfig
 } from "../../src/speech/SpeechToText"
 import {FetchHttpClient} from "@effect/platform"
 
@@ -37,12 +36,18 @@ describe("createOpenAICompatibleTranscriber", () => {
                     )
                 )
 
+                const config = yield* pipe(
+                    {
+                        apiKey: "secret",
+                        endpoint: "http://localhost:8000",
+                        model: "fast-whisper"
+                    },
+                    SC.decodeUnknown(TranscriberConfig)
+                )
+
                 const transcriber = yield* pipe(
-                    createOpenAICompatibleTranscriber({
-                        apiKey: SttApiKey.make("secret"),
-                        endpoint: SttEndpoint.make("http://localhost:8000"),
-                        model: SttModelId.make("fast-whisper")
-                    }),
+                    config,
+                    createOpenAICompatibleTranscriber,
                     FX.provide(TestLayer)
                 )
 
@@ -113,12 +118,18 @@ describe("createOpenAICompatibleTranscriber", () => {
                     )
                 )
 
+                const config = yield* pipe(
+                    {
+                        apiKey: "secret",
+                        endpoint: "http://localhost:8000",
+                        model: "fast-whisper"
+                    },
+                    SC.decodeUnknown(TranscriberConfig)
+                )
+
                 const transcriber = yield* pipe(
-                    createOpenAICompatibleTranscriber({
-                        apiKey: SttApiKey.make("secret"),
-                        endpoint: SttEndpoint.make("http://localhost:8000"),
-                        model: SttModelId.make("fast-whisper")
-                    }),
+                    config,
+                    createOpenAICompatibleTranscriber,
                     FX.provide(TestLayer)
                 )
 
@@ -156,12 +167,18 @@ describe("createOpenAICompatibleTranscriber", () => {
                     Promise.resolve(new Response("No Data", {status: 200}))
                 )
 
+                const config = yield* pipe(
+                    {
+                        apiKey: "secret",
+                        endpoint: "http://localhost:8000",
+                        model: "fast-whisper"
+                    },
+                    SC.decodeUnknown(TranscriberConfig)
+                )
+
                 const transcriber = yield* pipe(
-                    createOpenAICompatibleTranscriber({
-                        apiKey: SttApiKey.make("secret"),
-                        endpoint: SttEndpoint.make("http://localhost:8000"),
-                        model: SttModelId.make("fast-whisper")
-                    }),
+                    config,
+                    createOpenAICompatibleTranscriber,
                     FX.provide(TestLayer)
                 )
 

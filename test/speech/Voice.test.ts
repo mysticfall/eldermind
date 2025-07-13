@@ -3,6 +3,7 @@ import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
 import * as SCH from "effect/Schedule"
+import * as SC from "effect/Schema"
 import * as SR from "effect/SynchronizedRef"
 import {Fiber, TestClock} from "effect"
 import {
@@ -17,10 +18,14 @@ import {
 } from "../../src/speech/Voice"
 import {pipe} from "effect/Function"
 import {getActorHexId, getActorId} from "skyrim-effect/game/Actor"
-import {VoiceName} from "skyrim-effect/game/VoiceType"
-import {Emotion, EmotionIntensity} from "../../src/actor/Emotion"
+import {Emotion, EmotionIntensity, EmotionType} from "../../src/actor/Emotion"
 
 installActorMocks()
+
+const createEmotion = (type: EmotionType, intensity: number): Emotion => ({
+    type,
+    intensity: EmotionIntensity.make(intensity)
+})
 
 describe("createVoicePathResolver", () => {
     const root = VoiceRootPath.make("Data/Sound/Voice/Eldermind.esp")
@@ -30,13 +35,16 @@ describe("createVoicePathResolver", () => {
         "should return a voice file path matching the given actor's voice type",
         () =>
             FX.gen(function* () {
-                const config: VoiceFolderConfig = {
-                    fallback: {
-                        male: VoiceName.make("MaleEvenToned"),
-                        female: VoiceName.make("FemaleEvenToned"),
-                        none: VoiceName.make("FemaleCommoner")
-                    }
-                }
+                const config = yield* pipe(
+                    {
+                        fallback: {
+                            male: "MaleEvenToned",
+                            female: "FemaleEvenToned",
+                            none: "FemaleCommoner"
+                        }
+                    },
+                    SC.decodeUnknown(VoiceFolderConfig)
+                )
 
                 const resolver = createVoicePathResolver(root, config)
                 const getPath = resolver(getActorId(mockActors.Ulfric), file)
@@ -56,18 +64,20 @@ describe("createVoicePathResolver", () => {
 
     it.effect("should allow overriding voice files for unique actors", () =>
         FX.gen(function* () {
-            const config: VoiceFolderConfig = {
-                overrides: {
-                    [getActorHexId(mockActors.Lydia)]: VoiceName.make(
-                        "SomeModdedLydiaVoice"
-                    )
+            const config = yield* pipe(
+                {
+                    overrides: {
+                        [getActorHexId(mockActors.Lydia)]:
+                            "SomeModdedLydiaVoice"
+                    },
+                    fallback: {
+                        male: "MaleEvenToned",
+                        female: "FemaleEvenToned",
+                        none: "FemaleCommoner"
+                    }
                 },
-                fallback: {
-                    male: VoiceName.make("MaleEvenToned"),
-                    female: VoiceName.make("FemaleEvenToned"),
-                    none: VoiceName.make("FemaleCommoner")
-                }
-            }
+                SC.decodeUnknown(VoiceFolderConfig)
+            )
 
             const resolver = createVoicePathResolver(root, config)
             const getPath = resolver(getActorId(mockActors.Lydia), file)
@@ -86,16 +96,19 @@ describe("createVoicePathResolver", () => {
     )
 
     it.effect(
-        "should use a gender specific path when no override exists for the given unique actor",
+        "should use a gender-specific path when no override exists for the given unique actor",
         () =>
             FX.gen(function* () {
-                const config: VoiceFolderConfig = {
-                    fallback: {
-                        male: VoiceName.make("MaleEvenToned"),
-                        female: VoiceName.make("FemaleEvenToned"),
-                        none: VoiceName.make("FemaleCommoner")
-                    }
-                }
+                const config = yield* pipe(
+                    {
+                        fallback: {
+                            male: "MaleEvenToned",
+                            female: "FemaleEvenToned",
+                            none: "FemaleCommoner"
+                        }
+                    },
+                    SC.decodeUnknown(VoiceFolderConfig)
+                )
 
                 const resolver = createVoicePathResolver(root, config)
                 const getPath = resolver(getActorId(mockActors.Lydia), file)
@@ -121,53 +134,34 @@ describe("getVoicePoolForEmotion", () => {
             FX.gen(function* () {
                 const happyEmotionRanges = [
                     {
-                        min: EmotionIntensity.make(0),
-                        max: EmotionIntensity.make(50),
-                        value: new Set([VoiceFile.make("happy-low")])
+                        min: 0,
+                        max: 50,
+                        value: ["happy-low"]
                     },
                     {
-                        min: EmotionIntensity.make(51),
-                        max: EmotionIntensity.make(100),
-                        value: new Set([VoiceFile.make("happy-high")])
+                        min: 51,
+                        max: 100,
+                        value: ["happy-high"]
                     }
                 ]
 
-                const emotionMap: VoiceFilesEmotionRangeMap = {
-                    Neutral: new Set([
-                        VoiceFile.make("neutral-voice1"),
-                        VoiceFile.make("neutral-voice2")
-                    ]),
-                    Happy: happyEmotionRanges,
-                    Sad: new Set([VoiceFile.make("sad-general")])
-                }
+                const emotionMap = yield* pipe(
+                    {
+                        Neutral: ["neutral-voice1", "neutral-voice2"],
+                        Happy: happyEmotionRanges,
+                        Sad: ["sad-general"]
+                    },
+                    SC.decodeUnknown(VoiceFilesEmotionRangeMap)
+                )
 
                 const voicePoolForEmotion =
                     yield* getVoicePoolForEmotion(emotionMap)
 
-                const neutralEmotion = Emotion.make({
-                    type: "Neutral",
-                    intensity: EmotionIntensity.make(100)
-                })
-
-                const happyEmotionLow = Emotion.make({
-                    type: "Happy",
-                    intensity: EmotionIntensity.make(30)
-                })
-
-                const happyEmotionHigh = Emotion.make({
-                    type: "Happy",
-                    intensity: EmotionIntensity.make(75)
-                })
-
-                const sadEmotion = Emotion.make({
-                    type: "Sad",
-                    intensity: EmotionIntensity.make(50)
-                })
-
-                const angryEmotion = Emotion.make({
-                    type: "Anger",
-                    intensity: EmotionIntensity.make(80)
-                })
+                const neutralEmotion = createEmotion("Neutral", 100)
+                const happyEmotionLow = createEmotion("Happy", 30)
+                const happyEmotionHigh = createEmotion("Happy", 75)
+                const sadEmotion = createEmotion("Sad", 50)
+                const angryEmotion = createEmotion("Anger", 80)
 
                 const neutralPool = yield* voicePoolForEmotion(neutralEmotion)
                 const happyPoolLow = yield* voicePoolForEmotion(happyEmotionLow)
@@ -204,10 +198,7 @@ describe("getVoicePoolForEmotion", () => {
                 const voicePoolForEmotion =
                     yield* getVoicePoolForEmotion(emotionMap)
 
-                const fearEmotion = Emotion.make({
-                    type: "Fear",
-                    intensity: EmotionIntensity.make(30)
-                })
+                const fearEmotion = createEmotion("Fear", 30)
 
                 const fallbackPool = yield* voicePoolForEmotion(fearEmotion)
 
@@ -233,10 +224,7 @@ describe("getVoicePoolForEmotion", () => {
                 const voicePoolForEmotion =
                     yield* getVoicePoolForEmotion(emotionMap)
 
-                const emotion = Emotion.make({
-                    type: "Happy",
-                    intensity: EmotionIntensity.make(20)
-                })
+                const emotion = createEmotion("Happy", 20)
 
                 const pool = yield* voicePoolForEmotion(emotion)
 
