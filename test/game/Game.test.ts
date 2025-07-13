@@ -1,75 +1,59 @@
 import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
-import * as FX from "effect/Effect"
-import {
-    createGameDataPathResolver,
-    createSkyrimDataPathResolver,
-    GamePath,
-    SkyrimPath
-} from "../../src/game/Game"
-import {DataPath} from "../../src/data/Data"
+import * as E from "effect/Either"
+import * as SC from "effect/Schema"
 import {pipe} from "effect"
+import {ModName} from "../../src/game/Game"
 
-describe("createGameDataPathResolver", () => {
-    const mockGamePath = GamePath.make("/home/user/game/eldermind")
+describe("ModName", () => {
+    const validPaths = [
+        "Eldermind.esp",
+        "Skyrim.esm",
+        "DLC01.esm",
+        "MyMod.ESP",
+        "Another_Mod.esm",
+        "Complex-Mod-Name.esp",
+        "Mod With Spaces.esp",
+        "123NumericStart.esm",
+        "special!@#$%^&*()chars.esp",
+        "unicode文字.esm",
+        "very_long_mod_name_that_still_should_be_valid.esp",
+        "a.esp", // Single character filename
+        "MOD.ESM" // All uppercase
+    ]
 
-    it.effect("should resolve relative paths correctly for GamePath", () =>
-        FX.gen(function* () {
-            const resolver = createGameDataPathResolver(mockGamePath)
+    const invalidPaths = [
+        "", // Empty path
+        ".esp", // No filename, just extension
+        ".esm", // No filename, just extension
+        "mod", // No extension
+        "mod.txt", // Wrong extension
+        "mod.exe", // Wrong extension
+        "mod.esp.backup", // Multiple extensions
+        "mod.esm.old", // Multiple extensions
+        "esp", // Extension without dot
+        "esm", // Extension without dot
+        "mod.", // Filename with dot but no extension
+        "mod.es", // Incomplete extension
+        "mod.espx", // Invalid extension
+        "mod.esmx", // Invalid extension
+        ".esp.esp", // Starting with dot
+        ".esm.esm" // Starting with dot
+    ]
 
-            const resolved = yield* pipe(
-                "data/file.txt",
-                DataPath.make,
-                resolver
-            )
+    describe("should accept valid names", () => {
+        it.each(validPaths)("should accept name: '%s'", path => {
+            const result = pipe(path, SC.decodeUnknownEither(ModName))
 
-            expect(resolved).toBe("/home/user/game/eldermind/data/file.txt")
+            expect(result).satisfy(E.isRight)
         })
-    )
+    })
 
-    it.effect("should handle paths with no relative portion correctly", () =>
-        FX.gen(function* () {
-            const resolver = createGameDataPathResolver(mockGamePath)
+    describe("should reject invalid names", () => {
+        it.each(invalidPaths)("should reject name: '%s'", path => {
+            const result = pipe(path, SC.decodeUnknownEither(ModName))
 
-            const resolved = yield* pipe("file.txt", DataPath.make, resolver)
-
-            expect(resolved).toBe("/home/user/game/eldermind/file.txt")
+            expect(result).satisfy(E.isLeft)
         })
-    )
-})
-
-describe("createSkyrimDataPathResolver", () => {
-    const mockSkyrimPath = SkyrimPath.make("/home/user/game/Skyrim VR")
-
-    it.effect("should resolve relative paths correctly for SkyrimPath", () =>
-        FX.gen(function* () {
-            const resolver = createSkyrimDataPathResolver(mockSkyrimPath)
-
-            const resolved = yield* pipe(
-                "Data/Eldermind.esp",
-                DataPath.make,
-                resolver
-            )
-
-            expect(resolved).toBe(
-                "/home/user/game/Skyrim VR/Data/Eldermind.esp"
-            )
-        })
-    )
-
-    it.effect("should handle paths with nested directories correctly", () =>
-        FX.gen(function* () {
-            const resolver = createSkyrimDataPathResolver(mockSkyrimPath)
-
-            const resolved = yield* pipe(
-                "Data/textures/texture.dds",
-                DataPath.make,
-                resolver
-            )
-
-            expect(resolved).toBe(
-                "/home/user/game/Skyrim VR/Data/textures/texture.dds"
-            )
-        })
-    )
+    })
 })
