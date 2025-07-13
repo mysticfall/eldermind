@@ -16,13 +16,16 @@ import * as path from "node:path"
 import {BinaryData} from "../data/Data"
 import {FileSystem} from "@effect/platform/FileSystem"
 import {DialogueText} from "./Dialogue"
-import {VoicePathResolver} from "./Voice"
-import {FilePathResolver} from "../data/File"
 import {CommandExecutor} from "@effect/platform/CommandExecutor"
 import {Scope} from "effect/Scope"
 import * as os from "node:os"
 import {TaggedError} from "effect/Data"
 import {ErrorArgs, ErrorLike} from "../common/Error"
+import {ActorId} from "skyrim-effect/game/Actor"
+import {VoiceFile, VoicePathResolver} from "./Voice"
+import {FilePath} from "../data/File"
+import {Path} from "@effect/platform/Path"
+import {GamePaths} from "../data/Service"
 
 export class LipSyncError extends TaggedError("LipSyncError")<ErrorLike> {
     constructor(args: ErrorArgs = {}) {
@@ -36,19 +39,24 @@ export class LipSyncError extends TaggedError("LipSyncError")<ErrorLike> {
 export type LipSyncGenerator<E = never> = (
     audio: Stream<BinaryData, E>,
     text: DialogueText,
-    resolver: VoicePathResolver
-) => Effect<void, LipSyncError, FileSystem | CommandExecutor | Scope>
+    voice: VoiceFile,
+    speaker: ActorId
+) => Effect<
+    void,
+    LipSyncError,
+    GamePaths | FileSystem | Path | CommandExecutor | Scope
+>
 
 export type LipSyncCommandCreator = (
-    audioFile: string,
-    lipFile: string,
+    audioFile: FilePath,
+    lipFile: FilePath,
     text: DialogueText
 ) => Command
 
 const decoder = new TextDecoder("UTF-8")
 
 export function createLipSyncGenerator<E = never>(
-    resolver: FilePathResolver,
+    resolvePaths: VoicePathResolver,
     createCommand: LipSyncCommandCreator
 ): LipSyncGenerator<E> {
     const handleError =
@@ -75,45 +83,47 @@ export function createLipSyncGenerator<E = never>(
             })
     )
 
-    return (audio, text, getPath) =>
+    return (audio, text, voice, speaker) =>
         FX.gen(function* () {
             const fs = yield* FileSystem
+            const path = yield* Path
 
-            const resolvePath = flow(
-                getPath,
-                flow(
-                    FX.flatMap(resolver),
-                    FX.catchAll(handleError(`Failed to resolve the voice path`))
+            yield* FX.logDebug(
+                `Generating dialogue resources for text: "${text}"`
+            )
+
+            const files = yield* pipe(
+                resolvePaths(speaker, voice),
+                FX.catchTag(
+                    "FormError",
+                    handleError(`Failed to resolve the speaker: ${speaker}.`)
                 )
             )
 
-            const audioPath = yield* resolvePath(".wav")
-            const lipPath = yield* resolvePath(".lip")
-
-            const dir = path.dirname(audioPath)
+            const dir = path.dirname(files.wav)
 
             yield* pipe(
                 fs.makeDirectory(dir, {recursive: true}),
                 FX.catchAll(
-                    handleError(`Failed to create the target directory ${dir}`)
+                    handleError(
+                        `Failed to create the target directory for audio: ${dir}`
+                    )
                 )
             )
 
-            yield* FX.logDebug(`Creating audio file: ${audioPath}`)
+            yield* FX.logDebug(`Creating an audio file: ${files.wav}`)
 
             yield* pipe(
                 audio,
-                ST.run(fs.sink(audioPath)),
+                ST.run(fs.sink(files.wav)),
                 FX.catchAll(
-                    handleError(`Failed to create the audio file ${audioPath}`)
+                    handleError(`Failed to create the audio file ${files.wav}`)
                 )
             )
 
-            yield* FX.logDebug(
-                `Creating lip-sync animation for text: "${text}"`
-            )
+            yield* FX.logDebug(`Creating a lipsync animation: ${files.lip}`)
 
-            const command = createCommand(audioPath, lipPath, text)
+            const command = createCommand(files.wav, files.lip, text)
 
             yield* FX.logDebug(`Executing command: "${command}"`)
 
@@ -164,7 +174,7 @@ export function createLipSyncGenerator<E = never>(
             )
 
             yield* FX.logDebug(
-                `Generated lip-sync animation in ${DU.format(elapsed)}.`
+                `Generated dialogue resources in ${DU.format(elapsed)}.`
             )
         })
 }

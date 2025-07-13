@@ -7,7 +7,6 @@ import {Effect} from "effect/Effect"
 import * as SC from "effect/Schema"
 import * as SCH from "effect/Schedule"
 import {Schedule} from "effect/Schedule"
-import * as STR from "effect/String"
 import {getKnownVoiceName, VoiceName} from "skyrim-effect/game/VoiceType"
 import {
     ActorHexId,
@@ -32,26 +31,20 @@ import {
     EmotionType
 } from "../actor/Emotion"
 import {traverseArray} from "../common/Type"
-import {DataPath} from "../data/Data"
 import {defaultScheduler, Scheduler} from "effect/Scheduler"
 import {FormError} from "skyrim-effect/game/Form"
 import {ActorBase} from "@skyrim-platform/skyrim-platform"
 import {TaggedError} from "effect/Data"
-
-export const VoiceRootPath = pipe(
-    SC.NonEmptyString,
-    SC.brand("VoiceRootPath"),
-    SC.annotations({
-        title: "Voice Root Path",
-        description:
-            "Root path for the voice data(e.g. 'Sound/Voice/Eldermind.esp')"
-    })
-)
-
-export type VoicePath = typeof VoiceRootPath.Type
+import {GamePaths} from "../data/Service"
+import {ModName} from "../game/Game"
+import {FilePath} from "../data/File"
+import {Path} from "@effect/platform/Path"
 
 export const VoiceFolderConfig = pipe(
     SC.Struct({
+        modName: SC.optionalWith(ModName, {
+            default: () => ModName.make("Eldermind.esp")
+        }),
         overrides: pipe(
             SC.Record({key: ActorHexId, value: VoiceName}),
             SC.optional
@@ -86,46 +79,67 @@ export type VoiceFile = typeof VoiceFile.Type
 export type VoiceFilePool = SynchronizedRef<Set<VoiceFile>>
 
 export type VoicePathResolver = (
-    extension: ".lip" | ".wav" | ".fuz"
-) => Effect<DataPath, FormError>
+    speaker: ActorId,
+    file: VoiceFile
+) => Effect<
+    {readonly wav: FilePath; readonly lip: FilePath},
+    FormError,
+    GamePaths | Path
+>
 
 export function createVoicePathResolver(
-    root: VoicePath,
     config: VoiceFolderConfig,
     scheduler: Scheduler = defaultScheduler
-): (speaker: ActorId, file: VoiceFile) => VoicePathResolver {
-    const {overrides, fallback} = config
+): VoicePathResolver {
+    const {modName, overrides, fallback} = config
 
-    return (speaker, file) => extension =>
-        pipe(
-            FX.Do,
-            FX.bind("actor", () => getActor(speaker)),
-            FX.bind("voice", ({actor}) =>
+    return (speaker, file) =>
+        FX.gen(function* () {
+            const path = yield* Path
+            const {data} = yield* GamePaths
+
+            const {voice} = yield* pipe(
+                FX.Do,
+                FX.bind("actor", () => getActor(speaker)),
+                FX.bind("voice", ({actor}) =>
+                    pipe(
+                        overrides,
+                        O.fromNullable,
+                        O.flatMap(flow(R.get(getActorHexId(actor)))),
+                        O.orElse(() => getKnownVoiceName(actor)),
+                        O.getOrElse(
+                            () =>
+                                fallback[
+                                    //FIXME Handle the case when `null` is returned (e.g. throwing a FormError).
+                                    getSex(
+                                        actor.getLeveledActorBase() as ActorBase
+                                    )
+                                ]
+                        ),
+                        FX.succeed
+                    )
+                ),
+                FX.withScheduler(scheduler)
+            )
+
+            const getPath = (extension: "wav" | "lip") =>
                 pipe(
-                    overrides,
-                    O.fromNullable,
-                    O.flatMap(flow(R.get(getActorHexId(actor)))),
-                    O.orElse(() => getKnownVoiceName(actor)),
-                    O.getOrElse(
-                        () =>
-                            fallback[
-                                //FIXME Handle the case when `null` is returned (e.g. throwing a FormError).
-                                getSex(actor.getLeveledActorBase() as ActorBase)
-                            ]
+                    path.join(
+                        data.path,
+                        "Sound",
+                        "Voice",
+                        modName,
+                        voice,
+                        `${file}.${extension}`
                     ),
-                    FX.succeed
+                    FilePath.make
                 )
-            ),
-            FX.map(({voice}) =>
-                pipe(
-                    [root, voice, `${file}${extension}`],
-                    A.flatMap(STR.split("/")),
-                    A.join("/"),
-                    DataPath.make
-                )
-            ),
-            FX.withScheduler(scheduler)
-        )
+
+            return {
+                wav: getPath("wav"),
+                lip: getPath("lip")
+            }
+        })
 }
 
 export class NoAvailableVoiceFileError extends TaggedError(

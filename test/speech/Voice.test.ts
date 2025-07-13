@@ -2,8 +2,9 @@ import {installActorMocks, mockActors} from "../actor/mock"
 import {describe, expect} from "vitest"
 import {it} from "@effect/vitest"
 import * as FX from "effect/Effect"
-import * as SCH from "effect/Schedule"
+import * as FS from "@effect/platform/FileSystem"
 import * as SC from "effect/Schema"
+import * as SCH from "effect/Schedule"
 import * as SR from "effect/SynchronizedRef"
 import {Fiber, TestClock} from "effect"
 import {
@@ -13,12 +14,14 @@ import {
     NoAvailableVoiceFileError,
     VoiceFile,
     VoiceFilesEmotionRangeMap,
-    VoiceFolderConfig,
-    VoiceRootPath
+    VoiceFolderConfig
 } from "../../src/speech/Voice"
 import {pipe} from "effect/Function"
 import {getActorHexId, getActorId} from "skyrim-effect/game/Actor"
 import {Emotion, EmotionIntensity, EmotionType} from "../../src/actor/Emotion"
+import {createGamePaths} from "../../src/data/Service"
+import {FilePath} from "../../src/data/File"
+import {NodePath} from "@effect/platform-node"
 
 installActorMocks()
 
@@ -28,13 +31,21 @@ const createEmotion = (type: EmotionType, intensity: number): Emotion => ({
 })
 
 describe("createVoicePathResolver", () => {
-    const root = VoiceRootPath.make("Data/Sound/Voice/Eldermind.esp")
-    const file = VoiceFile.make("Eldermind_Dialogue_00001827_1")
+    const baseDir = FilePath.make("/home/user/skyrim")
+
+    const gamePaths = createGamePaths({baseDir})
+
+    const mockFileSystem = FS.layerNoop({
+        exists: () => FX.succeed(true),
+        access: () => FX.void
+    })
+
+    const voiceFile = VoiceFile.make("Eldermind_Dialogue_00001827_1")
 
     it.effect(
         "should return a voice file path matching the given actor's voice type",
-        () =>
-            FX.gen(function* () {
+        () => {
+            const test = FX.gen(function* () {
                 const config = yield* pipe(
                     {
                         fallback: {
@@ -46,24 +57,65 @@ describe("createVoicePathResolver", () => {
                     SC.decodeUnknown(VoiceFolderConfig)
                 )
 
-                const resolver = createVoicePathResolver(root, config)
-                const getPath = resolver(getActorId(mockActors.Ulfric), file)
+                const resolver = createVoicePathResolver(config)
 
-                const paths = yield* pipe(
-                    FX.Do,
-                    FX.bind("wav", () => getPath(".wav")),
-                    FX.bind("lip", () => getPath(".lip")),
-                    FX.bind("fuz", () => getPath(".fuz"))
+                const {wav, lip} = yield* resolver(
+                    getActorId(mockActors.Ulfric),
+                    voiceFile
                 )
 
-                expect(paths.wav).toBe(`${root}/MaleNord/${file}.wav`)
-                expect(paths.lip).toBe(`${root}/MaleNord/${file}.lip`)
-                expect(paths.fuz).toBe(`${root}/MaleNord/${file}.fuz`)
+                const voiceRoot = `${baseDir}/Data/Sound/Voice/Eldermind.esp/MaleNord`
+
+                expect(wav).toBe(`${voiceRoot}/${voiceFile}.wav`)
+                expect(lip).toBe(`${voiceRoot}/${voiceFile}.lip`)
             })
+
+            return pipe(
+                test,
+                FX.provide(gamePaths),
+                FX.provide(NodePath.layer),
+                FX.provide(mockFileSystem)
+            )
+        }
     )
 
-    it.effect("should allow overriding voice files for unique actors", () =>
-        FX.gen(function* () {
+    it.effect("should return a voice file path with a custom mod name", () => {
+        const test = FX.gen(function* () {
+            const config = yield* pipe(
+                {
+                    modName: "MyMod.esm",
+                    fallback: {
+                        male: "MaleEvenToned",
+                        female: "FemaleEvenToned",
+                        none: "FemaleCommoner"
+                    }
+                },
+                SC.decodeUnknown(VoiceFolderConfig)
+            )
+
+            const resolver = createVoicePathResolver(config)
+
+            const {wav, lip} = yield* resolver(
+                getActorId(mockActors.Ulfric),
+                voiceFile
+            )
+
+            const voiceRoot = `${baseDir}/Data/Sound/Voice/MyMod.esm/MaleNord`
+
+            expect(wav).toBe(`${voiceRoot}/${voiceFile}.wav`)
+            expect(lip).toBe(`${voiceRoot}/${voiceFile}.lip`)
+        })
+
+        return pipe(
+            test,
+            FX.provide(gamePaths),
+            FX.provide(NodePath.layer),
+            FX.provide(mockFileSystem)
+        )
+    })
+
+    it.effect("should allow overriding voice files for unique actors", () => {
+        const test = FX.gen(function* () {
             const config = yield* pipe(
                 {
                     overrides: {
@@ -79,26 +131,30 @@ describe("createVoicePathResolver", () => {
                 SC.decodeUnknown(VoiceFolderConfig)
             )
 
-            const resolver = createVoicePathResolver(root, config)
-            const getPath = resolver(getActorId(mockActors.Lydia), file)
-
-            const paths = yield* pipe(
-                FX.Do,
-                FX.bind("wav", () => getPath(".wav")),
-                FX.bind("lip", () => getPath(".lip")),
-                FX.bind("fuz", () => getPath(".fuz"))
+            const resolver = createVoicePathResolver(config)
+            const {wav, lip} = yield* resolver(
+                getActorId(mockActors.Lydia),
+                voiceFile
             )
 
-            expect(paths.wav).toBe(`${root}/SomeModdedLydiaVoice/${file}.wav`)
-            expect(paths.lip).toBe(`${root}/SomeModdedLydiaVoice/${file}.lip`)
-            expect(paths.fuz).toBe(`${root}/SomeModdedLydiaVoice/${file}.fuz`)
+            const voiceRoot = `${baseDir}/Data/Sound/Voice/Eldermind.esp/SomeModdedLydiaVoice/`
+
+            expect(wav).toBe(`${voiceRoot}${voiceFile}.wav`)
+            expect(lip).toBe(`${voiceRoot}${voiceFile}.lip`)
         })
-    )
+
+        return pipe(
+            test,
+            FX.provide(gamePaths),
+            FX.provide(NodePath.layer),
+            FX.provide(mockFileSystem)
+        )
+    })
 
     it.effect(
         "should use a gender-specific path when no override exists for the given unique actor",
-        () =>
-            FX.gen(function* () {
+        () => {
+            const test = FX.gen(function* () {
                 const config = yield* pipe(
                     {
                         fallback: {
@@ -110,20 +166,25 @@ describe("createVoicePathResolver", () => {
                     SC.decodeUnknown(VoiceFolderConfig)
                 )
 
-                const resolver = createVoicePathResolver(root, config)
-                const getPath = resolver(getActorId(mockActors.Lydia), file)
-
-                const paths = yield* pipe(
-                    FX.Do,
-                    FX.bind("wav", () => getPath(".wav")),
-                    FX.bind("lip", () => getPath(".lip")),
-                    FX.bind("fuz", () => getPath(".fuz"))
+                const resolver = createVoicePathResolver(config)
+                const {wav, lip} = yield* resolver(
+                    getActorId(mockActors.Lydia),
+                    voiceFile
                 )
 
-                expect(paths.wav).toBe(`${root}/FemaleEvenToned/${file}.wav`)
-                expect(paths.lip).toBe(`${root}/FemaleEvenToned/${file}.lip`)
-                expect(paths.fuz).toBe(`${root}/FemaleEvenToned/${file}.fuz`)
+                const voiceRoot = `${baseDir}/Data/Sound/Voice/Eldermind.esp/FemaleEvenToned/`
+
+                expect(wav).toBe(`${voiceRoot}${voiceFile}.wav`)
+                expect(lip).toBe(`${voiceRoot}${voiceFile}.lip`)
             })
+
+            return pipe(
+                test,
+                FX.provide(gamePaths),
+                FX.provide(NodePath.layer),
+                FX.provide(mockFileSystem)
+            )
+        }
     )
 })
 

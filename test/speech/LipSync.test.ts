@@ -14,13 +14,16 @@ import * as A from "effect/Array"
 import * as O from "effect/Option"
 import {some} from "effect/Option"
 import {Command} from "@effect/platform"
+import * as FS from "@effect/platform/FileSystem"
 import {FileSystem} from "@effect/platform/FileSystem"
 import * as ST from "effect/Stream"
 import {DialogueText} from "../../src/speech/Dialogue"
-import {VoicePathResolver} from "../../src/speech/Voice"
-import {FilePath, FilePathResolver} from "../../src/data/File"
-import {DataPath} from "../../src/data/Data"
+import {VoiceFile, VoicePathResolver} from "../../src/speech/Voice"
+import {FilePath} from "../../src/data/File"
 import {CommandExecutor, Process} from "@effect/platform/CommandExecutor"
+import {createGamePaths} from "../../src/data/Service"
+import {NodePath} from "@effect/platform-node"
+import {ActorId} from "skyrim-effect/game/Actor"
 
 vi.mock("node:os", () => ({
     ...vi.importActual("node:os"),
@@ -28,6 +31,19 @@ vi.mock("node:os", () => ({
 }))
 
 describe("createLipSyncGenerator", () => {
+    const baseDir = FilePath.make("/home/user/skyrim")
+
+    const gamePaths = createGamePaths({baseDir})
+
+    const mockFileSystem = FS.layerNoop({
+        exists: () => FX.succeed(true),
+        access: () => FX.void,
+        makeDirectory: () => FX.void,
+        sink: () => Sink.collectAll()
+    })
+
+    const voiceFile = VoiceFile.make("Eldermind_Dialogue_00001827_1")
+
     const dialogue = DialogueText.make(
         "Let Me Guess, Someone Stole Your Sweetroll?"
     )
@@ -38,15 +54,23 @@ describe("createLipSyncGenerator", () => {
         ST.fromEffect
     )
 
-    const filePathResolver: FilePathResolver = path =>
-        FX.succeed(FilePath.make(`/home/user/Skyrim/Data/${path}`))
+    const maleElf = ActorId.make(1)
+    const femaleNord = ActorId.make(2)
 
-    const voicePathResolver: VoicePathResolver = extension =>
-        pipe(
-            `Sound/Voice/Eldermind.esp/Dialogue_00001827_1${extension}`,
-            DataPath.make,
+    const voicePathResolver: VoicePathResolver = (speaker, file) => {
+        const voiceType =
+            speaker == maleElf ? "MaleOldGrumpy" : "FemaleCommoner"
+
+        const prefix = `${baseDir}/Data/Sound/Voice/Eldermind.esp/${voiceType}/${file}`
+
+        return pipe(
+            {
+                wav: pipe(`${prefix}.wav`, FilePath.make),
+                lip: pipe(`${prefix}.lip`, FilePath.make)
+            },
             FX.succeed
         )
+    }
 
     const createCommand: LipSyncCommandCreator = (audioFile, lipFile, text) =>
         Command.make(
@@ -69,99 +93,104 @@ describe("createLipSyncGenerator", () => {
             } as unknown as Process)
     } as unknown as CommandExecutor
 
-    const mockFileSystem: FileSystem = {
-        makeDirectory: () => FX.void,
-        sink: () => Sink.collectAll()
-    } as unknown as FileSystem
-
     afterEach(() => {
         vi.restoreAllMocks()
     })
 
-    it.scoped("should create the target directory if it does not exist", () =>
-        FX.gen(function* () {
+    it.scoped("should create the target directory if it does not exist", () => {
+        const test = FX.gen(function* () {
             const text = DialogueText.make(
                 "Let Me Guess, Someone Stole Your Sweetroll?"
             )
 
             const generateLipSync = createLipSyncGenerator(
-                filePathResolver,
+                voicePathResolver,
                 createCommand
             )
 
-            const makeDirectory = vi.spyOn(mockFileSystem, "makeDirectory")
+            const fs = yield* FileSystem
+            const makeDirectory = vi.spyOn(fs, "makeDirectory")
 
-            yield* pipe(
-                generateLipSync(mockAudio, text, voicePathResolver),
-                FX.provideService(FileSystem, mockFileSystem),
-                FX.provideService(CommandExecutor, mockCommandExecutor)
-            )
+            yield* generateLipSync(mockAudio, text, voiceFile, femaleNord)
 
             expect(makeDirectory).toHaveBeenCalledExactlyOnceWith(
-                "/home/user/Skyrim/Data/Sound/Voice/Eldermind.esp",
+                `${baseDir}/Data/Sound/Voice/Eldermind.esp/FemaleCommoner`,
                 {recursive: true}
             )
         })
-    )
 
-    it.scoped("should save the given audio data to the target directory", () =>
-        FX.gen(function* () {
-            const text = DialogueText.make(
-                "Let Me Guess, Someone Stole Your Sweetroll?"
-            )
+        return pipe(
+            test,
+            FX.provide(gamePaths),
+            FX.provide(mockFileSystem),
+            FX.provide(NodePath.layer),
+            FX.provideService(CommandExecutor, mockCommandExecutor)
+        )
+    })
 
-            const generateLipSync = createLipSyncGenerator(
-                filePathResolver,
-                createCommand
-            )
+    it.scoped(
+        "should save the given audio data to the target directory",
+        () => {
+            const test = FX.gen(function* () {
+                const text = DialogueText.make(
+                    "Let Me Guess, Someone Stole Your Sweetroll?"
+                )
 
-            const queue = yield* Queue.unbounded<Uint8Array<ArrayBufferLike>>()
+                const generateLipSync = createLipSyncGenerator(
+                    voicePathResolver,
+                    createCommand
+                )
 
-            const method = vi
-                .spyOn(mockFileSystem, "sink")
-                .mockReturnValueOnce(Sink.fromQueue(queue))
+                const queue =
+                    yield* Queue.unbounded<Uint8Array<ArrayBufferLike>>()
 
-            yield* pipe(
-                generateLipSync(mockAudio, text, voicePathResolver),
-                FX.provideService(FileSystem, mockFileSystem),
+                const fs = yield* FileSystem
+                const method = vi
+                    .spyOn(fs, "sink")
+                    .mockReturnValueOnce(Sink.fromQueue(queue))
+
+                yield* generateLipSync(mockAudio, text, voiceFile, maleElf)
+
+                expect(method).toHaveBeenCalledExactlyOnceWith(
+                    `${baseDir}/Data/Sound/Voice/Eldermind.esp/MaleOldGrumpy/${voiceFile}.wav`
+                )
+
+                const data = yield* pipe(
+                    Queue.takeAll(queue),
+                    FX.map(Chunk.toReadonlyArray)
+                )
+
+                expect(data).toHaveLength(1)
+
+                const buffer = data[0].buffer as ArrayBuffer
+
+                if (data.length > 0) {
+                    const text = new TextDecoder().decode(buffer)
+
+                    expect(text).toBe(dialogue)
+                }
+            })
+
+            return pipe(
+                test,
+                FX.provide(gamePaths),
+                FX.provide(mockFileSystem),
+                FX.provide(NodePath.layer),
                 FX.provideService(CommandExecutor, mockCommandExecutor)
             )
-
-            expect(method).toHaveBeenCalledExactlyOnceWith(
-                "/home/user/Skyrim/Data/Sound/Voice/Eldermind.esp/Dialogue_00001827_1.wav"
-            )
-
-            const data = yield* pipe(
-                Queue.takeAll(queue),
-                FX.map(Chunk.toReadonlyArray)
-            )
-
-            expect(data).toHaveLength(1)
-
-            const buffer = data[0].buffer as ArrayBuffer
-
-            if (data.length > 0) {
-                const text = new TextDecoder().decode(buffer)
-
-                expect(text).toBe(dialogue)
-            }
-        })
+        }
     )
 
-    it.scoped("should execute a command to create a lip sync file", () =>
-        FX.gen(function* () {
+    it.scoped("should execute a command to create a lipsync file", () => {
+        const test = FX.gen(function* () {
             const generateLipSync = createLipSyncGenerator(
-                filePathResolver,
+                voicePathResolver,
                 createCommand
             )
 
             const start = vi.spyOn(mockCommandExecutor, "start")
 
-            yield* pipe(
-                generateLipSync(mockAudio, dialogue, voicePathResolver),
-                FX.provideService(FileSystem, mockFileSystem),
-                FX.provideService(CommandExecutor, mockCommandExecutor)
-            )
+            yield* generateLipSync(mockAudio, dialogue, voiceFile, femaleNord)
 
             expect(start).toHaveBeenCalledOnce()
             expect(start.mock.lastCall).toHaveLength(1)
@@ -187,14 +216,16 @@ describe("createLipSyncGenerator", () => {
                 A.flatMap(c => c.args)
             )
 
+            const voiceDir = `${baseDir}/Data/Sound/Voice/Eldermind.esp/FemaleCommoner`
+
             expect(args).toEqual([
                 "/home/user/LipSync/FaceFXWrapper.exe",
                 "Skyrim",
                 "USEnglish",
                 "/home/user/LipSync/FonixData.cdf",
-                "/home/user/Skyrim/Data/Sound/Voice/Eldermind.esp/Dialogue_00001827_1.wav",
-                "/home/user/Skyrim/Data/Sound/Voice/Eldermind.esp/Dialogue_00001827_1.wav",
-                "/home/user/Skyrim/Data/Sound/Voice/Eldermind.esp/Dialogue_00001827_1.lip",
+                `${voiceDir}/${voiceFile}.wav`,
+                `${voiceDir}/${voiceFile}.wav`,
+                `${voiceDir}/${voiceFile}.lip`,
                 "Let Me Guess, Someone Stole Your Sweetroll?"
             ])
 
@@ -204,11 +235,17 @@ describe("createLipSyncGenerator", () => {
                 O.getOrUndefined
             )
 
-            expect(cwd).toEqual(
-                some("/home/user/Skyrim/Data/Sound/Voice/Eldermind.esp")
-            )
+            expect(cwd).toEqual(some(voiceDir))
         })
-    )
+
+        return pipe(
+            test,
+            FX.provide(gamePaths),
+            FX.provide(mockFileSystem),
+            FX.provide(NodePath.layer),
+            FX.provideService(CommandExecutor, mockCommandExecutor)
+        )
+    })
 })
 
 describe("createFaceFXWrapperConfig", () => {
@@ -237,8 +274,8 @@ describe("createFaceFXWrapperConfig", () => {
 
 describe("createFaceFXWrapperCommand", () => {
     it("should generate the correct command and arguments without wine", () => {
-        const audioFile = "c:\\voice\\test.wav"
-        const lipFile = "c:\\voice\\test.lip"
+        const audioFile = FilePath.make("c:\\voice\\test.wav")
+        const lipFile = FilePath.make("c:\\voice\\test.lip")
 
         const text = DialogueText.make("Never should've come here.")
 
@@ -273,8 +310,8 @@ describe("createFaceFXWrapperCommand", () => {
     })
 
     it("should generate the correct command and arguments with wine", () => {
-        const audioFile = "/home/user/voice/test2.wav"
-        const lipFile = "/home/user/voice/test2.lip"
+        const audioFile = FilePath.make("/home/user/voice/test2.wav")
+        const lipFile = FilePath.make("/home/user/voice/test2.lip")
 
         const text = DialogueText.make("Never should've come here.")
 
