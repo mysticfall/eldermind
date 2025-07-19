@@ -12,9 +12,15 @@
  * The module is designed to work with Effect-TS error handling patterns and provides
  * consistent error management across the application.
  */
+import * as FX from "effect/Effect"
+import {Effect} from "effect/Effect"
 import * as A from "effect/Array"
 import * as O from "effect/Option"
-import {pipe} from "effect"
+import * as STR from "effect/String"
+import {flow, Logger, LogLevel, pipe} from "effect"
+import {Debug} from "@skyrim-platform/skyrim-platform"
+import {createLogger, LoggingOptions} from "skyrim-effect/common/Log"
+import {notification} from "skyrim-effect/common/Debug"
 
 /**
  * Represents an error-like object with standardised properties.
@@ -145,5 +151,53 @@ export function prettyPrintError(error: unknown): string {
             return [indent, tagString, message].join("")
         }),
         A.join("\n")
+    )
+}
+
+export function withLogging(
+    options?: LoggingOptions
+): <E, R>(process: Effect<void, E, R>) => Effect<void, E, R> {
+    const loggingLayer = Logger.replace(
+        Logger.defaultLogger,
+        createLogger({
+            ...options,
+            prefix: options?.prefix ?? "ELM",
+            minLevels: {
+                ...options,
+                messageBox: LogLevel.None
+            }
+        })
+    )
+
+    return flow(
+        FX.tapError(e =>
+            notification(
+                `Eldermind: ${
+                    isErrorLike(e)
+                        ? e.message
+                        : "Unknown error occurred. See log for details."
+                }`
+            )
+        ),
+        FX.tapError(e => pipe(e, prettyPrintError, FX.logError)),
+        FX.catchAllDefect(e => {
+            const message = pipe(
+                getErrorMessage(e),
+                O.liftPredicate(STR.isNonEmpty),
+                O.map(m => `: ${m}`),
+                O.getOrElse(() => ".")
+            )
+
+            Debug.messageBox(
+                `A fatal error occurred. Eldermind will terminate${message}`
+            )
+
+            if (typeof e === "object" && e !== null && "stack" in e) {
+                Debug.traceStack((e as {stack: unknown}).stack as string, 2)
+            }
+
+            return pipe(e, prettyPrintError, FX.logFatal)
+        }),
+        FX.provide(loggingLayer)
     )
 }

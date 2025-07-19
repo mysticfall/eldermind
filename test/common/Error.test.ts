@@ -1,11 +1,40 @@
-import {describe, expect, it} from "vitest"
+import {afterEach, beforeEach, describe, expect, vi} from "vitest"
+import {it} from "@effect/vitest"
+import * as FX from "effect/Effect"
+import {pipe} from "effect"
 import {
     asErrorLike,
+    ErrorLike,
     getErrorChain,
     getErrorMessage,
     isErrorLike,
-    prettyPrintError
+    prettyPrintError,
+    withLogging
 } from "../../src/common/Error"
+import {Debug} from "@skyrim-platform/skyrim-platform"
+
+declare global {
+    // noinspection ES6ConvertVarToLetConst
+    var skyrimPlatform:
+        | typeof import("@skyrim-platform/skyrim-platform")
+        | undefined
+}
+
+//@ts-expect-error Vitest dynamic import mock overload
+vi.mock(import("@skyrim-platform/skyrim-platform"), async importOriginal => {
+    const mod = await importOriginal()
+
+    return {
+        ...mod,
+        Debug: {
+            messageBox: vi.fn(),
+            notification: vi.fn(),
+            trace: vi.fn(),
+            traceStack: vi.fn()
+        },
+        printConsole: vi.fn()
+    }
+})
 
 describe("isErrorLike", () => {
     it("should return true for objects with _tag, message and optional cause", () => {
@@ -239,4 +268,230 @@ describe("prettyPrintError", () => {
             "TopError: Top error\n" + "  UnknownError: string cause"
         )
     })
+})
+
+describe("withLogging", async () => {
+    beforeEach(async () => {
+        vi.clearAllMocks()
+
+        global.skyrimPlatform = await import("@skyrim-platform/skyrim-platform")
+    })
+
+    afterEach(() => {
+        delete global.skyrimPlatform
+    })
+
+    it.effect("should show in-game notification and log error details", () =>
+        FX.gen(function* () {
+            const error: ErrorLike = {
+                _tag: "TestError",
+                message: "Test error message"
+            }
+
+            const notification = vi.spyOn(Debug, "notification")
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                error,
+                FX.fail,
+                withLogging(),
+                FX.catchAll(() => FX.void)
+            )
+
+            expect(notification).toHaveBeenCalledExactlyOnceWith(
+                "Eldermind: Test error message"
+            )
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[ELM][ERROR]: TestError: Test error message",
+                2
+            )
+        })
+    )
+
+    it.effect("should handle non-ErrorLike errors in notification", () =>
+        FX.gen(function* () {
+            const error = "Plain string error"
+
+            const notification = vi.spyOn(Debug, "notification")
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                error,
+                FX.fail,
+                withLogging(),
+                FX.catchAll(() => FX.void)
+            )
+
+            expect(notification).toHaveBeenCalledExactlyOnceWith(
+                "Eldermind: Unknown error occurred. See log for details."
+            )
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[ELM][ERROR]: UnknownError: Plain string error",
+                2
+            )
+        })
+    )
+
+    it.effect("should handle defects with message box and stack trace", () =>
+        FX.gen(function* () {
+            const defectError = new Error("Fatal defect error")
+
+            defectError.stack = "Error stack trace"
+
+            const messageBox = vi.spyOn(Debug, "messageBox")
+            const traceStack = vi.spyOn(Debug, "traceStack")
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                FX.die(defectError),
+                withLogging(),
+                FX.catchAllDefect(() => FX.void)
+            )
+
+            expect(messageBox).toHaveBeenCalledExactlyOnceWith(
+                "A fatal error occurred. Eldermind will terminate: Fatal defect error"
+            )
+
+            expect(traceStack).toHaveBeenCalledExactlyOnceWith(
+                "Error stack trace",
+                2
+            )
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[ELM][FATAL]: UnknownError: Error: Fatal defect error",
+                2
+            )
+        })
+    )
+
+    it.effect("should handle defects without stack trace", () =>
+        FX.gen(function* () {
+            const defectError = {
+                _tag: "FatalError",
+                message: "Fatal error without stack"
+            }
+
+            const messageBox = vi.spyOn(Debug, "messageBox")
+            const traceStack = vi.spyOn(Debug, "traceStack")
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                FX.die(defectError),
+                withLogging(),
+                FX.catchAllDefect(() => FX.void)
+            )
+
+            expect(messageBox).toHaveBeenCalledExactlyOnceWith(
+                "A fatal error occurred. Eldermind will terminate: Fatal error without stack"
+            )
+
+            expect(traceStack).not.toHaveBeenCalled()
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[ELM][FATAL]: FatalError: Fatal error without stack",
+                2
+            )
+        })
+    )
+
+    it.effect("should handle defects that are not ErrorLike", () =>
+        FX.gen(function* () {
+            const defectError = "String defect error"
+
+            const messageBox = vi.spyOn(Debug, "messageBox")
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                FX.die(defectError),
+                withLogging(),
+                FX.catchAllDefect(() => FX.void)
+            )
+
+            expect(messageBox).toHaveBeenCalledExactlyOnceWith(
+                "A fatal error occurred. Eldermind will terminate: String defect error"
+            )
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[ELM][FATAL]: UnknownError: String defect error",
+                2
+            )
+        })
+    )
+
+    it.effect("should handle successful operations without logging", () =>
+        FX.gen(function* () {
+            const notification = vi.spyOn(Debug, "notification")
+            const trace = vi.spyOn(Debug, "trace")
+            const messageBox = vi.spyOn(Debug, "messageBox")
+
+            const result = yield* pipe(
+                FX.succeed("Success result"),
+                withLogging()
+            )
+
+            expect(result).toBe("Success result")
+            expect(notification).not.toHaveBeenCalled()
+            expect(trace).not.toHaveBeenCalled()
+            expect(messageBox).not.toHaveBeenCalled()
+        })
+    )
+
+    it.effect("should use custom prefix in logging options", () =>
+        FX.gen(function* () {
+            const error: ErrorLike = {
+                _tag: "CustomError",
+                message: "Custom error message"
+            }
+
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                error,
+                FX.fail,
+                withLogging({prefix: "CUSTOM"}),
+                FX.catchAll(() => FX.void)
+            )
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[CUSTOM][ERROR]: CustomError: Custom error message",
+                2
+            )
+        })
+    )
+
+    it.effect("should handle error chains in logging", () =>
+        FX.gen(function* () {
+            const rootCause: ErrorLike = {
+                _tag: "RootError",
+                message: "Root cause"
+            }
+
+            const error: ErrorLike = {
+                _tag: "ChainedError",
+                message: "Chained error",
+                cause: rootCause
+            }
+
+            const notification = vi.spyOn(Debug, "notification")
+            const trace = vi.spyOn(Debug, "trace")
+
+            yield* pipe(
+                error,
+                FX.fail,
+                withLogging(),
+                FX.catchAll(() => FX.void)
+            )
+
+            expect(notification).toHaveBeenCalledExactlyOnceWith(
+                "Eldermind: Chained error"
+            )
+
+            expect(trace).toHaveBeenCalledExactlyOnceWith(
+                "[ELM][ERROR]: ChainedError: Chained error\n  RootError: Root cause",
+                2
+            )
+        })
+    )
 })
